@@ -15,9 +15,10 @@ import { MaterialCommunityIcons, Feather, Ionicons, FontAwesome5 } from '@expo/v
 
 interface DashboardScreenProps {
   onSignOut?: () => void;
+  onCheckIn?: () => void;
 }
 
-export default function DashboardScreen({ onSignOut }: DashboardScreenProps) {
+export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScreenProps) {
   const insets = useSafeAreaInsets();
 
   // Dynamic Calendar States
@@ -188,7 +189,7 @@ export default function DashboardScreen({ onSignOut }: DashboardScreenProps) {
 
           {/* Action Buttons */}
           <View style={styles.statusActionsRow}>
-            <TouchableOpacity style={styles.checkInButton} activeOpacity={0.8}>
+            <TouchableOpacity style={styles.checkInButton} activeOpacity={0.8} onPress={onCheckIn}>
               <Text style={styles.checkInButtonText}>Check In</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.checkOutButton} activeOpacity={0.8} onPress={onSignOut}>
