@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -12,46 +12,100 @@ import {
   Platform,
   useWindowDimensions,
   Alert,
+  Animated,
+  Keyboard,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface LoginScreenProps {
   onForgotPassword: () => void;
+  onSignInSuccess: () => void;
 }
 
-export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
+export default function LoginScreen({ onForgotPassword, onSignInSuccess }: LoginScreenProps) {
   const { height } = useWindowDimensions();
   
+  // Slide-in and fade-in animations for the sign-in card on mount
+  const slideAnim = useRef(new Animated.Value(200)).current; // starts 200px down
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const keyboardShift = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 650,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Smoothly shift the sign-in card up when the keyboard opens
+    const showListener = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideListener = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSubscription = Keyboard.addListener(showListener, (e) => {
+      Animated.timing(keyboardShift, {
+        toValue: -150, // Move only the card up by 150px
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const hideSubscription = Keyboard.addListener(hideListener, () => {
+      Animated.timing(keyboardShift, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
   // State variables for the form
-  const [employeeId, setEmployeeId] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   // Focus states for input styling
-  const [isIdFocused, setIsIdFocused] = useState(false);
+  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   // References for programmatically triggering input focus
-  const employeeIdInputRef = useRef<TextInput>(null);
+  const usernameInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
   // Form submission handler
   const handleSignIn = () => {
-    if (!employeeId.trim()) {
-      Alert.alert('Validation Error', 'Please enter your Employee ID.');
+    const trimmedUsername = username.trim();
+    if (!trimmedUsername) {
+      Alert.alert('Validation Error', 'Please enter your Username.');
       return;
     }
+    
+    // Email regex validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedUsername)) {
+      Alert.alert('Validation Error', 'Please enter a valid email address.');
+      return;
+    }
+    
     if (!password) {
       Alert.alert('Validation Error', 'Please enter your Password.');
       return;
     }
     
-    // Simulate authentication
-    Alert.alert(
-      'Sign In Successful',
-      `Welcome to STS, ID: ${employeeId}!\nRemember Me: ${rememberMe ? 'Enabled' : 'Disabled'}`
-    );
+    // Transition to Dashboard
+    onSignInSuccess();
   };
 
   const handleForgotPassword = () => {
@@ -67,7 +121,7 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={undefined}
       style={styles.container}
     >
       <ScrollView
@@ -100,38 +154,50 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
         </ImageBackground>
 
         {/* Lower Portion: Card Container */}
-        <View style={styles.cardContainer}>
+        <Animated.View 
+          style={[
+            styles.cardContainer,
+            {
+              opacity: fadeAnim,
+              transform: [
+                { translateY: slideAnim },
+                { translateY: keyboardShift }
+              ],
+            }
+          ]}
+        >
           <Text style={styles.signInTitle}>Sign In</Text>
           <Text style={styles.signInSubtitle}>
             Please enter your credentials to access the portal.
           </Text>
 
-          {/* Employee ID Field */}
-          <Text style={styles.label}>EMPLOYEE ID</Text>
-          <TouchableWithoutFeedback onPress={() => employeeIdInputRef.current?.focus()}>
+          {/* Username Field */}
+          <Text style={styles.label}>USERNAME</Text>
+          <TouchableWithoutFeedback onPress={() => usernameInputRef.current?.focus()}>
             <View
               style={[
                 styles.inputWrapper,
-                isIdFocused && styles.inputWrapperFocused,
+                isUsernameFocused && styles.inputWrapperFocused,
               ]}
             >
               <MaterialCommunityIcons
-                name="badge-account-outline"
+                name="email-outline"
                 size={20}
-                color={isIdFocused ? '#0c44ac' : '#94a3b8'}
+                color={isUsernameFocused ? '#0c44ac' : '#94a3b8'}
                 style={styles.inputIcon}
               />
               <TextInput
-                ref={employeeIdInputRef}
+                ref={usernameInputRef}
                 style={styles.textInput}
-                placeholder="Enter your ID"
+                placeholder="Enter your email"
                 placeholderTextColor="#94a3b8"
-                value={employeeId}
-                onChangeText={setEmployeeId}
-                onFocus={() => setIsIdFocused(true)}
-                onBlur={() => setIsIdFocused(false)}
+                value={username}
+                onChangeText={setUsername}
+                onFocus={() => setIsUsernameFocused(true)}
+                onBlur={() => setIsUsernameFocused(false)}
                 autoCapitalize="none"
                 autoCorrect={false}
+                keyboardType="email-address"
               />
             </View>
           </TouchableWithoutFeedback>
@@ -215,7 +281,7 @@ export default function LoginScreen({ onForgotPassword }: LoginScreenProps) {
               <Text style={styles.supportLink}>Contact IT Support</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

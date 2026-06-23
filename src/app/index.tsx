@@ -5,9 +5,10 @@ import LoginScreen from '@/components/LoginScreen';
 import ForgotPasswordScreen from '@/components/ForgotPasswordScreen';
 import OtpScreen from '@/components/OtpScreen';
 import NewPasswordScreen from '@/components/NewPasswordScreen';
+import DashboardScreen from '@/components/DashboardScreen';
 
 export default function MainApp() {
-  const [screen, setScreen] = useState<'splash' | 'login' | 'forgot_password' | 'otp_verification' | 'new_password'>('splash');
+  const [screen, setScreen] = useState<'splash' | 'login' | 'forgot_password' | 'otp_verification' | 'new_password' | 'dashboard'>('splash');
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   // Transition to a different screen with a smooth cross-fade animation
@@ -31,7 +32,12 @@ export default function MainApp() {
       case 'splash':
         return <SplashScreen onFinish={() => transitionTo('login')} />;
       case 'login':
-        return <LoginScreen onForgotPassword={() => transitionTo('forgot_password')} />;
+        return (
+          <LoginScreen 
+            onForgotPassword={() => transitionTo('forgot_password')} 
+            onSignInSuccess={() => transitionTo('dashboard')}
+          />
+        );
       case 'forgot_password':
         return (
           <ForgotPasswordScreen
@@ -53,6 +59,8 @@ export default function MainApp() {
             onResetComplete={() => transitionTo('login')}
           />
         );
+      case 'dashboard':
+        return <DashboardScreen onSignOut={() => transitionTo('login')} />;
       default:
         return null;
     }
@@ -76,3 +84,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
+
