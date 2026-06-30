@@ -16,7 +16,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface AdminDashboardScreenProps {
-  onNavigate?: (screen: string) => void;
+  onNavigate?: (screen: string, params?: any) => void;
 }
 
 export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScreenProps) {
@@ -209,7 +209,7 @@ export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScree
           <Feather name="home" size={22} color="#0A52D6" />
           <Text style={[styles.tabText, { color: '#0A52D6' }]}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
           <MaterialCommunityIcons name="account-group-outline" size={24} color="#64748B" />
           <Text style={styles.tabText}>Staff</Text>
         </TouchableOpacity>
@@ -298,7 +298,17 @@ export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScree
               {employeeExpanded && (
                 <View style={styles.subMenu}>
                   {['Staff', 'Client', 'Leave Settings', 'User Group', 'Project', 'Holiday', 'Company Details','Assets'].map((item) => (
-                    <TouchableOpacity key={item} style={styles.subMenuItem} activeOpacity={0.7}>
+                    <TouchableOpacity 
+                      key={item} 
+                      style={styles.subMenuItem} 
+                      activeOpacity={0.7}
+                      onPress={() => {
+                        if (item === 'Staff') {
+                          closeMenu();
+                          setTimeout(() => onNavigate?.('admin_staff', { source: 'menu' }), 320);
+                        }
+                      }}
+                    >
                       <Text style={[
                         styles.subMenuText,
                         item === '' && { color: '#0A52D6', fontWeight: '700' } // Highlight selected item as per wireframe

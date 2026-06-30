@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface AdminMenuScreenProps {
-  onNavigate?: (screen: string) => void;
+  onNavigate?: (screen: string, params?: any) => void;
 }
 
 export default function AdminMenuScreen({ onNavigate }: AdminMenuScreenProps) {
@@ -179,7 +179,7 @@ export default function AdminMenuScreen({ onNavigate }: AdminMenuScreenProps) {
           <Text style={styles.tabText}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
           <MaterialCommunityIcons name="account-group-outline" size={24} color="#64748B" />
           <Text style={styles.tabText}>Staff</Text>
         </TouchableOpacity>

@@ -12,6 +12,7 @@ import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
 import AdminMenuScreen from '@/admin/screens/AdminMenuScreen';
+import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 
 type ScreenName =
   | 'splash'
@@ -25,7 +26,8 @@ type ScreenName =
   | 'checkin_location'
   | 'checkin_success'
   | 'location_failed'
-  | 'attendance_history';
+  | 'attendance_history'
+  | 'admin_staff';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +70,7 @@ function buildCheckInRecord(d: Date): AttendanceRecord {
 
 export default function MainApp() {
   const [screen, setScreen] = useState<ScreenName>('splash');
+  const [staffSource, setStaffSource] = useState<'dashboard' | 'menu'>('dashboard');
   const [checkInTime, setCheckInTime] = useState<Date>(new Date());
   const [failedDistance, setFailedDistance] = useState<number>(0);
   const [checkInHistory, setCheckInHistory] = useState<AttendanceRecord[]>([]);
@@ -77,7 +80,10 @@ export default function MainApp() {
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   /** Standard fade transition for most screens */
-  const transitionTo = (nextScreen: ScreenName) => {
+  const transitionTo = (nextScreen: ScreenName, params?: { source?: 'dashboard' | 'menu' }) => {
+    if (nextScreen === 'admin_staff' && params?.source) {
+      setStaffSource(params.source);
+    }
     if (nextScreen === 'admin_menu') {
       // Slide in from right — no fade needed
       slideAnim.setValue(SCREEN_WIDTH);
@@ -176,10 +182,24 @@ export default function MainApp() {
         );
 
       case 'admin_dashboard':
-        return <AdminDashboardScreen onNavigate={(s) => transitionTo(s as ScreenName)} />;
+        return <AdminDashboardScreen onNavigate={(s, p) => transitionTo(s as ScreenName, p)} />;
 
       case 'admin_menu':
-        return <AdminMenuScreen onNavigate={(s) => transitionTo(s as ScreenName)} />;
+        return <AdminMenuScreen onNavigate={(s, p) => transitionTo(s as ScreenName, p)} />;
+
+      case 'admin_staff':
+        return (
+          <AdminStaffScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (staffSource === 'menu') {
+                transitionTo('admin_menu');
+              } else {
+                transitionTo('admin_dashboard');
+              }
+            }}
+          />
+        );
 
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location':
