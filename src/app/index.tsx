@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, StyleSheet, View } from 'react-native';
 import SplashScreen from '@/common/screens/SplashScreen';
 import LoginScreen from '@/auth/screens/LoginScreen';
 import ForgotPasswordScreen from '@/auth/screens/ForgotPasswordScreen';
@@ -11,6 +11,7 @@ import CheckInSuccessScreen from '@/employee/screens/CheckInSuccessScreen';
 import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
+import AdminMenuScreen from '@/admin/screens/AdminMenuScreen';
 
 type ScreenName =
   | 'splash'
@@ -20,6 +21,7 @@ type ScreenName =
   | 'new_password'
   | 'dashboard'
   | 'admin_dashboard'
+  | 'admin_menu'
   | 'checkin_location'
   | 'checkin_success'
   | 'location_failed'
@@ -70,8 +72,41 @@ export default function MainApp() {
   const [failedDistance, setFailedDistance] = useState<number>(0);
   const [checkInHistory, setCheckInHistory] = useState<AttendanceRecord[]>([]);
   const fadeAnim = useRef(new Animated.Value(1)).current;
+  const SCREEN_WIDTH = Dimensions.get('window').width;
+  // slideAnim drives the admin_menu right-to-left entrance
+  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
+  /** Standard fade transition for most screens */
   const transitionTo = (nextScreen: ScreenName) => {
+    if (nextScreen === 'admin_menu') {
+      // Slide in from right — no fade needed
+      slideAnim.setValue(SCREEN_WIDTH);
+      setScreen('admin_menu');
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 320,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    if (screen === 'admin_menu') {
+      // Slide back out to the right, then switch screen
+      Animated.timing(slideAnim, {
+        toValue: SCREEN_WIDTH,
+        duration: 280,
+        useNativeDriver: true,
+      }).start(() => {
+        setScreen(nextScreen);
+        fadeAnim.setValue(0);
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+      return;
+    }
+    // Default fade for all other transitions
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 300,
@@ -143,6 +178,9 @@ export default function MainApp() {
       case 'admin_dashboard':
         return <AdminDashboardScreen onNavigate={(s) => transitionTo(s as ScreenName)} />;
 
+      case 'admin_menu':
+        return <AdminMenuScreen onNavigate={(s) => transitionTo(s as ScreenName)} />;
+
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location':
         return (
@@ -189,9 +227,22 @@ export default function MainApp() {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
-        {renderScreen()}
-      </Animated.View>
+      {screen === 'admin_menu' ? (
+        // Slide-in layer for admin_menu (right → left)
+        <Animated.View
+          style={[
+            styles.innerContainer,
+            { transform: [{ translateX: slideAnim }] },
+          ]}
+        >
+          {renderScreen()}
+        </Animated.View>
+      ) : (
+        // Fade layer for all other screens
+        <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
+          {renderScreen()}
+        </Animated.View>
+      )}
     </View>
   );
 }
