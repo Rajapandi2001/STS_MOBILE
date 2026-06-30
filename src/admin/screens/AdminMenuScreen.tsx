@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Modal,
   StyleSheet,
   Text,
   View,
@@ -21,6 +22,7 @@ export default function AdminMenuScreen({ onNavigate }: AdminMenuScreenProps) {
 
   // ── Fix: starts CLOSED — only opens when the user taps "Employee" ──
   const [employeeExpanded, setEmployeeExpanded] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   // Responsive scale helpers
   const isSmall = height < 700;           // small phones (e.g. SE)
@@ -32,7 +34,7 @@ export default function AdminMenuScreen({ onNavigate }: AdminMenuScreenProps) {
   const logoutBottom = tabBarH + (isSmall ? 8 : 16);
 
   const handleLogout = () => {
-    if (onNavigate) onNavigate('login');
+    setLogoutModalVisible(true);
   };
 
   return (
@@ -197,6 +199,45 @@ export default function AdminMenuScreen({ onNavigate }: AdminMenuScreenProps) {
           <Text style={[styles.tabText, { color: '#0A52D6' }]}>Menu</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalIconContainer}>
+              <MaterialCommunityIcons name="logout" size={28} color="#EF4444" />
+            </View>
+            <Text style={styles.modalTitle}>Confirm Logout</Text>
+            <Text style={styles.modalMessage}>
+              Are you sure want to log out of smart timesheet?
+            </Text>
+            <View style={styles.modalButtonContainer}>
+              <TouchableOpacity
+                style={styles.modalNoButton}
+                activeOpacity={0.8}
+                onPress={() => setLogoutModalVisible(false)}
+              >
+                <Text style={styles.modalNoButtonText}>No, stay</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalYesButton}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setLogoutModalVisible(false);
+                  setTimeout(() => onNavigate?.('login'), 320);
+                }}
+              >
+                <Text style={styles.modalYesButtonText}>Yes, logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -365,5 +406,84 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: '#64748B',
     fontWeight: '500',
+  },
+
+  /* Custom Modal Styles */
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    zIndex: 9999,
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 10,
+  },
+  modalIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginBottom: 8,
+  },
+  modalMessage: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+    fontWeight: '500',
+  },
+  modalButtonContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  modalNoButton: {
+    flex: 1,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalNoButtonText: {
+    color: '#64748B',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  modalYesButton: {
+    flex: 1,
+    backgroundColor: '#EF4444',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalYesButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
