@@ -58,6 +58,39 @@ const STAFF_DATA = [
     color: '#FFEDD5',
     textColor: '#C2410C',
   },
+  {
+    id: '5',
+    name: 'Manikandan Rajan',
+    empId: 'EMP-8812',
+    role: 'Developer',
+    department: 'Engineering',
+    status: 'Active',
+    initials: 'MR',
+    color: '#E0F2FE',
+    textColor: '#0369A1',
+  },
+  {
+    id: '6',
+    name: 'Manish Sharma',
+    empId: 'EMP-8813',
+    role: 'QA Engineer',
+    department: 'Quality Assurance',
+    status: 'Active',
+    initials: 'MS',
+    color: '#F0FDF4',
+    textColor: '#15803D',
+  },
+  {
+    id: '7',
+    name: 'Manoj Kumar',
+    empId: 'EMP-8814',
+    role: 'Lead Engineer',
+    department: 'Engineering',
+    status: 'Pending',
+    initials: 'MK',
+    color: '#FEF3C7',
+    textColor: '#B45309',
+  },
 ];
 
 export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScreenProps) {
@@ -123,7 +156,19 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
         <View style={styles.divider} />
 
         {/* Staff List */}
-        {STAFF_DATA.map((staff) => {
+        {STAFF_DATA.filter((staff) => {
+          const query = search.toLowerCase().trim();
+          if (!query) return true;
+
+          // Check if any word in the name starts with the query, or if the name includes the query
+          const nameWords = staff.name.toLowerCase().split(' ');
+          const nameMatch = nameWords.some(word => word.startsWith(query)) || staff.name.toLowerCase().includes(query);
+          const empIdMatch = staff.empId.toLowerCase().includes(query);
+          const roleMatch = staff.role.toLowerCase().includes(query);
+          const deptMatch = staff.department.toLowerCase().includes(query);
+
+          return nameMatch || empIdMatch || roleMatch || deptMatch;
+        }).map((staff) => {
           const isSelected = selectedStaff.includes(staff.id);
           return (
             <View key={staff.id} style={styles.staffCard}>
@@ -175,13 +220,13 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
       {/* Bottom Tab Bar */}
       <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
         <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
-          <Feather name="grid" size={22} color="#64748B" />
+          <Feather name="home" size={22} color="#64748B" />
           <Text style={styles.tabText}>Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem}>
           <MaterialCommunityIcons name="account-group-outline" size={24} color="#0A52D6" />
-          <Text style={[styles.tabText, { color: '#0A52D6' }]}>Staffs</Text>
+          <Text style={[styles.tabText, { color: '#0A52D6' }]}>Staff</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem}>
@@ -194,8 +239,8 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
           <Text style={styles.tabText}>Alerts</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_menu')}>
-          <Feather name="settings" size={22} color="#64748B" />
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard', { menuOpen: true })}>
+          <Feather name="grid" size={22} color="#64748B" />
           <Text style={styles.tabText}>Menu</Text>
         </TouchableOpacity>
       </View>

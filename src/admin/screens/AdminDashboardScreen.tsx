@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Animated,
   Dimensions,
@@ -17,9 +17,10 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface AdminDashboardScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
+  routeParams?: { menuOpen?: boolean };
 }
 
-export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScreenProps) {
+export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminDashboardScreenProps) {
   const insets = useSafeAreaInsets();
 
   // ── Menu overlay state ───────────────────────────────────────────────────────
@@ -28,6 +29,12 @@ export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScree
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const [employeeExpanded, setEmployeeExpanded] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (routeParams?.menuOpen) {
+      openMenu();
+    }
+  }, [routeParams]);
 
   const openMenu = () => {
     setMenuOpen(true);

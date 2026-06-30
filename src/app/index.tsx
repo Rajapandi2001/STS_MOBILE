@@ -11,7 +11,6 @@ import CheckInSuccessScreen from '@/employee/screens/CheckInSuccessScreen';
 import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
-import AdminMenuScreen from '@/admin/screens/AdminMenuScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 
 type ScreenName =
@@ -22,7 +21,6 @@ type ScreenName =
   | 'new_password'
   | 'dashboard'
   | 'admin_dashboard'
-  | 'admin_menu'
   | 'checkin_location'
   | 'checkin_success'
   | 'location_failed'
@@ -71,46 +69,18 @@ function buildCheckInRecord(d: Date): AttendanceRecord {
 export default function MainApp() {
   const [screen, setScreen] = useState<ScreenName>('splash');
   const [staffSource, setStaffSource] = useState<'dashboard' | 'menu'>('dashboard');
+  const [screenParams, setScreenParams] = useState<any>(null);
   const [checkInTime, setCheckInTime] = useState<Date>(new Date());
   const [failedDistance, setFailedDistance] = useState<number>(0);
   const [checkInHistory, setCheckInHistory] = useState<AttendanceRecord[]>([]);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const SCREEN_WIDTH = Dimensions.get('window').width;
-  // slideAnim drives the admin_menu right-to-left entrance
-  const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   /** Standard fade transition for most screens */
-  const transitionTo = (nextScreen: ScreenName, params?: { source?: 'dashboard' | 'menu' }) => {
+  const transitionTo = (nextScreen: ScreenName, params?: any) => {
+    setScreenParams(params);
     if (nextScreen === 'admin_staff' && params?.source) {
       setStaffSource(params.source);
-    }
-    if (nextScreen === 'admin_menu') {
-      // Slide in from right — no fade needed
-      slideAnim.setValue(SCREEN_WIDTH);
-      setScreen('admin_menu');
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 320,
-        useNativeDriver: true,
-      }).start();
-      return;
-    }
-    if (screen === 'admin_menu') {
-      // Slide back out to the right, then switch screen
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_WIDTH,
-        duration: 280,
-        useNativeDriver: true,
-      }).start(() => {
-        setScreen(nextScreen);
-        fadeAnim.setValue(0);
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }).start();
-      });
-      return;
     }
     // Default fade for all other transitions
     Animated.timing(fadeAnim, {
@@ -182,10 +152,12 @@ export default function MainApp() {
         );
 
       case 'admin_dashboard':
-        return <AdminDashboardScreen onNavigate={(s, p) => transitionTo(s as ScreenName, p)} />;
-
-      case 'admin_menu':
-        return <AdminMenuScreen onNavigate={(s, p) => transitionTo(s as ScreenName, p)} />;
+        return (
+          <AdminDashboardScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            routeParams={screenParams}
+          />
+        );
 
       case 'admin_staff':
         return (
@@ -193,7 +165,7 @@ export default function MainApp() {
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (staffSource === 'menu') {
-                transitionTo('admin_menu');
+                transitionTo('admin_dashboard', { menuOpen: true });
               } else {
                 transitionTo('admin_dashboard');
               }
@@ -247,22 +219,10 @@ export default function MainApp() {
 
   return (
     <View style={styles.container}>
-      {screen === 'admin_menu' ? (
-        // Slide-in layer for admin_menu (right → left)
-        <Animated.View
-          style={[
-            styles.innerContainer,
-            { transform: [{ translateX: slideAnim }] },
-          ]}
-        >
-          {renderScreen()}
-        </Animated.View>
-      ) : (
-        // Fade layer for all other screens
-        <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
-          {renderScreen()}
-        </Animated.View>
-      )}
+      {/* Fade layer for all screens */}
+      <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
+        {renderScreen()}
+      </Animated.View>
     </View>
   );
 }
