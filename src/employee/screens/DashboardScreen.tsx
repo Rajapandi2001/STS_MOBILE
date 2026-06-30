@@ -178,7 +178,7 @@ export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScree
             {/* Worked */}
             <View style={styles.statBox}>
               <View style={styles.statIconWrapper}>
-                <MaterialCommunityIcons name="hourglass-outline" size={20} color="#0A52D6" />
+                <MaterialCommunityIcons name="timer-sand-empty" size={20} color="#0A52D6" />
               </View>
               <View style={styles.statTextContainer}>
                 <Text style={styles.statLabel}>WORKED</Text>

@@ -20,9 +20,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 interface LoginScreenProps {
   onForgotPassword: () => void;
   onSignInSuccess: () => void;
+  onAdminSignIn?: () => void;
 }
 
-export default function LoginScreen({ onForgotPassword, onSignInSuccess }: LoginScreenProps) {
+export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdminSignIn }: LoginScreenProps) {
   const { height } = useWindowDimensions();
   
   // Slide-in and fade-in animations for the sign-in card on mount
@@ -92,9 +93,9 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess }: Login
       return;
     }
     
-    // Email regex validation
+    // Email regex validation (skip if admin)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedUsername)) {
+    if (trimmedUsername.toLowerCase() !== 'admin' && !emailRegex.test(trimmedUsername)) {
       Alert.alert('Validation Error', 'Please enter a valid email address.');
       return;
     }
@@ -104,8 +105,13 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess }: Login
       return;
     }
     
-    // Transition to Dashboard
-    onSignInSuccess();
+    
+    // Transition to Dashboard or Admin Dashboard
+    if (trimmedUsername.toLowerCase() === 'admin' && onAdminSignIn) {
+      onAdminSignIn();
+    } else {
+      onSignInSuccess();
+    }
   };
 
   const handleForgotPassword = () => {

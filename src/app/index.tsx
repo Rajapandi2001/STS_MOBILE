@@ -1,15 +1,16 @@
 import React, { useState, useRef } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
-import SplashScreen from '@/components/SplashScreen';
-import LoginScreen from '@/components/LoginScreen';
-import ForgotPasswordScreen from '@/components/ForgotPasswordScreen';
-import OtpScreen from '@/components/OtpScreen';
-import NewPasswordScreen from '@/components/NewPasswordScreen';
-import DashboardScreen from '@/components/DashboardScreen';
-import CheckInLocationScreen from '@/components/CheckInLocationScreen';
-import CheckInSuccessScreen from '@/components/CheckInSuccessScreen';
-import LocationFailedScreen from '@/components/LocationFailedScreen';
-import AttendanceHistoryScreen, { AttendanceRecord } from '@/components/AttendanceHistoryScreen';
+import SplashScreen from '@/common/screens/SplashScreen';
+import LoginScreen from '@/auth/screens/LoginScreen';
+import ForgotPasswordScreen from '@/auth/screens/ForgotPasswordScreen';
+import OtpScreen from '@/auth/screens/OtpScreen';
+import NewPasswordScreen from '@/auth/screens/NewPasswordScreen';
+import DashboardScreen from '@/employee/screens/DashboardScreen';
+import CheckInLocationScreen from '@/employee/screens/CheckInLocationScreen';
+import CheckInSuccessScreen from '@/employee/screens/CheckInSuccessScreen';
+import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
+import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
+import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
 
 type ScreenName =
   | 'splash'
@@ -18,6 +19,7 @@ type ScreenName =
   | 'otp_verification'
   | 'new_password'
   | 'dashboard'
+  | 'admin_dashboard'
   | 'checkin_location'
   | 'checkin_success'
   | 'location_failed'
@@ -102,6 +104,7 @@ export default function MainApp() {
           <LoginScreen
             onForgotPassword={() => transitionTo('forgot_password')}
             onSignInSuccess={() => transitionTo('dashboard')}
+            onAdminSignIn={() => transitionTo('admin_dashboard')}
           />
         );
 
@@ -136,6 +139,9 @@ export default function MainApp() {
             onCheckIn={() => transitionTo('checkin_location')}
           />
         );
+
+      case 'admin_dashboard':
+        return <AdminDashboardScreen onNavigate={(s) => transitionTo(s as ScreenName)} />;
 
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location':
