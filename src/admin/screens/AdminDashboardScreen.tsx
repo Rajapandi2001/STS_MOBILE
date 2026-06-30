@@ -274,17 +274,17 @@ export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScree
                 <Text style={styles.menuItemText}>Profile</Text>
               </TouchableOpacity>
 
-              {/* Employee — expandable */}
+              {/* ERP Master — expandable */}
               <TouchableOpacity
                 style={[styles.menuItem, employeeExpanded && styles.menuItemActive]}
                 activeOpacity={0.7}
                 onPress={() => setEmployeeExpanded(prev => !prev)}
               >
                 <View style={styles.menuIconWrap}>
-                  <MaterialCommunityIcons name="account-multiple-outline" size={22} color="#0A52D6" />
+                  <MaterialCommunityIcons name="office-building" size={22} color="#0A52D6" />
                 </View>
                 <Text style={[styles.menuItemText, employeeExpanded && styles.menuItemTextActive]}>
-                  Employee
+                  ERP Master
                 </Text>
                 <Feather
                   name={employeeExpanded ? 'chevron-up' : 'chevron-down'}
@@ -295,36 +295,41 @@ export default function AdminDashboardScreen({ onNavigate }: AdminDashboardScree
 
               {employeeExpanded && (
                 <View style={styles.subMenu}>
-                  {['Directory', 'Attendance', 'Leave Management'].map((item) => (
+                  {['Staff', 'Client', 'Leave Settings', 'User Group', 'Project', 'Holiday', 'Company Details','Assets'].map((item) => (
                     <TouchableOpacity key={item} style={styles.subMenuItem} activeOpacity={0.7}>
-                      <Text style={styles.subMenuText}>{item}</Text>
+                      <Text style={[
+                        styles.subMenuText,
+                        item === '' && { color: '#0A52D6', fontWeight: '700' } // Highlight selected item as per wireframe
+                      ]}>
+                        {item}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
 
-              {/* Clients */}
+              {/* Roles & Permissions */}
               <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
                 <View style={styles.menuIconWrap}>
-                  <MaterialCommunityIcons name="briefcase-outline" size={22} color="#0A52D6" />
+                  <MaterialCommunityIcons name="shield-account-outline" size={22} color="#0A52D6" />
                 </View>
-                <Text style={styles.menuItemText}>Clients</Text>
+                <Text style={styles.menuItemText}>Roles & Permissions</Text>
               </TouchableOpacity>
 
-              {/* Payroll */}
-              <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-                <View style={styles.menuIconWrap}>
-                  <MaterialCommunityIcons name="credit-card-outline" size={22} color="#0A52D6" />
-                </View>
-                <Text style={styles.menuItemText}>Payroll</Text>
-              </TouchableOpacity>
-
-              {/* Support */}
+              {/* Help */}
               <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
                 <View style={styles.menuIconWrap}>
                   <MaterialCommunityIcons name="help-circle-outline" size={22} color="#0A52D6" />
                 </View>
-                <Text style={styles.menuItemText}>Support</Text>
+                <Text style={styles.menuItemText}>Help</Text>
+              </TouchableOpacity>
+
+              {/* Settings */}
+              <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+                <View style={styles.menuIconWrap}>
+                  <MaterialCommunityIcons name="cog-outline" size={22} color="#0A52D6" />
+                </View>
+                <Text style={styles.menuItemText}>Settings</Text>
               </TouchableOpacity>
             </ScrollView>
 
