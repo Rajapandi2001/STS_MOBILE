@@ -9,7 +9,7 @@ import DashboardScreen from '@/components/DashboardScreen';
 import CheckInLocationScreen from '@/components/CheckInLocationScreen';
 import CheckInSuccessScreen from '@/components/CheckInSuccessScreen';
 import LocationFailedScreen from '@/components/LocationFailedScreen';
-import AttendanceHistoryScreen from '@/components/AttendanceHistoryScreen';
+import AttendanceHistoryScreen, { AttendanceRecord } from '@/components/AttendanceHistoryScreen';
 
 type ScreenName =
   | 'splash'
@@ -23,13 +23,52 @@ type ScreenName =
   | 'location_failed'
   | 'attendance_history';
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+/** Format a Date object to "09:05 AM" */
+function formatTime(d: Date): string {
+  const h = d.getHours();
+  const m = d.getMinutes().toString().padStart(2, '0');
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour12 = h % 12 === 0 ? 12 : h % 12;
+  return `${hour12.toString().padStart(2, '0')}:${m} ${ampm}`;
+}
+
+/** Format a Date object to "Jun 23" */
+function formatDate(d: Date): string {
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+
+/** Determine if the check-in time is "late" (after 09:30 AM) */
+function getStatus(d: Date): 'on_time' | 'late' {
+  const totalMinutes = d.getHours() * 60 + d.getMinutes();
+  return totalMinutes > 9 * 60 + 30 ? 'late' : 'on_time';
+}
+
+/** Build a real AttendanceRecord from a Date */
+function buildCheckInRecord(d: Date): AttendanceRecord {
+  return {
+    date: formatDate(d),
+    dayLabel: 'Today',
+    shift: 'Regular Shift',
+    status: getStatus(d),
+    checkIn: formatTime(d),
+    checkOut: '—',
+    total: '—',
+  };
+}
+
+// ── Main App ─────────────────────────────────────────────────────────────────
+
 export default function MainApp() {
   const [screen, setScreen] = useState<ScreenName>('splash');
   const [checkInTime, setCheckInTime] = useState<Date>(new Date());
   const [failedDistance, setFailedDistance] = useState<number>(0);
+  const [checkInHistory, setCheckInHistory] = useState<AttendanceRecord[]>([]);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Transition to a different screen with a smooth cross-fade animation
   const transitionTo = (nextScreen: ScreenName) => {
     Animated.timing(fadeAnim, {
       toValue: 0,
@@ -43,6 +82,14 @@ export default function MainApp() {
         useNativeDriver: true,
       }).start();
     });
+  };
+
+  const handleCheckInConfirmed = () => {
+    const now = new Date();
+    setCheckInTime(now);
+    // Save the real record with correct time & date
+    setCheckInHistory(prev => [buildCheckInRecord(now), ...prev]);
+    transitionTo('checkin_success');
   };
 
   const renderScreen = () => {
@@ -90,15 +137,12 @@ export default function MainApp() {
           />
         );
 
-      // ─── CHECK-IN FLOW ──────────────────────────────────────────────────────
+      // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location':
         return (
           <CheckInLocationScreen
             onBack={() => transitionTo('dashboard')}
-            onConfirm={(coords) => {
-              setCheckInTime(new Date());
-              transitionTo('checkin_success');
-            }}
+            onConfirm={handleCheckInConfirmed}
             onValidationFailed={(distance) => {
               setFailedDistance(distance);
               transitionTo('location_failed');
@@ -127,6 +171,7 @@ export default function MainApp() {
       case 'attendance_history':
         return (
           <AttendanceHistoryScreen
+            liveRecords={checkInHistory}
             onReturnHome={() => transitionTo('dashboard')}
           />
         );

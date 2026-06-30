@@ -10,26 +10,18 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 
-interface AttendanceRecord {
-  date: string;
-  dayLabel: string;
+export interface AttendanceRecord {
+  date: string;       // e.g. 'Jun 23'
+  dayLabel: string;   // e.g. 'Today' or ''
   shift: string;
   status: 'on_time' | 'late' | 'absent';
-  checkIn: string;
-  checkOut: string;
-  total: string;
+  checkIn: string;    // e.g. '09:12 AM'
+  checkOut: string;   // e.g. '06:45 PM' or '—'
+  total: string;      // e.g. '9h 33m' or '—'
 }
 
-const MOCK_RECORDS: AttendanceRecord[] = [
-  {
-    date: 'Jun 23',
-    dayLabel: 'Today',
-    shift: 'Regular Shift',
-    status: 'on_time',
-    checkIn: '09:00 AM',
-    checkOut: '—',
-    total: '—',
-  },
+// Historical sample records (past days, no live today entry)
+const HISTORICAL_RECORDS: AttendanceRecord[] = [
   {
     date: 'Oct 24',
     dayLabel: '',
@@ -76,11 +68,15 @@ const STATUS_CONFIG = {
 
 interface Props {
   onReturnHome: () => void;
+  liveRecords?: AttendanceRecord[];  // Real check-in records from this session
 }
 
-export default function AttendanceHistoryScreen({ onReturnHome }: Props) {
+export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = [] }: Props) {
   const insets = useSafeAreaInsets();
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'present' | 'absent' | 'late'>('all');
+
+  // Merge: live check-ins (newest first) + historical sample records
+  const allRecords: AttendanceRecord[] = [...liveRecords, ...HISTORICAL_RECORDS];
 
   const filters = [
     { key: 'all', label: 'All' },
@@ -89,7 +85,7 @@ export default function AttendanceHistoryScreen({ onReturnHome }: Props) {
     { key: 'late', label: 'Late' },
   ] as const;
 
-  const filtered = MOCK_RECORDS.filter(r => {
+  const filtered = allRecords.filter(r => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'present') return r.status === 'on_time';
     if (activeFilter === 'absent') return r.status === 'absent';
@@ -97,9 +93,9 @@ export default function AttendanceHistoryScreen({ onReturnHome }: Props) {
     return true;
   });
 
-  const totalPresent = MOCK_RECORDS.filter(r => r.status === 'on_time').length;
-  const totalLate = MOCK_RECORDS.filter(r => r.status === 'late').length;
-  const totalAbsent = MOCK_RECORDS.filter(r => r.status === 'absent').length;
+  const totalPresent = allRecords.filter(r => r.status === 'on_time').length;
+  const totalLate    = allRecords.filter(r => r.status === 'late').length;
+  const totalAbsent  = allRecords.filter(r => r.status === 'absent').length;
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
@@ -168,8 +164,6 @@ export default function AttendanceHistoryScreen({ onReturnHome }: Props) {
           const cfg = STATUS_CONFIG[record.status];
           return (
             <View key={idx} style={[styles.recordCard, record.status === 'late' && styles.recordCardLate]}>
-              {/* Left accent bar for late */}
-              {record.status === 'late' && <View style={styles.lateAccent} />}
 
               <View style={styles.recordHeader}>
                 <View>
@@ -346,7 +340,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingHorizontal: 20,
-    gap: 12,
+    paddingTop: 4,
   },
   emptyState: {
     alignItems: 'center',
@@ -362,24 +356,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
     padding: 18,
+    marginBottom: 12,
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
     elevation: 3,
-    overflow: 'hidden',
   },
   recordCardLate: {
     borderLeftWidth: 4,
     borderLeftColor: '#F59E0B',
-  },
-  lateAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
-    backgroundColor: '#F59E0B',
   },
   recordHeader: {
     flexDirection: 'row',
