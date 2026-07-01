@@ -100,11 +100,6 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
           <View style={styles.hamburgerLine} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>AdminConsole</Text>
-<<<<<<< Updated upstream
-        <View style={styles.avatarCircle}>
-          <Feather name="user" size={20} color="#0A52D6" />
-        </View>
-=======
         {/* Right: Avatar */}
         <TouchableOpacity
           style={styles.avatarCircle}
@@ -113,7 +108,6 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
         >
           <Text style={styles.avatarText}>AP</Text>
         </TouchableOpacity>
->>>>>>> Stashed changes
       </View>
 
       {/* ── Main ScrollView ── */}
