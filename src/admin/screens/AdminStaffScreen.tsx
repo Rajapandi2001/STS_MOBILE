@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface AdminStaffScreenProps {
@@ -95,6 +96,7 @@ const STAFF_DATA = [
 
 export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [search, setSearch] = useState('');
 
   const renderStatusBadge = (status: string) => {
@@ -116,13 +118,17 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.menuButton} onPress={() => onBack?.()}>
-          <Feather name="arrow-left" size={24} color="#64748B" />
+          <View style={{ gap: 4, alignItems: 'flex-start' }}>
+            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
+            <View style={{ width: 14, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
+            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
+          </View>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Staffs</Text>
         <View style={styles.avatarCircle}>
@@ -207,30 +213,20 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
       </ScrollView>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
         <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
-          <Feather name="home" size={22} color="#64748B" />
-          <Text style={styles.tabText}>Home</Text>
+          <Feather name="home" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem}>
-          <MaterialCommunityIcons name="account-group-outline" size={24} color="#0A52D6" />
-          <Text style={[styles.tabText, { color: '#0A52D6' }]}>Staff</Text>
+          <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabActive} />
+          <Text style={[styles.tabText, { color: colors.tabActive }]}>Staff</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem}>
-          <Feather name="bar-chart-2" size={22} color="#64748B" />
-          <Text style={styles.tabText}>Reports</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="bell" size={22} color="#64748B" />
-          <Text style={styles.tabText}>Alerts</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard', { menuOpen: true })}>
-          <Feather name="grid" size={22} color="#64748B" />
-          <Text style={styles.tabText}>Menu</Text>
+          <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
         </TouchableOpacity>
       </View>
     </View>

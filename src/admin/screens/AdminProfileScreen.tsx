@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -159,6 +160,7 @@ interface AdminProfileScreenProps {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileScreenProps) {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   const [isEditing, setIsEditing] = useState(false);
 
   const [profile, setProfile] = useState<ProfileShape>({
@@ -194,15 +196,19 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F1F5F9" />
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bg }]}>
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.bg} />
 
       {/* ── Header ── */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
-          <Feather name="arrow-left" size={22} color="#0F172A" />
+          <View style={{ gap: 4, alignItems: 'flex-start' }}>
+            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#0F172A' }} />
+            <View style={{ width: 14, height: 2, borderRadius: 2, backgroundColor: '#0F172A' }} />
+            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#0F172A' }} />
+          </View>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Edit Profile</Text>
         {isEditing ? (
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.8}>
@@ -213,7 +219,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={styles.editBtn} onPress={handleEdit} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.editBtn, { backgroundColor: colors.brand }]} onPress={handleEdit} activeOpacity={0.8}>
             <Text style={styles.editBtnText}>Edit</Text>
           </TouchableOpacity>
         )}
@@ -225,7 +231,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Avatar Card ── */}
-        <View style={styles.avatarCard}>
+        <View style={[styles.avatarCard, { backgroundColor: colors.card }]}>
           {/* Left: Avatar */}
           <View style={styles.avatarOuter}>
             <View style={styles.avatarInner}>
@@ -239,23 +245,23 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
           </View>
           {/* Right: Details */}
           <View style={styles.avatarDetails}>
-            <Text style={styles.profileName}>{profile.fullName}</Text>
-            <Text style={styles.profileRole}>{profile.role}</Text>
-            <Text style={styles.profileId}>Employee ID : {profile.employeeId}</Text>
-            <View style={styles.activeChip}>
-              <View style={styles.activeDot} />
-              <Text style={styles.activeText}>ACTIVE</Text>
+            <Text style={[styles.profileName, { color: colors.textPrimary }]}>{profile.fullName}</Text>
+            <Text style={[styles.profileRole, { color: colors.textSecond }]}>{profile.role}</Text>
+            <Text style={[styles.profileId, { color: colors.brand }]}>Employee ID : {profile.employeeId}</Text>
+            <View style={[styles.activeChip, { backgroundColor: colors.successBg, borderColor: colors.successBorder }]}>
+              <View style={[styles.activeDot, { backgroundColor: colors.success }]} />
+              <Text style={[styles.activeText, { color: colors.successText }]}>ACTIVE</Text>
             </View>
           </View>
         </View>
 
         {/* ══ Personal Information ══ */}
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconWrap}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="account-outline" size={22} color="#0A52D6" />
             </View>
-            <Text style={styles.sectionTitle}>Personal Information</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Personal Information</Text>
           </View>
 
           <TwoColRow
@@ -298,12 +304,12 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         </View>
 
         {/* ══ Contact Information ══ */}
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconWrap}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="map-marker-outline" size={22} color="#0A52D6" />
             </View>
-            <Text style={styles.sectionTitle}>Contact Information</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Contact Information</Text>
           </View>
 
           <TwoColRow
@@ -341,12 +347,12 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         {/* ══ Emergency Contact + Bank Information ══ */}
         <View style={styles.bottomCardRow}>
           {/* Emergency Contact */}
-          <View style={[styles.sectionCard, styles.halfCard]}>
+          <View style={[styles.sectionCard, styles.halfCard, { backgroundColor: colors.card }]}>
             <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: '#FEF2F2' }]}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: colors.dangerBg }]}>
                 <MaterialCommunityIcons name="phone-alert-outline" size={20} color="#EF4444" />
               </View>
-              <Text style={[styles.sectionTitle, { fontSize: 14 }]}>{'Emergency\nContact'}</Text>
+              <Text style={[styles.sectionTitle, { fontSize: 14, color: colors.textPrimary }]}>{'Emergency\nContact'}</Text>
             </View>
             <InfoField label="Name" value={profile.emergencyName} editable fieldKey="emergencyName"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
@@ -357,12 +363,12 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
           </View>
 
           {/* Bank Information */}
-          <View style={[styles.sectionCard, styles.halfCard]}>
+          <View style={[styles.sectionCard, styles.halfCard, { backgroundColor: colors.card }]}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconWrap}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
                 <MaterialCommunityIcons name="bank-outline" size={20} color="#0A52D6" />
               </View>
-              <Text style={[styles.sectionTitle, { fontSize: 14 }]}>{'Bank\nInformation'}</Text>
+              <Text style={[styles.sectionTitle, { fontSize: 14, color: colors.textPrimary }]}>{'Bank\nInformation'}</Text>
             </View>
             <InfoField label="Bank Name" value={profile.bankName} icon={<MaterialCommunityIcons name="bank" size={14} color="#64748B" />} editable fieldKey="bankName"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
@@ -374,22 +380,22 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         </View>
 
         {/* ══ Security ══ */}
-        <View style={styles.sectionCard}>
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconWrap}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="shield-lock-outline" size={22} color="#0A52D6" />
             </View>
-            <Text style={styles.sectionTitle}>Security</Text>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Security</Text>
           </View>
 
           <TouchableOpacity style={styles.securityRow} activeOpacity={0.7}>
             <View style={styles.securityLeft}>
-              <View style={[styles.securityIconBg, { backgroundColor: '#EFF6FF' }]}>
+              <View style={[styles.securityIconBg, { backgroundColor: colors.iconBg }]}>
                 <Feather name="lock" size={16} color="#0A52D6" />
               </View>
               <View>
-                <Text style={styles.securityLabel}>Change Password</Text>
-                <Text style={styles.securitySub}>Last changed 30 days ago</Text>
+                <Text style={[styles.securityLabel, { color: colors.textPrimary }]}>Change Password</Text>
+                <Text style={[styles.securitySub, { color: colors.textSecond }]}>Last changed 30 days ago</Text>
               </View>
             </View>
             <Feather name="chevron-right" size={18} color="#94A3B8" />
@@ -403,7 +409,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
                 <Feather name="smartphone" size={16} color="#22C55E" />
               </View>
               <View>
-                <Text style={styles.securityLabel}>Two-Factor Auth</Text>
+                <Text style={[styles.securityLabel, { color: colors.textPrimary }]}>Two-Factor Auth</Text>
                 <Text style={[styles.securitySub, { color: '#22C55E' }]}>Enabled</Text>
               </View>
             </View>
@@ -414,16 +420,16 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
 
       {/* ── Save Confirmation Modal ── */}
       <Modal visible={saveConfirmVisible} transparent animationType="fade" onRequestClose={() => setSaveConfirmVisible(false)}>
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalIconContainer}>
+        <View style={[styles.modalBackdrop, { backgroundColor: colors.modalBackdrop }]}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.modalIconContainer, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="content-save-outline" size={28} color="#0A52D6" />
             </View>
-            <Text style={styles.modalTitle}>Save Changes?</Text>
-            <Text style={styles.modalMessage}>Your profile information will be updated. Do you want to continue?</Text>
+            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Save Changes?</Text>
+            <Text style={[styles.modalMessage, { color: colors.textSecond }]}>Your profile information will be updated. Do you want to continue?</Text>
             <View style={styles.modalButtonContainer}>
-              <TouchableOpacity style={styles.modalNoButton} activeOpacity={0.8} onPress={() => setSaveConfirmVisible(false)}>
-                <Text style={styles.modalNoButtonText}>Cancel</Text>
+              <TouchableOpacity style={[styles.modalNoButton, { borderColor: colors.border }]} activeOpacity={0.8} onPress={() => setSaveConfirmVisible(false)}>
+                <Text style={[styles.modalNoButtonText, { color: colors.textSecond }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalYesButton} activeOpacity={0.8} onPress={confirmSave}>
                 <Text style={styles.modalYesButtonText}>Save</Text>

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, View } from 'react-native';
+import { ThemeProvider } from '@/context/ThemeContext';
 import SplashScreen from '@/common/screens/SplashScreen';
 import LoginScreen from '@/auth/screens/LoginScreen';
 import ForgotPasswordScreen from '@/auth/screens/ForgotPasswordScreen';
@@ -292,12 +293,14 @@ export default function MainApp() {
   };
 
   return (
-    <View style={styles.container}>
-      {/* Fade layer for all screens */}
-      <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
-        {renderScreen()}
-      </Animated.View>
-    </View>
+    <ThemeProvider>
+      <View style={styles.container}>
+        {/* Fade layer for all screens */}
+        <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
+          {renderScreen()}
+        </Animated.View>
+      </View>
+    </ThemeProvider>
   );
 }
 
