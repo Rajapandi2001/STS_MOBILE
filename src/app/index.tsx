@@ -84,27 +84,38 @@ export default function MainApp() {
   const [checkInTime, setCheckInTime] = useState<Date>(new Date());
   const [failedDistance, setFailedDistance] = useState<number>(0);
   const [checkInHistory, setCheckInHistory] = useState<AttendanceRecord[]>([]);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  // For smooth overlapping transitions
+  const [prevScreen, setPrevScreen] = useState<ScreenName | null>(null);
+  const [prevScreenParams, setPrevScreenParams] = useState<any>(null);
+  const [navDirection, setNavDirection] = useState<'forward' | 'backward'>('forward');
+  const transitionAnim = useRef(new Animated.Value(1)).current;
   const SCREEN_WIDTH = Dimensions.get('window').width;
 
-  /** Standard fade transition for most screens */
-  const transitionTo = (nextScreen: ScreenName, params?: any) => {
-    setScreenParams(params);
+  /** Super smooth native-like slide transition */
+  const transitionTo = (nextScreen: ScreenName, params?: any, direction: 'forward' | 'backward' = 'forward') => {
     if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects') && params?.source) {
       setNavSource(params.source);
     }
-    // Default fade for all other transitions
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 300,
+    
+    // Set up overlapping state
+    setNavDirection(direction);
+    setPrevScreen(screen);
+    setPrevScreenParams(screenParams);
+    
+    setScreen(nextScreen);
+    setScreenParams(params);
+    
+    // Reset animation to 0 (start of transition)
+    transitionAnim.setValue(0);
+    
+    Animated.timing(transitionAnim, {
+      toValue: 1,
+      duration: 350,
       useNativeDriver: true,
     }).start(() => {
-      setScreen(nextScreen);
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
+      // Clean up the old screen once transition completes
+      setPrevScreen(null);
+      setPrevScreenParams(null);
     });
   };
 
@@ -116,8 +127,8 @@ export default function MainApp() {
     transitionTo('checkin_success');
   };
 
-  const renderScreen = () => {
-    switch (screen) {
+  const renderScreenComponent = (s: ScreenName, p: any) => {
+    switch (s) {
       case 'splash':
         return <SplashScreen onFinish={() => transitionTo('login')} />;
 
@@ -141,7 +152,7 @@ export default function MainApp() {
       case 'otp_verification':
         return (
           <OtpScreen
-            onBack={() => transitionTo('forgot_password')}
+            onBack={() => transitionTo('forgot_password', undefined, 'backward')}
             onVerify={() => transitionTo('new_password')}
           />
         );
@@ -149,7 +160,7 @@ export default function MainApp() {
       case 'new_password':
         return (
           <NewPasswordScreen
-            onBack={() => transitionTo('otp_verification')}
+            onBack={() => transitionTo('otp_verification', undefined, 'backward')}
             onResetComplete={() => transitionTo('login')}
           />
         );
@@ -157,7 +168,7 @@ export default function MainApp() {
       case 'dashboard':
         return (
           <DashboardScreen
-            onSignOut={() => transitionTo('login')}
+            onSignOut={() => transitionTo('login', undefined, 'backward')}
             onCheckIn={() => transitionTo('checkin_location')}
           />
         );
@@ -165,8 +176,8 @@ export default function MainApp() {
       case 'admin_dashboard':
         return (
           <AdminDashboardScreen
-            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
-            routeParams={screenParams}
+            onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
+            routeParams={p}
           />
         );
 
@@ -176,9 +187,9 @@ export default function MainApp() {
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {
-                transitionTo('admin_dashboard', { menuOpen: true });
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
               } else {
-                transitionTo('admin_dashboard');
+                transitionTo('admin_dashboard', undefined, 'backward');
               }
             }}
           />
@@ -190,9 +201,9 @@ export default function MainApp() {
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {
-                transitionTo('admin_dashboard', { menuOpen: true });
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
               } else {
-                transitionTo('admin_dashboard');
+                transitionTo('admin_dashboard', undefined, 'backward');
               }
             }}
           />
@@ -204,9 +215,9 @@ export default function MainApp() {
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {
-                transitionTo('admin_dashboard', { menuOpen: true });
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
               } else {
-                transitionTo('admin_dashboard');
+                transitionTo('admin_dashboard', undefined, 'backward');
               }
             }}
           />
@@ -218,9 +229,9 @@ export default function MainApp() {
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {
-                transitionTo('admin_dashboard', { menuOpen: true });
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
               } else {
-                transitionTo('admin_dashboard');
+                transitionTo('admin_dashboard', undefined, 'backward');
               }
             }}
           />
@@ -232,9 +243,9 @@ export default function MainApp() {
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {
-                transitionTo('admin_dashboard', { menuOpen: true });
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
               } else {
-                transitionTo('admin_dashboard');
+                transitionTo('admin_dashboard', undefined, 'backward');
               }
             }}
           />
@@ -243,7 +254,7 @@ export default function MainApp() {
       case 'admin_profile':
         return (
           <AdminProfileScreen
-            onBack={() => transitionTo('admin_dashboard', { menuOpen: true })}
+            onBack={() => transitionTo('admin_dashboard', { menuOpen: true }, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
@@ -252,7 +263,7 @@ export default function MainApp() {
       case 'checkin_location':
         return (
           <CheckInLocationScreen
-            onBack={() => transitionTo('dashboard')}
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
             onConfirm={handleCheckInConfirmed}
             onValidationFailed={(distance) => {
               setFailedDistance(distance);
@@ -275,7 +286,7 @@ export default function MainApp() {
           <LocationFailedScreen
             distance={failedDistance}
             onRetry={() => transitionTo('checkin_location')}
-            onBack={() => transitionTo('dashboard')}
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
           />
         );
 
@@ -283,7 +294,7 @@ export default function MainApp() {
         return (
           <AttendanceHistoryScreen
             liveRecords={checkInHistory}
-            onReturnHome={() => transitionTo('dashboard')}
+            onReturnHome={() => transitionTo('dashboard', undefined, 'backward')}
           />
         );
 
@@ -295,9 +306,42 @@ export default function MainApp() {
   return (
     <ThemeProvider>
       <View style={styles.container}>
-        {/* Fade layer for all screens */}
-        <Animated.View style={[styles.innerContainer, { opacity: fadeAnim }]}>
-          {renderScreen()}
+        {/* Previous Screen */}
+        {prevScreen && (
+          <Animated.View style={[StyleSheet.absoluteFill, { 
+            zIndex: navDirection === 'forward' ? 0 : 10,
+            transform: [{ 
+              translateX: transitionAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: navDirection === 'forward' ? [0, -SCREEN_WIDTH * 0.3] : [0, SCREEN_WIDTH]
+              }) 
+            }],
+            shadowColor: '#000',
+            shadowOffset: { width: -5, height: 0 },
+            shadowOpacity: navDirection === 'backward' ? 0.3 : 0,
+            shadowRadius: 10,
+            elevation: navDirection === 'backward' ? 10 : 0,
+          }]}>
+            {renderScreenComponent(prevScreen, prevScreenParams)}
+          </Animated.View>
+        )}
+
+        {/* Current/Incoming Screen */}
+        <Animated.View style={[StyleSheet.absoluteFill, { 
+          zIndex: navDirection === 'forward' ? 10 : 0,
+          transform: [{ 
+            translateX: prevScreen ? transitionAnim.interpolate({
+              inputRange: [0, 1],
+              outputRange: navDirection === 'forward' ? [SCREEN_WIDTH, 0] : [-SCREEN_WIDTH * 0.3, 0]
+            }) : 0
+          }],
+          shadowColor: '#000',
+          shadowOffset: { width: -5, height: 0 },
+          shadowOpacity: (prevScreen && navDirection === 'forward') ? 0.3 : 0,
+          shadowRadius: 10,
+          elevation: (prevScreen && navDirection === 'forward') ? 10 : 0,
+        }]}>
+          {renderScreenComponent(screen, screenParams)}
         </Animated.View>
       </View>
     </ThemeProvider>

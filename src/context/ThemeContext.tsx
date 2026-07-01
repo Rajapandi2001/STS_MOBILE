@@ -32,6 +32,7 @@ export const lightColors = {
   danger:       '#EF4444',
   dangerBg:     '#FEF2F2',
   amber:        '#F59E0B',
+  amberBg:      '#FFFBEB',
   // Header
   header:       '#FFFFFF',
   statusBar:    'dark-content' as 'dark-content' | 'light-content',
@@ -71,6 +72,7 @@ export const darkColors: typeof lightColors = {
   danger:       '#F87171',
   dangerBg:     '#450A0A',
   amber:        '#FCD34D',
+  amberBg:      '#422006',
   header:       '#1E293B',
   statusBar:    'light-content' as 'dark-content' | 'light-content',
   tabBar:       '#1E293B',

@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import AdminMenu from '@/admin/components/AdminMenu';
 
 interface AdminUserGroupsScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
@@ -64,16 +65,17 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const renderStatusBadge = (status: string) => {
-    let bgColor = '#DCFCE7';
-    let textColor = '#16A34A';
+    let bgColor = colors.successBg;
+    let textColor = colors.success;
     if (status === 'Inactive') {
-      bgColor = '#F1F5F9';
-      textColor = '#64748B';
+      bgColor = colors.iconBg;
+      textColor = colors.textSecond;
     } else if (status === 'Pending') {
-      bgColor = '#FFEDD5';
-      textColor = '#EA580C';
+      bgColor = colors.amberBg;
+      textColor = colors.amber;
     }
     return (
       <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
@@ -95,20 +97,18 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => onBack?.()}>
-          <View style={{ gap: 4, alignItems: 'flex-start' }}>
-            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
-            <View style={{ width: 14, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
-            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
-          </View>
+      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
+          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
+          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>User Groups</Text>
-        <View style={styles.avatarCircle}>
-          <Feather name="user" size={20} color="#0A52D6" />
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>User Groups</Text>
+        <View style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}>
+          <Feather name="user" size={20} color={colors.brand} />
         </View>
       </View>
 
@@ -117,51 +117,51 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
       >
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Feather name="search" size={18} color="#94A3B8" style={styles.searchIcon} />
+        <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+          <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder="Search User Groups by Name or ID..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textSecond}
             value={search}
             onChangeText={setSearch}
           />
           <TouchableOpacity>
-            <Feather name="sliders" size={18} color="#64748B" />
+            <Feather name="sliders" size={18} color={colors.textSecond} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Section Header */}
-        <Text style={styles.sectionHeader}>USER GROUPS INDEX</Text>
+        <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>USER GROUPS INDEX</Text>
 
         {/* User Groups List */}
         {filteredGroups.map((group) => {
           return (
-            <View key={group.id} style={styles.groupCard}>
+            <View key={group.id} style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardInfoRow}>
                   <View style={[styles.iconContainer, { backgroundColor: group.color }]}>
                     <MaterialCommunityIcons name="account-group" size={24} color={group.iconColor} />
                   </View>
                   <View>
-                    <Text style={styles.groupName}>{group.name}</Text>
-                    <Text style={styles.groupIdText}>Group ID: {group.groupId}</Text>
+                    <Text style={[styles.groupName, { color: colors.textPrimary }]}>{group.name}</Text>
+                    <Text style={[styles.groupIdText, { color: colors.textSecond }]}>Group ID: {group.groupId}</Text>
                   </View>
                 </View>
               </View>
 
-              <View style={styles.groupDivider} />
+              <View style={[styles.groupDivider, { backgroundColor: colors.borderLight }]} />
 
               <View style={styles.groupDetailsRow}>
                 <View style={styles.detailCol}>
-                  <Text style={styles.detailLabel}>Access Level</Text>
-                  <Text style={styles.detailValue}>{group.accessType}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Access Level</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{group.accessType}</Text>
                 </View>
                 <View style={styles.detailCol}>
-                  <Text style={styles.detailLabel}>Total Members</Text>
-                  <Text style={styles.detailValue}>{group.members}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Total Members</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{group.members}</Text>
                 </View>
               </View>
 
@@ -190,6 +190,12 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
         </TouchableOpacity>
       </View>
+
+      <AdminMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={onNavigate}
+      />
     </View>
   );
 }
@@ -206,10 +212,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  backButton: {
-    padding: 4,
-    marginLeft: -4,
-  },
+  hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
+  hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',

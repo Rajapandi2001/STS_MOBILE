@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import AdminMenu from '@/admin/components/AdminMenu';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -45,23 +46,24 @@ function InfoField({
   label, value, icon, editable = false, fieldKey,
   keyboardType = 'default', isEditing, editBuffer, onChangeBuffer,
 }: InfoFieldProps) {
+  const { colors, isDark } = useTheme();
   return (
     <View style={styles.fieldWrapper}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.textSecond }]}>{label}</Text>
       {isEditing && editable && fieldKey ? (
         <TextInput
-          style={styles.fieldInput}
+          style={[styles.fieldInput, { backgroundColor: colors.input, borderColor: colors.border, color: colors.textPrimary }]}
           value={editBuffer[fieldKey]}
           onChangeText={(t) => onChangeBuffer(fieldKey, t)}
           placeholder={label}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor={colors.textMuted}
           keyboardType={keyboardType}
           autoCapitalize="none"
         />
       ) : (
-        <View style={styles.fieldRow}>
+        <View style={[styles.fieldRow, { backgroundColor: colors.input, borderColor: colors.border }]}>
           {icon && <View style={styles.fieldIcon}>{icon}</View>}
-          <Text style={[styles.fieldValue, !value && styles.fieldValueEmpty]}>{value || '—'}</Text>
+          <Text style={[styles.fieldValue, { color: colors.textPrimary }, !value && { color: colors.textMuted, fontStyle: 'italic' }]}>{value || '—'}</Text>
         </View>
       )}
     </View>
@@ -83,12 +85,13 @@ type TwoColRowProps = {
 };
 
 function TwoColRow({ left, right, isEditing, editBuffer, onChangeBuffer }: TwoColRowProps) {
+  const { colors, isDark } = useTheme();
   return (
     <View style={styles.twoColRow}>
       <View style={styles.twoColCell}>
         <InfoField {...left} isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={onChangeBuffer} />
       </View>
-      <View style={styles.twoColDivider} />
+      <View style={[styles.twoColDivider, { backgroundColor: colors.border }]} />
       <View style={styles.twoColCell}>
         <InfoField {...right} isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={onChangeBuffer} />
       </View>
@@ -110,37 +113,38 @@ function DropdownField({
   label, value, options, open, onToggle, fieldKey,
   isEditing, editBuffer, onChangeBuffer,
 }: DropdownFieldProps) {
+  const { colors, isDark } = useTheme();
   return (
     <View style={styles.fieldWrapper}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.textSecond }]}>{label}</Text>
       {isEditing ? (
         <View>
-          <TouchableOpacity style={styles.dropdownButton} onPress={onToggle} activeOpacity={0.8}>
-            <Text style={[styles.dropdownButtonText, !editBuffer[fieldKey] && { color: '#94A3B8' }]}>
+          <TouchableOpacity style={[styles.dropdownButton, { backgroundColor: colors.input, borderColor: colors.border }]} onPress={onToggle} activeOpacity={0.8}>
+            <Text style={[styles.dropdownButtonText, { color: colors.textPrimary }, !editBuffer[fieldKey] && { color: colors.textMuted }]}>
               {editBuffer[fieldKey] || `Select ${label}`}
             </Text>
-            <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color="#64748B" />
+            <Feather name={open ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textSecond} />
           </TouchableOpacity>
           {open && (
-            <View style={styles.dropdownMenu}>
+            <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
               {options.map((opt) => (
                 <TouchableOpacity
                   key={opt}
-                  style={[styles.dropdownOption, editBuffer[fieldKey] === opt && styles.dropdownOptionSelected]}
+                  style={[styles.dropdownOption, editBuffer[fieldKey] === opt && { backgroundColor: colors.iconBg }]}
                   onPress={() => { onChangeBuffer(fieldKey, opt); onToggle(); }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.dropdownOptionText, editBuffer[fieldKey] === opt && styles.dropdownOptionTextSelected]}>{opt}</Text>
-                  {editBuffer[fieldKey] === opt && <Feather name="check" size={14} color="#0A52D6" />}
+                  <Text style={[styles.dropdownOptionText, { color: colors.textPrimary }, editBuffer[fieldKey] === opt && { color: colors.brand, fontWeight: '700' }]}>{opt}</Text>
+                  {editBuffer[fieldKey] === opt && <Feather name="check" size={14} color={colors.brand} />}
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
       ) : (
-        <View style={styles.fieldRow}>
-          <Text style={[styles.fieldValue, { flex: 1 }, !value && styles.fieldValueEmpty]}>{value || '—'}</Text>
-          <Feather name="chevron-down" size={16} color="#94A3B8" />
+        <View style={[styles.fieldRow, { backgroundColor: colors.input, borderColor: colors.border }]}>
+          <Text style={[styles.fieldValue, { flex: 1, color: colors.textPrimary }, !value && { color: colors.textMuted, fontStyle: 'italic' }]}>{value || '—'}</Text>
+          <Feather name="chevron-down" size={16} color={colors.textMuted} />
         </View>
       )}
     </View>
@@ -158,9 +162,10 @@ interface AdminProfileScreenProps {
 // ─────────────────────────────────────────────────────────────────────────────
 // AdminProfileScreen
 // ─────────────────────────────────────────────────────────────────────────────
-export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileScreenProps) {
+export default function AdminProfileScreen({ onNavigate, onBack }: AdminProfileScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const [profile, setProfile] = useState<ProfileShape>({
@@ -201,14 +206,12 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
 
       {/* ── Header ── */}
       <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
-          <View style={{ gap: 4, alignItems: 'flex-start' }}>
-            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#0F172A' }} />
-            <View style={{ width: 14, height: 2, borderRadius: 2, backgroundColor: '#0F172A' }} />
-            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#0F172A' }} />
-          </View>
+        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt || '#F8FAFC' }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
+          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
+          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Edit Profile</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Profile</Text>
         {isEditing ? (
           <View style={styles.headerActions}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.8}>
@@ -234,11 +237,11 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         <View style={[styles.avatarCard, { backgroundColor: colors.card }]}>
           {/* Left: Avatar */}
           <View style={styles.avatarOuter}>
-            <View style={styles.avatarInner}>
-              <MaterialCommunityIcons name="account" size={60} color="#0A52D6" />
+            <View style={[styles.avatarInner, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}>
+              <MaterialCommunityIcons name="account" size={60} color={colors.brand} />
             </View>
             {isEditing && (
-              <TouchableOpacity style={styles.cameraButton} activeOpacity={0.8}>
+              <TouchableOpacity style={[styles.cameraButton, { backgroundColor: colors.brand, borderColor: colors.card }]} activeOpacity={0.8}>
                 <Feather name="camera" size={14} color="#FFFFFF" />
               </TouchableOpacity>
             )}
@@ -259,31 +262,31 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="account-outline" size={22} color="#0A52D6" />
+              <MaterialCommunityIcons name="account-outline" size={22} color={colors.brand} />
             </View>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Personal Information</Text>
           </View>
 
           <TwoColRow
             left={{ label: 'Name', value: profile.name, editable: true, fieldKey: 'name' }}
-            right={{ label: 'Phone', value: profile.phone, icon: <Feather name="phone" size={14} color="#64748B" />, editable: true, fieldKey: 'phone', keyboardType: 'phone-pad' }}
+            right={{ label: 'Phone', value: profile.phone, icon: <Feather name="phone" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'phone', keyboardType: 'phone-pad' }}
             isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
           />
-          <View style={styles.rowDivider} />
+          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
 
           <TwoColRow
             left={{ label: 'Designation', value: profile.designation, editable: true, fieldKey: 'designation' }}
-            right={{ label: 'Email', value: profile.email, icon: <Feather name="mail" size={14} color="#64748B" />, editable: true, fieldKey: 'email', keyboardType: 'email-address' }}
+            right={{ label: 'Email', value: profile.email, icon: <Feather name="mail" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'email', keyboardType: 'email-address' }}
             isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
           />
-          <View style={styles.rowDivider} />
+          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
 
           <TwoColRow
-            left={{ label: 'Date of Joining', value: profile.dateOfJoining, icon: <Feather name="calendar" size={14} color="#64748B" />, editable: true, fieldKey: 'dateOfJoining' }}
-            right={{ label: 'Date of Birth', value: profile.dateOfBirth, icon: <Feather name="gift" size={14} color="#64748B" />, editable: true, fieldKey: 'dateOfBirth' }}
+            left={{ label: 'Date of Joining', value: profile.dateOfJoining, icon: <Feather name="calendar" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'dateOfJoining' }}
+            right={{ label: 'Date of Birth', value: profile.dateOfBirth, icon: <Feather name="gift" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'dateOfBirth' }}
             isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
           />
-          <View style={styles.rowDivider} />
+          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
 
           <View style={styles.twoColRow}>
             <View style={styles.twoColCell}>
@@ -307,28 +310,28 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="map-marker-outline" size={22} color="#0A52D6" />
+              <MaterialCommunityIcons name="map-marker-outline" size={22} color={colors.brand} />
             </View>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Contact Information</Text>
           </View>
 
           <TwoColRow
-            left={{ label: 'Address', value: profile.address, icon: <Feather name="home" size={14} color="#64748B" />, editable: true, fieldKey: 'address' }}
+            left={{ label: 'Address', value: profile.address, icon: <Feather name="home" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'address' }}
             right={{ label: 'Postal Code', value: profile.postalCode, editable: true, fieldKey: 'postalCode', keyboardType: 'numeric' }}
             isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
           />
-          <View style={styles.rowDivider} />
+          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
 
           <TwoColRow
-            left={{ label: 'City', value: profile.city, icon: <Feather name="map-pin" size={14} color="#64748B" />, editable: true, fieldKey: 'city' }}
-            right={{ label: 'Salary', value: profile.salary, icon: <MaterialCommunityIcons name="currency-inr" size={14} color="#64748B" />, editable: true, fieldKey: 'salary', keyboardType: 'numeric' }}
+            left={{ label: 'City', value: profile.city, icon: <Feather name="map-pin" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'city' }}
+            right={{ label: 'Salary', value: profile.salary, icon: <MaterialCommunityIcons name="currency-inr" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'salary', keyboardType: 'numeric' }}
             isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
           />
-          <View style={styles.rowDivider} />
+          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
 
           <View style={styles.twoColRow}>
             <View style={styles.twoColCell}>
-              <InfoField label="Country" value={profile.country} icon={<Feather name="globe" size={14} color="#64748B" />} editable fieldKey="country"
+              <InfoField label="Country" value={profile.country} icon={<Feather name="globe" size={14} color={colors.textSecond} />} editable fieldKey="country"
                 isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             </View>
             <View style={styles.twoColDivider} />
@@ -350,7 +353,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
           <View style={[styles.sectionCard, styles.halfCard, { backgroundColor: colors.card }]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIconWrap, { backgroundColor: colors.dangerBg }]}>
-                <MaterialCommunityIcons name="phone-alert-outline" size={20} color="#EF4444" />
+                <MaterialCommunityIcons name="phone-alert-outline" size={20} color={colors.danger} />
               </View>
               <Text style={[styles.sectionTitle, { fontSize: 14, color: colors.textPrimary }]}>{'Emergency\nContact'}</Text>
             </View>
@@ -358,7 +361,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Relationship" value={profile.relationship} editable fieldKey="relationship"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            <InfoField label="Phone" value={profile.emergencyPhone} icon={<Feather name="phone" size={14} color="#64748B" />} editable fieldKey="emergencyPhone" keyboardType="phone-pad"
+            <InfoField label="Phone" value={profile.emergencyPhone} icon={<Feather name="phone" size={14} color={colors.textSecond} />} editable fieldKey="emergencyPhone" keyboardType="phone-pad"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
           </View>
 
@@ -366,11 +369,11 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
           <View style={[styles.sectionCard, styles.halfCard, { backgroundColor: colors.card }]}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name="bank-outline" size={20} color="#0A52D6" />
+                <MaterialCommunityIcons name="bank-outline" size={20} color={colors.brand} />
               </View>
               <Text style={[styles.sectionTitle, { fontSize: 14, color: colors.textPrimary }]}>{'Bank\nInformation'}</Text>
             </View>
-            <InfoField label="Bank Name" value={profile.bankName} icon={<MaterialCommunityIcons name="bank" size={14} color="#64748B" />} editable fieldKey="bankName"
+            <InfoField label="Bank Name" value={profile.bankName} icon={<MaterialCommunityIcons name="bank" size={14} color={colors.textSecond} />} editable fieldKey="bankName"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Account No" value={profile.accountNo} editable fieldKey="accountNo" keyboardType="numeric"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
@@ -383,7 +386,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
           <View style={styles.sectionHeader}>
             <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="shield-lock-outline" size={22} color="#0A52D6" />
+              <MaterialCommunityIcons name="shield-lock-outline" size={22} color={colors.brand} />
             </View>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Security</Text>
           </View>
@@ -391,29 +394,29 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
           <TouchableOpacity style={styles.securityRow} activeOpacity={0.7}>
             <View style={styles.securityLeft}>
               <View style={[styles.securityIconBg, { backgroundColor: colors.iconBg }]}>
-                <Feather name="lock" size={16} color="#0A52D6" />
+                <Feather name="lock" size={16} color={colors.brand} />
               </View>
               <View>
                 <Text style={[styles.securityLabel, { color: colors.textPrimary }]}>Change Password</Text>
                 <Text style={[styles.securitySub, { color: colors.textSecond }]}>Last changed 30 days ago</Text>
               </View>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color={colors.textMuted} />
           </TouchableOpacity>
 
-          <View style={styles.securityDivider} />
+          <View style={[styles.securityDivider, { backgroundColor: colors.borderLight }]} />
 
           <TouchableOpacity style={styles.securityRow} activeOpacity={0.7}>
             <View style={styles.securityLeft}>
-              <View style={[styles.securityIconBg, { backgroundColor: '#F0FDF4' }]}>
-                <Feather name="smartphone" size={16} color="#22C55E" />
+              <View style={[styles.securityIconBg, { backgroundColor: colors.successBg }]}>
+                <Feather name="smartphone" size={16} color={colors.success} />
               </View>
               <View>
                 <Text style={[styles.securityLabel, { color: colors.textPrimary }]}>Two-Factor Auth</Text>
-                <Text style={[styles.securitySub, { color: '#22C55E' }]}>Enabled</Text>
+                <Text style={[styles.securitySub, { color: colors.success }]}>Enabled</Text>
               </View>
             </View>
-            <Feather name="chevron-right" size={18} color="#94A3B8" />
+            <Feather name="chevron-right" size={18} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -423,7 +426,7 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
         <View style={[styles.modalBackdrop, { backgroundColor: colors.modalBackdrop }]}>
           <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
             <View style={[styles.modalIconContainer, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="content-save-outline" size={28} color="#0A52D6" />
+              <MaterialCommunityIcons name="content-save-outline" size={28} color={colors.brand} />
             </View>
             <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>Save Changes?</Text>
             <Text style={[styles.modalMessage, { color: colors.textSecond }]}>Your profile information will be updated. Do you want to continue?</Text>
@@ -438,6 +441,30 @@ export default function AdminProfileScreen({ onBack, onNavigate }: AdminProfileS
           </View>
         </View>
       </Modal>
+
+      {/* Bottom Tab Bar */}
+      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
+          <Feather name="home" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'profile' })}>
+          <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem}>
+          <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
+        </TouchableOpacity>
+      </View>
+
+      <AdminMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={onNavigate}
+      />
     </View>
   );
 }
@@ -447,7 +474,8 @@ const styles = StyleSheet.create({
 
   /* Header */
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  backButton: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
+  hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
+  hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#0F172A', marginHorizontal: 8 },
   headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   editBtn: { backgroundColor: '#0A52D6', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20 },
@@ -526,4 +554,34 @@ const styles = StyleSheet.create({
   modalNoButtonText: { fontSize: 15, fontWeight: '700', color: '#64748B' },
   modalYesButton: { flex: 1, paddingVertical: 14, borderRadius: 14, backgroundColor: '#0A52D6', alignItems: 'center' },
   modalYesButtonText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+
+  /* Bottom Tab Bar */
+  bottomTabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabText: {
+    fontSize: 11,
+    marginTop: 4,
+    color: '#64748B',
+    fontWeight: '500',
+  },
 });

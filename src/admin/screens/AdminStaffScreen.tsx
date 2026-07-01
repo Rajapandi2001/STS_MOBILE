@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import AdminMenu from '@/admin/components/AdminMenu';
 
 interface AdminStaffScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
@@ -98,16 +99,17 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const renderStatusBadge = (status: string) => {
-    let bgColor = '#DCFCE7';
-    let textColor = '#16A34A';
+    let bgColor = colors.successBg;
+    let textColor = colors.success;
     if (status === 'Inactive') {
-      bgColor = '#F1F5F9';
-      textColor = '#64748B';
+      bgColor = colors.iconBg;
+      textColor = colors.textSecond;
     } else if (status === 'Pending') {
-      bgColor = '#FFEDD5';
-      textColor = '#EA580C';
+      bgColor = colors.amberBg;
+      textColor = colors.amber;
     }
     return (
       <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
@@ -119,20 +121,18 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.menuButton} onPress={() => onBack?.()}>
-          <View style={{ gap: 4, alignItems: 'flex-start' }}>
-            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
-            <View style={{ width: 14, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
-            <View style={{ width: 20, height: 2, borderRadius: 2, backgroundColor: '#64748B' }} />
-          </View>
+      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
+          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
+          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Staffs</Text>
-        <View style={styles.avatarCircle}>
-          <Feather name="user" size={20} color="#0A52D6" />
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Staffs</Text>
+        <View style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}>
+          <Feather name="user" size={20} color={colors.brand} />
         </View>
       </View>
 
@@ -141,21 +141,21 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
       >
         {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Feather name="search" size={18} color="#94A3B8" style={styles.searchIcon} />
+        <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+          <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: colors.textPrimary }]}
             placeholder="Search users..."
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor={colors.textSecond}
             value={search}
             onChangeText={setSearch}
           />
           <TouchableOpacity>
-            <Feather name="sliders" size={18} color="#64748B" />
+            <Feather name="sliders" size={18} color={colors.textSecond} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Staff List */}
         {STAFF_DATA.filter((staff) => {
@@ -172,35 +172,35 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
           return nameMatch || empIdMatch || roleMatch || deptMatch;
         }).map((staff) => {
           return (
-            <View key={staff.id} style={styles.staffCard}>
+            <View key={staff.id} style={[styles.staffCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
               <View style={styles.staffHeaderRow}>
                 <View style={styles.staffInfoRow}>
                   {staff.avatar ? (
                     <Image source={{ uri: staff.avatar }} style={styles.staffAvatar} />
                   ) : (
-                    <View style={[styles.staffAvatarInitials, { backgroundColor: staff.color }]}>
-                      <Text style={[styles.staffInitialsText, { color: staff.textColor }]}>
+                    <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
+                      <Text style={[styles.staffInitialsText, { color: colors.brand }]}>
                         {staff.initials}
                       </Text>
                     </View>
                   )}
                   <View>
-                    <Text style={styles.staffName}>{staff.name}</Text>
-                    <Text style={styles.staffEmpId}>{staff.empId}</Text>
+                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{staff.name}</Text>
+                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{staff.empId}</Text>
                   </View>
                 </View>
               </View>
 
-              <View style={styles.staffDivider} />
+              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
 
               <View style={styles.staffDetailsRow}>
                 <View style={styles.detailCol}>
-                  <Text style={styles.detailLabel}>Role</Text>
-                  <Text style={styles.detailValue}>{staff.role}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Role</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{staff.role}</Text>
                 </View>
                 <View style={styles.detailCol}>
-                  <Text style={styles.detailLabel}>Department</Text>
-                  <Text style={styles.detailValue}>{staff.department}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Department</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{staff.department}</Text>
                 </View>
               </View>
 
@@ -229,6 +229,12 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
         </TouchableOpacity>
       </View>
+
+      <AdminMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={onNavigate}
+      />
     </View>
   );
 }
@@ -245,10 +251,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  menuButton: {
-    padding: 4,
-    marginLeft: -4,
-  },
+  hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
+  hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
   headerTitle: {
     fontSize: 18,
     fontWeight: '700',
