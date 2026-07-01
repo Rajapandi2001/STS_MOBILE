@@ -49,7 +49,8 @@
           "locationAlwaysAndWhenInUsePermission": "Allow STS Mobile to access your location for attendance check-in.",
           "locationWhenInUsePermission": "Allow STS Mobile to access your location for attendance check-in."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,

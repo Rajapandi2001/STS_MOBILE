@@ -80,7 +80,7 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
           </View>
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.textPrimary }]}>Sarah Jenkins</Text>
-            <Text style={[styles.profileRole, { color: colors.textSecond }]}>HR Admin</Text>
+            <Text style={[styles.profileRole, { color: colors.textSecond }]}>Admin</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Feather name="x" size={22} color={colors.textPrimary} />
@@ -147,7 +147,11 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
           </TouchableOpacity>
 
           {/* Help */}
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.menuItem, { backgroundColor: colors.card }]}
+            activeOpacity={0.7}
+            onPress={() => handleNavigate('admin_help', { source: 'menu' })}
+          >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="help-circle-outline" size={22} color={colors.brand} />
             </View>
