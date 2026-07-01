@@ -96,13 +96,6 @@ const STAFF_DATA = [
 export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScreenProps) {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
-  const [selectedStaff, setSelectedStaff] = useState<string[]>([]);
-
-  const toggleSelect = (id: string) => {
-    setSelectedStaff((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   const renderStatusBadge = (status: string) => {
     let bgColor = '#DCFCE7';
@@ -131,7 +124,10 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
         <TouchableOpacity style={styles.menuButton} onPress={() => onBack?.()}>
           <Feather name="arrow-left" size={24} color="#64748B" />
         </TouchableOpacity>
-        <View style={styles.avatarCircle} />
+        <Text style={styles.headerTitle}>Staffs</Text>
+        <View style={styles.avatarCircle}>
+          <Feather name="user" size={20} color="#0A52D6" />
+        </View>
       </View>
 
       <ScrollView
@@ -169,7 +165,6 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
 
           return nameMatch || empIdMatch || roleMatch || deptMatch;
         }).map((staff) => {
-          const isSelected = selectedStaff.includes(staff.id);
           return (
             <View key={staff.id} style={styles.staffCard}>
               <View style={styles.staffHeaderRow}>
@@ -188,12 +183,6 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
                     <Text style={styles.staffEmpId}>{staff.empId}</Text>
                   </View>
                 </View>
-                <TouchableOpacity
-                  style={[styles.checkbox, isSelected && styles.checkboxSelected]}
-                  onPress={() => toggleSelect(staff.id)}
-                >
-                  {isSelected && <Feather name="check" size={14} color="#FFFFFF" />}
-                </TouchableOpacity>
               </View>
 
               <View style={styles.staffDivider} />
@@ -264,11 +253,18 @@ const styles = StyleSheet.create({
     padding: 4,
     marginLeft: -4,
   },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
   avatarCircle: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#94A3B8', // Gray placeholder
+    backgroundColor: '#DBEAFE',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollContent: {
     paddingHorizontal: 20,

@@ -23,6 +23,9 @@ const USER_GROUPS_DATA = [
     groupId: 'UGP-001',
     color: '#EFF6FF',
     iconColor: '#0A52D6',
+    status: 'Active',
+    members: '15 Members',
+    accessType: 'Super Admin',
   },
   {
     id: '2',
@@ -30,6 +33,9 @@ const USER_GROUPS_DATA = [
     groupId: 'UGP-002',
     color: '#F0FDF4',
     iconColor: '#16A34A',
+    status: 'Active',
+    members: '124 Members',
+    accessType: 'Standard Access',
   },
   {
     id: '3',
@@ -37,6 +43,9 @@ const USER_GROUPS_DATA = [
     groupId: 'UGP-003',
     color: '#FAF5FF',
     iconColor: '#9333EA',
+    status: 'Active',
+    members: '8 Members',
+    accessType: 'HR Access',
   },
   {
     id: '4',
@@ -44,12 +53,33 @@ const USER_GROUPS_DATA = [
     groupId: 'UGP-004',
     color: '#FFF7ED',
     iconColor: '#EA580C',
+    status: 'Pending',
+    members: '4 Members',
+    accessType: 'Executive Access',
   },
 ];
 
 export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserGroupsScreenProps) {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
+
+  const renderStatusBadge = (status: string) => {
+    let bgColor = '#DCFCE7';
+    let textColor = '#16A34A';
+    if (status === 'Inactive') {
+      bgColor = '#F1F5F9';
+      textColor = '#64748B';
+    } else if (status === 'Pending') {
+      bgColor = '#FFEDD5';
+      textColor = '#EA580C';
+    }
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
+      </View>
+    );
+  };
 
   const filteredGroups = USER_GROUPS_DATA.filter((group) => {
     const query = search.toLowerCase().trim();
@@ -72,7 +102,7 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
         </TouchableOpacity>
         <Text style={styles.headerTitle}>User Groups</Text>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>AP</Text>
+          <Feather name="user" size={20} color="#0A52D6" />
         </View>
       </View>
 
@@ -101,20 +131,40 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
         <Text style={styles.sectionHeader}>USER GROUPS INDEX</Text>
 
         {/* User Groups List */}
-        {filteredGroups.map((group) => (
-          <View key={group.id} style={styles.groupCard}>
-            <View style={styles.cardMainRow}>
-              <View style={[styles.iconContainer, { backgroundColor: group.color }]}>
-                <MaterialCommunityIcons name="account-group" size={24} color={group.iconColor} />
+        {filteredGroups.map((group) => {
+          return (
+            <View key={group.id} style={styles.groupCard}>
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.cardInfoRow}>
+                  <View style={[styles.iconContainer, { backgroundColor: group.color }]}>
+                    <MaterialCommunityIcons name="account-group" size={24} color={group.iconColor} />
+                  </View>
+                  <View>
+                    <Text style={styles.groupName}>{group.name}</Text>
+                    <Text style={styles.groupIdText}>Group ID: {group.groupId}</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.infoCol}>
-                <Text style={styles.groupName}>{group.name}</Text>
-                <Text style={styles.groupIdText}>Group ID: {group.groupId}</Text>
+
+              <View style={styles.groupDivider} />
+
+              <View style={styles.groupDetailsRow}>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Access Level</Text>
+                  <Text style={styles.detailValue}>{group.accessType}</Text>
+                </View>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Total Members</Text>
+                  <Text style={styles.detailValue}>{group.members}</Text>
+                </View>
               </View>
-              <Feather name="chevron-right" size={20} color="#94A3B8" />
+
+              <View style={styles.statusContainer}>
+                {renderStatusBadge(group.status)}
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -234,7 +284,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardMainRow: {
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -246,19 +301,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  infoCol: {
-    flex: 1,
-  },
   groupName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
     marginBottom: 2,
   },
   groupIdText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#0A52D6',
+    borderColor: '#0A52D6',
+  },
+  groupDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  groupDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  detailCol: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  statusContainer: {
+    alignItems: 'flex-start',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   /* Bottom Tab Bar */

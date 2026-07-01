@@ -25,6 +25,7 @@ const PROJECTS_DATA = [
     endDate: '2026-06-30',
     color: '#EFF6FF',
     iconColor: '#0A52D6',
+    status: 'Completed',
   },
   {
     id: '2',
@@ -34,6 +35,7 @@ const PROJECTS_DATA = [
     endDate: '2026-09-15',
     color: '#F0FDF4',
     iconColor: '#16A34A',
+    status: 'Active',
   },
   {
     id: '3',
@@ -43,6 +45,7 @@ const PROJECTS_DATA = [
     endDate: '2026-05-20',
     color: '#FEE2E2',
     iconColor: '#DC2626',
+    status: 'Inactive',
   },
   {
     id: '4',
@@ -52,12 +55,34 @@ const PROJECTS_DATA = [
     endDate: '2026-12-31',
     color: '#FFF7ED',
     iconColor: '#EA580C',
+    status: 'Pending',
   },
 ];
 
 export default function AdminProjectsScreen({ onNavigate, onBack }: AdminProjectsScreenProps) {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
+
+  const renderStatusBadge = (status: string) => {
+    let bgColor = '#DCFCE7';
+    let textColor = '#16A34A';
+    if (status === 'Inactive') {
+      bgColor = '#F1F5F9';
+      textColor = '#64748B';
+    } else if (status === 'Pending') {
+      bgColor = '#FFEDD5';
+      textColor = '#EA580C';
+    } else if (status === 'Completed') {
+      bgColor = '#E0F2FE';
+      textColor = '#0284C7';
+    }
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
+      </View>
+    );
+  };
 
   const filteredProjects = PROJECTS_DATA.filter((project) => {
     const query = search.toLowerCase().trim();
@@ -80,7 +105,7 @@ export default function AdminProjectsScreen({ onNavigate, onBack }: AdminProject
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Projects</Text>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>AP</Text>
+          <Feather name="user" size={20} color="#0A52D6" />
         </View>
       </View>
 
@@ -109,32 +134,40 @@ export default function AdminProjectsScreen({ onNavigate, onBack }: AdminProject
         <Text style={styles.sectionHeader}>COMPANY PROJECT INDEX LEDGER</Text>
 
         {/* Projects List */}
-        {filteredProjects.map((project) => (
-          <View key={project.id} style={styles.projectCard}>
-            <View style={styles.cardHeaderRow}>
-              <View style={[styles.iconContainer, { backgroundColor: project.color }]}>
-                <MaterialCommunityIcons name="rocket-launch" size={24} color={project.iconColor} />
+        {filteredProjects.map((project) => {
+          return (
+            <View key={project.id} style={styles.projectCard}>
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.cardInfoRow}>
+                  <View style={[styles.iconContainer, { backgroundColor: project.color }]}>
+                    <MaterialCommunityIcons name="rocket-launch" size={24} color={project.iconColor} />
+                  </View>
+                  <View>
+                    <Text style={styles.projectName}>{project.name}</Text>
+                    <Text style={styles.projectIdText}>ID: {project.projectId}</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.titleCol}>
-                <Text style={styles.projectName}>{project.name}</Text>
-                <Text style={styles.projectIdText}>ID: {project.projectId}</Text>
+
+              <View style={styles.projectDivider} />
+
+              <View style={styles.projectDetailsRow}>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Start Date</Text>
+                  <Text style={styles.detailValue}>{project.startDate}</Text>
+                </View>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>End Date</Text>
+                  <Text style={styles.detailValue}>{project.endDate}</Text>
+                </View>
+              </View>
+
+              <View style={styles.statusContainer}>
+                {renderStatusBadge(project.status)}
               </View>
             </View>
-
-            <View style={styles.projectDivider} />
-
-            <View style={styles.projectDetailsRow}>
-              <View style={styles.detailCol}>
-                <Text style={styles.detailLabel}>Start Date</Text>
-                <Text style={styles.detailValue}>{project.startDate}</Text>
-              </View>
-              <View style={styles.detailColRight}>
-                <Text style={styles.detailLabelRight}>End Date</Text>
-                <Text style={styles.detailValueRight}>{project.endDate}</Text>
-              </View>
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -256,6 +289,11 @@ const styles = StyleSheet.create({
   },
   cardHeaderRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardInfoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   iconContainer: {
@@ -266,19 +304,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  titleCol: {
-    flex: 1,
-  },
   projectName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
     marginBottom: 2,
   },
   projectIdText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#0A52D6',
+    borderColor: '#0A52D6',
   },
   projectDivider: {
     height: 1,
@@ -288,16 +336,13 @@ const styles = StyleSheet.create({
   projectDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 12,
   },
   detailCol: {
     flex: 1,
   },
-  detailColRight: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#94A3B8',
     marginBottom: 4,
   },
@@ -306,17 +351,25 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontWeight: '500',
   },
-  detailLabelRight: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginBottom: 4,
-    textAlign: 'right',
+  statusContainer: {
+    alignItems: 'flex-start',
   },
-  detailValueRight: {
-    fontSize: 13,
-    color: '#475569',
-    fontWeight: '500',
-    textAlign: 'right',
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   /* Bottom Tab Bar */

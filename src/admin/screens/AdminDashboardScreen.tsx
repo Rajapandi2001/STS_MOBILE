@@ -95,7 +95,7 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
       <View style={styles.header}>
         <Text style={styles.headerTitle}>AdminConsole</Text>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>AP</Text>
+          <Feather name="user" size={20} color="#0A52D6" />
         </View>
       </View>
 

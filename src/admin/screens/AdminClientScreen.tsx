@@ -23,6 +23,7 @@ const CLIENT_DATA = [
     clientId: 'CLN-2026-901',
     email: 'info@acme.com',
     country: 'United States',
+    status: 'Active',
   },
   {
     id: '2',
@@ -30,6 +31,7 @@ const CLIENT_DATA = [
     clientId: 'CLN-2026-443',
     email: 'contact@nexus.io',
     country: 'United Kingdom',
+    status: 'Active',
   },
   {
     id: '3',
@@ -37,6 +39,7 @@ const CLIENT_DATA = [
     clientId: 'CLN-2025-012',
     email: 'partnerships@star.co',
     country: 'Singapore',
+    status: 'Inactive',
   },
   {
     id: '4',
@@ -44,12 +47,31 @@ const CLIENT_DATA = [
     clientId: 'CLN-2026-778',
     email: 'partnerships@apex.in',
     country: 'India',
+    status: 'Pending',
   },
 ];
 
 export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScreenProps) {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
+
+  const renderStatusBadge = (status: string) => {
+    let bgColor = '#DCFCE7';
+    let textColor = '#16A34A';
+    if (status === 'Inactive') {
+      bgColor = '#F1F5F9';
+      textColor = '#64748B';
+    } else if (status === 'Pending') {
+      bgColor = '#FFEDD5';
+      textColor = '#EA580C';
+    }
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
+      </View>
+    );
+  };
 
   const filteredClients = CLIENT_DATA.filter((client) => {
     const query = search.toLowerCase().trim();
@@ -74,7 +96,7 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Clients</Text>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>AP</Text>
+          <Feather name="user" size={20} color="#0A52D6" />
         </View>
       </View>
 
@@ -103,32 +125,40 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
         <Text style={styles.sectionHeader}>CLIENT ACCOUNTS INDEX</Text>
 
         {/* Client List */}
-        {filteredClients.map((client) => (
-          <View key={client.id} style={styles.clientCard}>
-            <View style={styles.clientHeaderRow}>
-              <View style={styles.iconContainer}>
-                <MaterialCommunityIcons name="office-building" size={24} color="#0A52D6" />
+        {filteredClients.map((client) => {
+          return (
+            <View key={client.id} style={styles.clientCard}>
+              <View style={styles.clientHeaderRow}>
+                <View style={styles.clientInfoRow}>
+                  <View style={styles.iconContainer}>
+                    <MaterialCommunityIcons name="office-building" size={24} color="#0A52D6" />
+                  </View>
+                  <View>
+                    <Text style={styles.clientName}>{client.name}</Text>
+                    <Text style={styles.clientIdText}>ID: {client.clientId}</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.titleCol}>
-                <Text style={styles.clientName}>{client.name}</Text>
-                <Text style={styles.clientIdText}>ID: {client.clientId}</Text>
+
+              <View style={styles.clientDivider} />
+
+              <View style={styles.clientDetailsRow}>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Mail</Text>
+                  <Text style={styles.detailValue}>{client.email}</Text>
+                </View>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Country</Text>
+                  <Text style={styles.detailValue}>{client.country}</Text>
+                </View>
+              </View>
+
+              <View style={styles.statusContainer}>
+                {renderStatusBadge(client.status)}
               </View>
             </View>
-
-            <View style={styles.clientDivider} />
-
-            <View style={styles.clientDetailsRow}>
-              <View style={styles.detailCol}>
-                <Text style={styles.detailLabel}>Mail</Text>
-                <Text style={styles.detailValue}>{client.email}</Text>
-              </View>
-              <View style={styles.detailColRight}>
-                <Text style={styles.detailLabelRight}>Country</Text>
-                <Text style={styles.detailValueRight}>{client.country}</Text>
-              </View>
-            </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -250,6 +280,11 @@ const styles = StyleSheet.create({
   },
   clientHeaderRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  clientInfoRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   iconContainer: {
@@ -261,19 +296,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  titleCol: {
-    flex: 1,
-  },
   clientName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
     marginBottom: 2,
   },
   clientIdText: {
     fontSize: 12,
-    color: '#64748B',
+    color: '#94A3B8',
     fontWeight: '500',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#0A52D6',
+    borderColor: '#0A52D6',
   },
   clientDivider: {
     height: 1,
@@ -283,16 +328,13 @@ const styles = StyleSheet.create({
   clientDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 12,
   },
   detailCol: {
-    flex: 1.2,
-  },
-  detailColRight: {
-    flex: 0.8,
-    alignItems: 'flex-end',
+    flex: 1,
   },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#94A3B8',
     marginBottom: 4,
   },
@@ -301,17 +343,25 @@ const styles = StyleSheet.create({
     color: '#475569',
     fontWeight: '500',
   },
-  detailLabelRight: {
-    fontSize: 11,
-    color: '#94A3B8',
-    marginBottom: 4,
-    textAlign: 'right',
+  statusContainer: {
+    alignItems: 'flex-start',
   },
-  detailValueRight: {
-    fontSize: 13,
-    color: '#475569',
-    fontWeight: '500',
-    textAlign: 'right',
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   /* Bottom Tab Bar */

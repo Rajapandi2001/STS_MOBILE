@@ -28,6 +28,7 @@ const LEAVE_DATA = [
     iconType: 'MaterialCommunityIcons',
     color: '#FEF3C7',
     iconColor: '#D97706',
+    status: 'Active',
   },
   {
     id: '2',
@@ -40,6 +41,7 @@ const LEAVE_DATA = [
     iconType: 'MaterialCommunityIcons',
     color: '#FEE2E2',
     iconColor: '#DC2626',
+    status: 'Active',
   },
   {
     id: '3',
@@ -52,25 +54,44 @@ const LEAVE_DATA = [
     iconType: 'MaterialCommunityIcons',
     color: '#E0F2FE',
     iconColor: '#0284C7',
+    status: 'Active',
   },
   {
     id: '4',
     name: 'CASUAL LEAVE',
     policyId: 'CL-2026',
-    type: 'Contingency Allocation', // Wait, wireframe says: CL-2026 | Contingency Allocation (wait, "Contingency Allocation" is the description. Let's make it match description and type: "Contingency" / "Unpaid" etc. Let's use empty or Paid)
-    typeText: 'Paid', // We can just display Policy ID: CL-2026 | Contingency Allocation
+    type: 'Contingency',
     description: 'Contingency Allocation',
     days: '08 Days',
     icon: 'email-outline',
     iconType: 'MaterialCommunityIcons',
     color: '#F1F5F9',
     iconColor: '#475569',
+    status: 'Pending',
   },
 ];
 
 export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLeaveSettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
+
+  const renderStatusBadge = (status: string) => {
+    let bgColor = '#DCFCE7';
+    let textColor = '#16A34A';
+    if (status === 'Inactive') {
+      bgColor = '#F1F5F9';
+      textColor = '#64748B';
+    } else if (status === 'Pending') {
+      bgColor = '#FFEDD5';
+      textColor = '#EA580C';
+    }
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
+      </View>
+    );
+  };
 
   const filteredLeaves = LEAVE_DATA.filter((leave) => {
     const query = search.toLowerCase().trim();
@@ -108,7 +129,7 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Leave Settings</Text>
         <View style={styles.avatarCircle}>
-          <Text style={styles.avatarText}>AP</Text>
+          <Feather name="user" size={20} color="#0A52D6" />
         </View>
       </View>
 
@@ -137,25 +158,40 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
         <Text style={styles.sectionHeader}>STAFF LEAVE SETTINGS LEDGER</Text>
 
         {/* Leave List */}
-        {filteredLeaves.map((leave) => (
-          <View key={leave.id} style={styles.leaveCard}>
-            <View style={styles.cardMainRow}>
-              <View style={[styles.iconContainer, { backgroundColor: leave.color }]}>
-                {renderIcon(leave)}
+        {filteredLeaves.map((leave) => {
+          return (
+            <View key={leave.id} style={styles.leaveCard}>
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.cardInfoRow}>
+                  <View style={[styles.iconContainer, { backgroundColor: leave.color }]}>
+                    {renderIcon(leave)}
+                  </View>
+                  <View>
+                    <Text style={styles.leaveName}>{leave.name}</Text>
+                    <Text style={styles.policyText}>Policy ID: {leave.policyId}</Text>
+                  </View>
+                </View>
               </View>
-              <View style={styles.infoCol}>
-                <Text style={styles.leaveName}>{leave.name}</Text>
-                <Text style={styles.policyText}>
-                  Policy ID: {leave.policyId} {leave.type ? `| ${leave.type}` : ''}
-                </Text>
-                <Text style={styles.descriptionText}>{leave.description}</Text>
+
+              <View style={styles.leaveDivider} />
+
+              <View style={styles.leaveDetailsRow}>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Type</Text>
+                  <Text style={styles.detailValue}>{leave.type}</Text>
+                </View>
+                <View style={styles.detailCol}>
+                  <Text style={styles.detailLabel}>Days Limit</Text>
+                  <Text style={styles.detailValue}>{leave.days}</Text>
+                </View>
               </View>
-              <View style={styles.daysCol}>
-                <Text style={styles.daysText}>{leave.days}</Text>
+
+              <View style={styles.statusContainer}>
+                {renderStatusBadge(leave.status)}
               </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -275,7 +311,12 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardMainRow: {
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  cardInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -287,35 +328,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  infoCol: {
-    flex: 1,
-  },
   leaveName: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
     marginBottom: 2,
   },
   policyText: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
-    marginBottom: 1,
-  },
-  descriptionText: {
-    fontSize: 11,
+    fontSize: 12,
     color: '#94A3B8',
     fontWeight: '500',
   },
-  daysCol: {
-    alignItems: 'flex-end',
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
     justifyContent: 'center',
-    paddingLeft: 8,
+    alignItems: 'center',
   },
-  daysText: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#0F172A',
+  checkboxSelected: {
+    backgroundColor: '#0A52D6',
+    borderColor: '#0A52D6',
+  },
+  leaveDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  leaveDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  detailCol: {
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  statusContainer: {
+    alignItems: 'flex-start',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
 
   /* Bottom Tab Bar */
