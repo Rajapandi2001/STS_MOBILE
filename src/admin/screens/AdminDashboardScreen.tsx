@@ -93,10 +93,27 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
 
       {/* ── Header ── */}
       <View style={styles.header}>
+        {/* Left: Hamburger + Title */}
+        <TouchableOpacity style={styles.hamburgerBtn} onPress={openMenu} activeOpacity={0.7}>
+          <View style={styles.hamburgerLine} />
+          <View style={[styles.hamburgerLine, { width: 16 }]} />
+          <View style={styles.hamburgerLine} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>AdminConsole</Text>
+<<<<<<< Updated upstream
         <View style={styles.avatarCircle}>
           <Feather name="user" size={20} color="#0A52D6" />
         </View>
+=======
+        {/* Right: Avatar */}
+        <TouchableOpacity
+          style={styles.avatarCircle}
+          activeOpacity={0.8}
+          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
+        >
+          <Text style={styles.avatarText}>AP</Text>
+        </TouchableOpacity>
+>>>>>>> Stashed changes
       </View>
 
       {/* ── Main ScrollView ── */}
@@ -289,7 +306,14 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
               <View style={styles.menuDivider} />
 
               {/* Profile */}
-              <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.menuItem}
+                activeOpacity={0.7}
+                onPress={() => {
+                  closeMenu();
+                  setTimeout(() => onNavigate?.('admin_profile', { source: 'menu' }), 320);
+                }}
+              >
                 <View style={styles.menuIconWrap}>
                   <MaterialCommunityIcons name="account-outline" size={22} color="#0A52D6" />
                 </View>
@@ -439,9 +463,11 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
 
   /* ── Header ── */
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15 },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#0A52D6', letterSpacing: -0.5 },
-  avatarCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#DBEAFE', justifyContent: 'center', alignItems: 'center' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#EEF2F7', gap: 12 },
+  hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, backgroundColor: '#F1F5F9', paddingHorizontal: 8 },
+  hamburgerLine: { width: 20, height: 2, borderRadius: 2, backgroundColor: '#0A52D6' },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', color: '#0A52D6', letterSpacing: -0.5 },
+  avatarCircle: { width: 38, height: 38, borderRadius: 19, backgroundColor: '#DBEAFE', justifyContent: 'center', alignItems: 'center' },
   avatarText: { color: '#1E3A8A', fontWeight: '700', fontSize: 14 },
 
   /* ── Scroll ── */

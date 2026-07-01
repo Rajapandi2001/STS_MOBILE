@@ -16,6 +16,7 @@ import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
 import AdminUserGroupsScreen from '@/admin/screens/AdminUserGroupsScreen';
 import AdminProjectsScreen from '@/admin/screens/AdminProjectsScreen';
+import AdminProfileScreen from '@/admin/screens/AdminProfileScreen';
 
 type ScreenName =
   | 'splash'
@@ -33,7 +34,8 @@ type ScreenName =
   | 'admin_client'
   | 'admin_leave_settings'
   | 'admin_user_groups'
-  | 'admin_projects';
+  | 'admin_projects'
+  | 'admin_profile';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -234,6 +236,14 @@ export default function MainApp() {
                 transitionTo('admin_dashboard');
               }
             }}
+          />
+        );
+
+      case 'admin_profile':
+        return (
+          <AdminProfileScreen
+            onBack={() => transitionTo('admin_dashboard', { menuOpen: true })}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
 
