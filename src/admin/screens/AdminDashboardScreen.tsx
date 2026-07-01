@@ -144,7 +144,20 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
         </View>
         <View style={styles.quickActionsGrid}>
           {quickActions.map((action) => (
-            <TouchableOpacity key={action.id} style={styles.quickActionCard} activeOpacity={0.7}>
+            <TouchableOpacity 
+              key={action.id} 
+              style={styles.quickActionCard} 
+              activeOpacity={0.7}
+              onPress={() => {
+                if (action.name === 'Client') {
+                  onNavigate?.('admin_client', { source: 'dashboard' });
+                } else if (action.name === 'Leave Set') {
+                  onNavigate?.('admin_leave_settings', { source: 'dashboard' });
+                } else if (action.name === 'Project') {
+                  onNavigate?.('admin_projects', { source: 'dashboard' });
+                }
+              }}
+            >
               <View style={styles.quickActionIconBg}>
                 <MaterialCommunityIcons name={action.icon as any} size={24} color="#0A52D6" />
               </View>
@@ -313,6 +326,18 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
                         if (item === 'Staff') {
                           closeMenu();
                           setTimeout(() => onNavigate?.('admin_staff', { source: 'menu' }), 320);
+                        } else if (item === 'Client') {
+                          closeMenu();
+                          setTimeout(() => onNavigate?.('admin_client', { source: 'menu' }), 320);
+                        } else if (item === 'Leave Settings') {
+                          closeMenu();
+                          setTimeout(() => onNavigate?.('admin_leave_settings', { source: 'menu' }), 320);
+                        } else if (item === 'User Group') {
+                          closeMenu();
+                          setTimeout(() => onNavigate?.('admin_user_groups', { source: 'menu' }), 320);
+                        } else if (item === 'Project') {
+                          closeMenu();
+                          setTimeout(() => onNavigate?.('admin_projects', { source: 'menu' }), 320);
                         }
                       }}
                     >

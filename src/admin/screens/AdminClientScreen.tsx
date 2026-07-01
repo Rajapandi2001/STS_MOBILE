@@ -1,0 +1,346 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  StatusBar,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+
+interface AdminClientScreenProps {
+  onNavigate?: (screen: string, params?: any) => void;
+  onBack?: () => void;
+}
+
+const CLIENT_DATA = [
+  {
+    id: '1',
+    name: 'ACME CORPORATION',
+    clientId: 'CLN-2026-901',
+    email: 'info@acme.com',
+    country: 'United States',
+  },
+  {
+    id: '2',
+    name: 'NEXUS GLOBAL TECH',
+    clientId: 'CLN-2026-443',
+    email: 'contact@nexus.io',
+    country: 'United Kingdom',
+  },
+  {
+    id: '3',
+    name: 'STARLIGHT VENTURES',
+    clientId: 'CLN-2025-012',
+    email: 'partnerships@star.co',
+    country: 'Singapore',
+  },
+  {
+    id: '4',
+    name: 'APEX INNOVATIONS',
+    clientId: 'CLN-2026-778',
+    email: 'partnerships@apex.in',
+    country: 'India',
+  },
+];
+
+export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScreenProps) {
+  const insets = useSafeAreaInsets();
+  const [search, setSearch] = useState('');
+
+  const filteredClients = CLIENT_DATA.filter((client) => {
+    const query = search.toLowerCase().trim();
+    if (!query) return true;
+
+    return (
+      client.name.toLowerCase().includes(query) ||
+      client.clientId.toLowerCase().includes(query) ||
+      client.email.toLowerCase().includes(query) ||
+      client.country.toLowerCase().includes(query)
+    );
+  });
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => onBack?.()}>
+          <Feather name="arrow-left" size={24} color="#64748B" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Clients</Text>
+        <View style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>AP</Text>
+        </View>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
+      >
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <Feather name="search" size={18} color="#94A3B8" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Corporate Clients by Name or ID..."
+            placeholderTextColor="#94A3B8"
+            value={search}
+            onChangeText={setSearch}
+          />
+          <TouchableOpacity>
+            <Feather name="sliders" size={18} color="#64748B" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* Section Header */}
+        <Text style={styles.sectionHeader}>CLIENT ACCOUNTS INDEX</Text>
+
+        {/* Client List */}
+        {filteredClients.map((client) => (
+          <View key={client.id} style={styles.clientCard}>
+            <View style={styles.clientHeaderRow}>
+              <View style={styles.iconContainer}>
+                <MaterialCommunityIcons name="office-building" size={24} color="#0A52D6" />
+              </View>
+              <View style={styles.titleCol}>
+                <Text style={styles.clientName}>{client.name}</Text>
+                <Text style={styles.clientIdText}>ID: {client.clientId}</Text>
+              </View>
+            </View>
+
+            <View style={styles.clientDivider} />
+
+            <View style={styles.clientDetailsRow}>
+              <View style={styles.detailCol}>
+                <Text style={styles.detailLabel}>Mail</Text>
+                <Text style={styles.detailValue}>{client.email}</Text>
+              </View>
+              <View style={styles.detailColRight}>
+                <Text style={styles.detailLabelRight}>Country</Text>
+                <Text style={styles.detailValueRight}>{client.country}</Text>
+              </View>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+
+      {/* Bottom Tab Bar */}
+      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
+          <Feather name="home" size={22} color="#64748B" />
+          <Text style={styles.tabText}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
+          <MaterialCommunityIcons name="account-group-outline" size={24} color="#64748B" />
+          <Text style={styles.tabText}>Staff</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem}>
+          <Feather name="bar-chart-2" size={22} color="#64748B" />
+          <Text style={styles.tabText}>Reports</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem}>
+          <Feather name="bell" size={22} color="#64748B" />
+          <Text style={styles.tabText}>Alerts</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard', { menuOpen: true })}>
+          <Feather name="grid" size={22} color="#0A52D6" />
+          <Text style={[styles.tabText, { color: '#0A52D6' }]}>Menu</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  backButton: {
+    padding: 4,
+    marginLeft: -4,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#DBEAFE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    color: '#1E3A8A',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    height: 48,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#0F172A',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 20,
+  },
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+    marginBottom: 16,
+    letterSpacing: 0.5,
+  },
+  clientCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  clientHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  titleCol: {
+    flex: 1,
+  },
+  clientName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 2,
+  },
+  clientIdText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  clientDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  clientDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  detailCol: {
+    flex: 1.2,
+  },
+  detailColRight: {
+    flex: 0.8,
+    alignItems: 'flex-end',
+  },
+  detailLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  detailLabelRight: {
+    fontSize: 11,
+    color: '#94A3B8',
+    marginBottom: 4,
+    textAlign: 'right',
+  },
+  detailValueRight: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
+    textAlign: 'right',
+  },
+
+  /* Bottom Tab Bar */
+  bottomTabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabText: {
+    fontSize: 11,
+    marginTop: 4,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+});

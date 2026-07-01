@@ -12,6 +12,10 @@ import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
+import AdminClientScreen from '@/admin/screens/AdminClientScreen';
+import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
+import AdminUserGroupsScreen from '@/admin/screens/AdminUserGroupsScreen';
+import AdminProjectsScreen from '@/admin/screens/AdminProjectsScreen';
 
 type ScreenName =
   | 'splash'
@@ -25,7 +29,11 @@ type ScreenName =
   | 'checkin_success'
   | 'location_failed'
   | 'attendance_history'
-  | 'admin_staff';
+  | 'admin_staff'
+  | 'admin_client'
+  | 'admin_leave_settings'
+  | 'admin_user_groups'
+  | 'admin_projects';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,7 +76,7 @@ function buildCheckInRecord(d: Date): AttendanceRecord {
 
 export default function MainApp() {
   const [screen, setScreen] = useState<ScreenName>('splash');
-  const [staffSource, setStaffSource] = useState<'dashboard' | 'menu'>('dashboard');
+  const [navSource, setNavSource] = useState<'dashboard' | 'menu'>('dashboard');
   const [screenParams, setScreenParams] = useState<any>(null);
   const [checkInTime, setCheckInTime] = useState<Date>(new Date());
   const [failedDistance, setFailedDistance] = useState<number>(0);
@@ -79,8 +87,8 @@ export default function MainApp() {
   /** Standard fade transition for most screens */
   const transitionTo = (nextScreen: ScreenName, params?: any) => {
     setScreenParams(params);
-    if (nextScreen === 'admin_staff' && params?.source) {
-      setStaffSource(params.source);
+    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects') && params?.source) {
+      setNavSource(params.source);
     }
     // Default fade for all other transitions
     Animated.timing(fadeAnim, {
@@ -164,7 +172,63 @@ export default function MainApp() {
           <AdminStaffScreen
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
-              if (staffSource === 'menu') {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true });
+              } else {
+                transitionTo('admin_dashboard');
+              }
+            }}
+          />
+        );
+
+      case 'admin_client':
+        return (
+          <AdminClientScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true });
+              } else {
+                transitionTo('admin_dashboard');
+              }
+            }}
+          />
+        );
+
+      case 'admin_leave_settings':
+        return (
+          <AdminLeaveSettingsScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true });
+              } else {
+                transitionTo('admin_dashboard');
+              }
+            }}
+          />
+        );
+
+      case 'admin_user_groups':
+        return (
+          <AdminUserGroupsScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true });
+              } else {
+                transitionTo('admin_dashboard');
+              }
+            }}
+          />
+        );
+
+      case 'admin_projects':
+        return (
+          <AdminProjectsScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
                 transitionTo('admin_dashboard', { menuOpen: true });
               } else {
                 transitionTo('admin_dashboard');
