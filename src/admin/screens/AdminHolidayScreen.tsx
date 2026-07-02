@@ -107,9 +107,13 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Holidays</Text>
-        <View style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}>
+        <TouchableOpacity
+          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
+          activeOpacity={0.8}
+          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
+        >
           <Feather name="user" size={20} color={colors.brand} />
-        </View>
+        </TouchableOpacity>
       </View>
 
       <ScrollView

@@ -79,7 +79,7 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
             <MaterialCommunityIcons name="account" size={28} color={colors.brand} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.textPrimary }]}>Sarah Jenkins</Text>
+            <Text style={[styles.profileName, { color: colors.textPrimary }]}>Admin</Text>
             <Text style={[styles.profileRole, { color: colors.textSecond }]}>Admin</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
