@@ -119,7 +119,7 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
 
           {employeeExpanded && (
             <View style={[styles.subMenu, { backgroundColor: colors.card }]}>
-              {['Staff', 'Client', 'Leave Settings', 'User Group', 'Project', 'Holiday', 'Company Details', 'Assets'].map((item) => (
+              {['Staff', 'Client', 'Leave Setting', 'User Group', 'Project', 'Holiday', 'Company Detail', 'Asset'].map((item) => (
                 <TouchableOpacity
                   key={item}
                   style={[styles.subMenuItem, { borderLeftColor: colors.brandBorder }]}
@@ -127,12 +127,12 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
                   onPress={() => {
                     if (item === 'Staff') handleNavigate('admin_staff', { source: 'menu' });
                     else if (item === 'Client') handleNavigate('admin_client', { source: 'menu' });
-                    else if (item === 'Leave Settings') handleNavigate('admin_leave_settings', { source: 'menu' });
+                    else if (item === 'Leave Setting') handleNavigate('admin_leave_settings', { source: 'menu' });
                     else if (item === 'User Group') handleNavigate('admin_user_groups', { source: 'menu' });
                     else if (item === 'Project') handleNavigate('admin_projects', { source: 'menu' });
                     else if (item === 'Holiday') handleNavigate('admin_holidays', { source: 'menu' });
-                    else if (item === 'Company Details') handleNavigate('admin_companies', { source: 'menu' });
-                    else if (item === 'Assets') handleNavigate('admin_assets', { source: 'menu' });
+                    else if (item === 'Company Detail') handleNavigate('admin_companies', { source: 'menu' });
+                    else if (item === 'Asset') handleNavigate('admin_assets', { source: 'menu' });
                   }}
                 >
                   <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item}</Text>

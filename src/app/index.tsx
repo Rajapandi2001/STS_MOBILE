@@ -22,6 +22,7 @@ import AdminHelpScreen from '@/admin/screens/AdminHelpScreen';
 import AdminHolidayScreen from '@/admin/screens/AdminHolidayScreen';
 import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
+import AdminStaffDetailScreen from '@/admin/screens/AdminStaffDetailScreen';
 
 type ScreenName =
   | 'splash'
@@ -44,7 +45,8 @@ type ScreenName =
   | 'admin_help'
   | 'admin_holidays'
   | 'admin_companies'
-  | 'admin_assets';
+  | 'admin_assets'
+  | 'admin_staff_detail';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -298,6 +300,15 @@ export default function MainApp() {
                 transitionTo('admin_dashboard', undefined, 'backward');
               }
             }}
+          />
+        );
+
+      case 'admin_staff_detail':
+        return (
+          <AdminStaffDetailScreen
+            staffId={p?.staffId}
+            onBack={() => transitionTo('admin_staff', undefined, 'backward')}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />
         );
 

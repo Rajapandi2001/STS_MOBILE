@@ -176,7 +176,12 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
           return nameMatch || empIdMatch || roleMatch || deptMatch;
         }).map((staff) => {
           return (
-            <View key={staff.id} style={[styles.staffCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <TouchableOpacity
+              key={staff.id}
+              activeOpacity={0.85}
+              onPress={() => onNavigate?.('admin_staff_detail', { staffId: staff.id })}
+              style={[styles.staffCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+            >
               <View style={styles.staffHeaderRow}>
                 <View style={styles.staffInfoRow}>
                   {staff.avatar ? (
@@ -211,7 +216,7 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
               <View style={styles.statusContainer}>
                 {renderStatusBadge(staff.status)}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
