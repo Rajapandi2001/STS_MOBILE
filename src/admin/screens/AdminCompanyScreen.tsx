@@ -54,16 +54,8 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
   const handleCardPress = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+    onNavigate?.('admin_company_detail', { companyId: id });
   };
 
   const filteredCompanies = COMPANY_DATA.filter((company) => {
@@ -101,7 +93,12 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+          onPress={() => setMenuOpen(true)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
@@ -136,7 +133,6 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
 
         {/* Company List */}
         {filteredCompanies.map((company) => {
-          const isSelected = selectedIds.has(company.id);
           return (
             <TouchableOpacity
               key={company.id}
@@ -146,7 +142,7 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
                 styles.staffCard,
                 { 
                   backgroundColor: colors.card, 
-                  borderColor: isSelected ? colors.brand : colors.borderLight 
+                  borderColor: colors.borderLight 
                 }
               ]}
             >
