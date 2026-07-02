@@ -54,33 +54,6 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // ── Calendar ──────────────────────────────────────────────────────
-  const today = new Date();
-  const [calYear, setCalYear] = useState(today.getFullYear());
-  const [calMonth, setCalMonth] = useState(today.getMonth()); // 0-indexed
-
-  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const DAY_LABELS = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-
-  const holidayDateSet: Record<string, { emoji: string; status: string }> = {};
-  HOLIDAY_DATA.forEach(h => {
-    const d = new Date(h.date);
-    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-    holidayDateSet[key] = { emoji: h.emoji, status: h.status };
-  });
-
-  const getDaysInMonth = (y: number, m: number) => new Date(y, m + 1, 0).getDate();
-  const getFirstDayOfMonth = (y: number, m: number) => new Date(y, m, 1).getDay();
-
-  const prevMonth = () => {
-    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
-    else setCalMonth(m => m - 1);
-  };
-  const nextMonth = () => {
-    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
-    else setCalMonth(m => m + 1);
-  };
   const handleCardPress = (id: string) => {
     onNavigate?.('admin_holiday_detail', { holidayId: id });
   };
@@ -139,77 +112,6 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
       >
-        {/* ── Calendar Widget ── */}
-        <View style={[styles.calCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          {/* Month nav */}
-          <View style={styles.calNavRow}>
-            <TouchableOpacity onPress={prevMonth} style={[styles.calNavBtn, { backgroundColor: colors.bgScreen }]}>
-              <Feather name="chevron-left" size={18} color={colors.brand} />
-            </TouchableOpacity>
-            <Text style={[styles.calMonthTitle, { color: colors.textPrimary }]}>
-              {MONTH_NAMES[calMonth]} {calYear}
-            </Text>
-            <TouchableOpacity onPress={nextMonth} style={[styles.calNavBtn, { backgroundColor: colors.bgScreen }]}>
-              <Feather name="chevron-right" size={18} color={colors.brand} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Day labels */}
-          <View style={styles.calDayLabelsRow}>
-            {DAY_LABELS.map(d => (
-              <Text key={d} style={[styles.calDayLabel, { color: colors.textSecond }]}>{d}</Text>
-            ))}
-          </View>
-
-          {/* Grid */}
-          <View style={styles.calGrid}>
-            {Array.from({ length: getFirstDayOfMonth(calYear, calMonth) }).map((_, i) => (
-              <View key={`e-${i}`} style={styles.calCell} />
-            ))}
-            {Array.from({ length: getDaysInMonth(calYear, calMonth) }).map((_, i) => {
-              const day = i + 1;
-              const key = `${calYear}-${calMonth}-${day}`;
-              const holiday = holidayDateSet[key];
-              const isToday = day === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear();
-              const dotColor = holiday ? (holiday.status === 'Active' ? '#16A34A' : holiday.status === 'Passed' ? '#94A3B8' : '#D97706') : null;
-              return (
-                <View key={day} style={styles.calCell}>
-                  <View style={[
-                    styles.calDayCircle,
-                    isToday && { backgroundColor: colors.brand },
-                    !isToday && holiday && { backgroundColor: dotColor + '22' },
-                  ]}>
-                    <Text style={[
-                      styles.calDayNum,
-                      { color: isToday ? '#fff' : holiday ? dotColor! : colors.textPrimary },
-                      (calMonth !== calMonth) && { opacity: 0.3 },
-                    ]}>{day}</Text>
-                  </View>
-                  {holiday && !isToday && (
-                    <View style={[styles.calDot, { backgroundColor: dotColor! }]} />
-                  )}
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Legend */}
-          <View style={styles.calLegend}>
-            <View style={styles.calLegendItem}>
-              <View style={[styles.calLegendDot, { backgroundColor: '#2563EB' }]} />
-              <Text style={[styles.calLegendText, { color: colors.textSecond }]}>Today</Text>
-            </View>
-            <View style={styles.calLegendItem}>
-              <View style={[styles.calLegendDot, { backgroundColor: '#16A34A' }]} />
-              <Text style={[styles.calLegendText, { color: colors.textSecond }]}>Upcoming</Text>
-            </View>
-            <View style={styles.calLegendItem}>
-              <View style={[styles.calLegendDot, { backgroundColor: '#94A3B8' }]} />
-              <Text style={[styles.calLegendText, { color: colors.textSecond }]}>Passed</Text>
-            </View>
-          </View>
-        </View>
-
         {/* Search Bar */}
         <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
@@ -485,21 +387,4 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontWeight: '500',
   },
-
-  // Calendar
-  calCard: { borderRadius: 16, padding: 16, borderWidth: 1, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.03, shadowRadius: 8, elevation: 2 },
-  calNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
-  calNavBtn: { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  calMonthTitle: { fontSize: 15, fontWeight: '700' },
-  calDayLabelsRow: { flexDirection: 'row', marginBottom: 8 },
-  calDayLabel: { flex: 1, textAlign: 'center', fontSize: 11, fontWeight: '600' },
-  calGrid: { flexDirection: 'row', flexWrap: 'wrap' },
-  calCell: { width: '14.28%', alignItems: 'center', marginBottom: 6 },
-  calDayCircle: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  calDayNum: { fontSize: 13, fontWeight: '600' },
-  calDot: { width: 5, height: 5, borderRadius: 3, marginTop: 2 },
-  calLegend: { flexDirection: 'row', justifyContent: 'center', gap: 16, marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  calLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  calLegendDot: { width: 8, height: 8, borderRadius: 4 },
-  calLegendText: { fontSize: 11, fontWeight: '500' },
 });
