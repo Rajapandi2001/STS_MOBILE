@@ -176,6 +176,7 @@ export const STAFF_DETAILS: Record<string, StaffDetail> = {
     reportManager: 'Sarah Jenkins',
     email: 'manikandan.rajan@company.com',
     mobile: '+91 93456 78901',
+    salary: '₹55,000 / month',
     initials: 'MR',
     status: 'Active',
     relationName: 'Kavitha Rajan',
@@ -202,6 +203,7 @@ export const STAFF_DETAILS: Record<string, StaffDetail> = {
     reportManager: 'Michael Chen',
     email: 'manish.sharma@company.com',
     mobile: '+91 87654 32109',
+    salary: '₹60,000 / month',
     initials: 'MS',
     status: 'Active',
     relationName: 'Priya Sharma',
@@ -228,6 +230,7 @@ export const STAFF_DETAILS: Record<string, StaffDetail> = {
     reportManager: 'James Wilson',
     email: 'manoj.kumar@company.com',
     mobile: '+91 81234 56789',
+    salary: '₹90,000 / month',
     initials: 'MK',
     status: 'Pending',
     relationName: 'Sunita Kumar',
@@ -405,7 +408,7 @@ export default function AdminStaffDetailScreen({
 
         {/* ── Section 1: Personal Information ── */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <SectionHeader icon="account-details-outline" title="Personal Information" color="#3B82F6" />
+          <SectionHeader icon="card-account-details-outline" title="Personal Information" color="#3B82F6" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
           <InfoRow label="First Name" value={staff.firstName} />
           <InfoRow label="Last Name" value={staff.lastName} />
@@ -439,7 +442,7 @@ export default function AdminStaffDetailScreen({
 
           {/* ── Add Files ── */}
           <View style={styles.filesSectionHeader}>
-            <SectionHeader icon="file-multiple" title="Add Files" color="#3B82F6" />
+            <SectionHeader icon="attachment" title="Add Files" color="#3B82F6" />
           </View>
 
           {/* Picked files list */}
@@ -449,7 +452,7 @@ export default function AdminStaffDetailScreen({
               style={[styles.fileItem, { backgroundColor: colors.bgScreen, borderColor: colors.borderLight }]}
             >
               <MaterialCommunityIcons
-                name={file.name.endsWith('.pdf') ? 'file-pdf-box' : file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'file-image' : 'file-document-outline'}
+                name={file.name.endsWith('.pdf') ? 'file-pdf-box' : file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? 'file-image-outline' : 'file-document-outline'}
                 size={22}
                 color={colors.brand}
               />
@@ -497,7 +500,7 @@ export default function AdminStaffDetailScreen({
 
         {/* ── Section 3: Bank Information ── */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <SectionHeader icon="bank-outline" title="Bank Information" color="#10B981" />
+          <SectionHeader icon="bank" title="Bank Information" color="#10B981" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
           <InfoRow label="Bank Name" value={staff.bankName} />
           <InfoRow label="Account No." value={staff.bankAccountNo} />
@@ -506,7 +509,7 @@ export default function AdminStaffDetailScreen({
 
         {/* ── Section 4: User Login Information ── */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <SectionHeader icon="shield-lock-outline" title="User Login Information" color="#8B5CF6" />
+          <SectionHeader icon="shield-key-outline" title="User Login Information" color="#8B5CF6" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
           <InfoRow label="User Name" value={staff.userName} />
           <View style={styles.infoRow}>
