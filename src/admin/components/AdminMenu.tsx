@@ -162,7 +162,11 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
           )}
 
           {/* Roles & Permissions */}
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card }]} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={[styles.menuItem, { backgroundColor: colors.card }]}
+            activeOpacity={0.7}
+            onPress={() => handleNavigate('admin_roles_permissions')}
+          >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="shield-account-outline" size={22} color={colors.brand} />
             </View>

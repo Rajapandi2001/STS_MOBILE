@@ -29,6 +29,8 @@ import AdminCompanyDetailScreen from '@/admin/screens/AdminCompanyDetailScreen';
 import AdminAssetDetailScreen from '@/admin/screens/AdminAssetDetailScreen';
 import AdminLeaveSettingDetailScreen from '@/admin/screens/AdminLeaveSettingDetailScreen';
 import AdminHolidayDetailScreen from '@/admin/screens/AdminHolidayDetailScreen';
+import AdminRolesPermissionsScreen from '@/admin/screens/AdminRolesPermissionsScreen';
+import AdminRoleDetailScreen from '@/admin/screens/AdminRoleDetailScreen';
 
 type ScreenName =
   | 'splash'
@@ -58,7 +60,9 @@ type ScreenName =
   | 'admin_company_detail'
   | 'admin_asset_detail'
   | 'admin_leave_setting_detail'
-  | 'admin_holiday_detail';
+  | 'admin_holiday_detail'
+  | 'admin_roles_permissions'
+  | 'admin_role_detail';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -175,6 +179,14 @@ export default function MainApp() {
 
       case 'admin_holiday_detail':
         transitionTo('admin_holidays', undefined, 'backward');
+        return true;
+
+      case 'admin_roles_permissions':
+        transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+        return true;
+
+      case 'admin_role_detail':
+        transitionTo('admin_roles_permissions', undefined, 'backward');
         return true;
 
       case 'admin_profile':
@@ -474,6 +486,23 @@ export default function MainApp() {
           <AdminHolidayDetailScreen
             holidayId={p?.holidayId}
             onBack={() => transitionTo('admin_holidays', undefined, 'backward')}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
+      case 'admin_roles_permissions':
+        return (
+          <AdminRolesPermissionsScreen
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+            onBack={() => transitionTo('admin_dashboard', { menuOpen: true }, 'backward')}
+          />
+        );
+
+      case 'admin_role_detail':
+        return (
+          <AdminRoleDetailScreen
+            roleId={p?.roleId}
+            onBack={() => transitionTo('admin_roles_permissions', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />
         );
