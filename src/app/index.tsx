@@ -23,6 +23,7 @@ import AdminHolidayScreen from '@/admin/screens/AdminHolidayScreen';
 import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
 import AdminStaffDetailScreen from '@/admin/screens/AdminStaffDetailScreen';
+import AdminClientDetailScreen from '@/admin/screens/AdminClientDetailScreen';
 
 type ScreenName =
   | 'splash'
@@ -46,7 +47,8 @@ type ScreenName =
   | 'admin_holidays'
   | 'admin_companies'
   | 'admin_assets'
-  | 'admin_staff_detail';
+  | 'admin_staff_detail'
+  | 'admin_client_detail';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -308,6 +310,15 @@ export default function MainApp() {
           <AdminStaffDetailScreen
             staffId={p?.staffId}
             onBack={() => transitionTo('admin_staff', undefined, 'backward')}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
+      case 'admin_client_detail':
+        return (
+          <AdminClientDetailScreen
+            clientId={p?.clientId}
+            onBack={() => transitionTo('admin_client', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />
         );

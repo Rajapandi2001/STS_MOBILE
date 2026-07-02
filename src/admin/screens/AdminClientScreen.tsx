@@ -137,7 +137,12 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
         {/* Client List */}
         {filteredClients.map((client) => {
           return (
-            <View key={client.id} style={[styles.clientCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <TouchableOpacity
+              key={client.id}
+              activeOpacity={0.8}
+              onPress={() => onNavigate?.('admin_client_detail', { clientId: client.id })}
+              style={[styles.clientCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+            >
               <View style={styles.clientHeaderRow}>
                 <View style={styles.clientInfoRow}>
                   <View style={[styles.iconContainer, { backgroundColor: colors.iconBg }]}>
@@ -166,7 +171,7 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
               <View style={styles.statusContainer}>
                 {renderStatusBadge(client.status)}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
