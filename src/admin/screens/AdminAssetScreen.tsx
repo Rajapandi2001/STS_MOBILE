@@ -25,6 +25,7 @@ const ASSET_DATA = [
     user: 'John D.',
     cost: '$1200',
     icon: 'laptop',
+    status: 'In Use',
   },
   {
     id: 'AST-002',
@@ -32,6 +33,7 @@ const ASSET_DATA = [
     user: 'Sarah J.',
     cost: '$400',
     icon: 'monitor',
+    status: 'In Use',
   },
   {
     id: 'AST-003',
@@ -39,6 +41,7 @@ const ASSET_DATA = [
     user: 'Emily W.',
     cost: '$80',
     icon: 'mouse',
+    status: 'Available',
   },
   {
     id: 'AST-004',
@@ -46,6 +49,7 @@ const ASSET_DATA = [
     user: 'Robert K.',
     cost: '$150',
     icon: 'keyboard',
+    status: 'Maintenance',
   },
 ];
 
@@ -70,13 +74,30 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
     const query = search.toLowerCase().trim();
     if (!query) return true;
 
-    // Filter by name, user, or ID
     return (
       asset.name.toLowerCase().includes(query) ||
       asset.user.toLowerCase().includes(query) ||
       asset.id.toLowerCase().includes(query)
     );
   });
+
+  const renderStatusBadge = (status: string) => {
+    let bgColor = colors.successBg;
+    let textColor = colors.success;
+    if (status === 'Maintenance') {
+      bgColor = colors.iconBg;
+      textColor = colors.textSecond;
+    } else if (status === 'Available') {
+      bgColor = colors.amberBg;
+      textColor = colors.amber;
+    }
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
@@ -89,7 +110,7 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
           <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>ASSETS</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Assets</Text>
         <View style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}>
           <Feather name="user" size={20} color={colors.brand} />
         </View>
@@ -104,7 +125,7 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
           <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search Assets by Name or ID..."
+            placeholder="Search assets..."
             placeholderTextColor={colors.textSecond}
             value={search}
             onChangeText={setSearch}
@@ -112,9 +133,6 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        {/* Section Header */}
-        <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>ASSET INVENTORY LEDGER</Text>
 
         {/* Asset List */}
         {filteredAssets.map((asset) => {
@@ -125,56 +143,44 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
               activeOpacity={0.8}
               onPress={() => handleCardPress(asset.id)}
               style={[
-                styles.assetCard,
+                styles.staffCard,
                 { 
                   backgroundColor: colors.card, 
                   borderColor: isSelected ? colors.brand : colors.borderLight 
                 }
               ]}
             >
-              <View style={styles.cardHeaderRow}>
-                {/* Icon Container */}
-                <View style={[
-                  styles.iconContainer, 
-                  { 
-                    backgroundColor: isSelected ? colors.brandBg : colors.cardAlt,
-                    borderColor: isSelected ? colors.brandBorder : colors.border
-                  }
-                ]}>
-                  <MaterialCommunityIcons 
-                    name={asset.icon as any} 
-                    size={22} 
-                    color={isSelected ? colors.brand : colors.textSecond} 
-                  />
-                </View>
-
-                {/* Name & ID Details */}
-                <View style={styles.detailCol}>
-                  <Text style={[styles.assetName, { color: colors.textPrimary }]}>{asset.name}</Text>
-                  <Text style={[styles.assetId, { color: colors.textSecond }]}>ID: {asset.id}</Text>
-                </View>
-
-                {/* Selection Checkbox indicator on right */}
-                {isSelected && (
-                  <View style={[styles.checkIndicator, { backgroundColor: colors.brand }]}>
-                    <Feather name="check" size={10} color="#FFFFFF" />
+              <View style={styles.staffHeaderRow}>
+                <View style={styles.staffInfoRow}>
+                  <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
+                    <MaterialCommunityIcons 
+                      name={asset.icon as any} 
+                      size={22} 
+                      color={colors.brand} 
+                    />
                   </View>
-                )}
+                  <View>
+                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{asset.name}</Text>
+                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{asset.id}</Text>
+                  </View>
+                </View>
               </View>
 
-              {/* Details Divider */}
-              <View style={[styles.cardDivider, { backgroundColor: colors.borderLight }]} />
+              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
 
-              {/* User and Cost Rows */}
-              <View style={styles.assetDetailsRow}>
+              <View style={styles.staffDetailsRow}>
                 <View style={styles.detailCol}>
                   <Text style={[styles.detailLabel, { color: colors.textSecond }]}>User</Text>
                   <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{asset.user}</Text>
                 </View>
-                <View style={[styles.detailCol, styles.alignRight]}>
+                <View style={styles.detailCol}>
                   <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Cost</Text>
                   <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{asset.cost}</Text>
                 </View>
+              </View>
+
+              <View style={styles.statusContainer}>
+                {renderStatusBadge(asset.status)}
               </View>
             </TouchableOpacity>
           );
@@ -219,10 +225,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    borderBottomWidth: 1,
   },
   hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
   hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
   avatarCircle: {
     width: 36,
     height: 36,
@@ -231,31 +241,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backBtn: { 
-    width: 36, 
-    height: 36, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    borderRadius: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  badgeContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 38,
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -263,11 +248,13 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
     marginTop: 8,
     borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
@@ -279,19 +266,16 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
+    color: '#0F172A',
   },
   divider: {
     height: 1,
+    backgroundColor: '#E2E8F0',
     marginVertical: 20,
   },
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 16,
-    letterSpacing: 0.5,
-  },
-  assetCard: {
+  staffCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -302,65 +286,98 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardHeaderRow: {
+  staffHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  staffInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconContainer: {
+  staffAvatarInitials: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 1,
+    marginRight: 12,
+  },
+  staffName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 2,
+  },
+  staffEmpId: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#0A52D6',
+    borderColor: '#0A52D6',
+  },
+  staffDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  staffDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   detailCol: {
     flex: 1,
-    justifyContent: 'center',
-  },
-  alignRight: {
-    alignItems: 'flex-end',
-  },
-  assetName: {
-    fontSize: 15,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  assetId: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  checkIndicator: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardDivider: {
-    height: 1,
-    marginVertical: 12,
-  },
-  assetDetailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   detailLabel: {
-    fontSize: 11,
-    fontWeight: '500',
+    fontSize: 12,
+    color: '#94A3B8',
     marginBottom: 4,
   },
   detailValue: {
     fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
+  },
+  statusContainer: {
+    alignItems: 'flex-start',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 11,
     fontWeight: '600',
   },
   bottomTabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     paddingTop: 12,
     borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -378,6 +395,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 11,
     marginTop: 4,
+    color: '#64748B',
     fontWeight: '500',
   },
 });

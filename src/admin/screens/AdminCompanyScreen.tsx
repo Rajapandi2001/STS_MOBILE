@@ -23,21 +23,29 @@ const COMPANY_DATA = [
     id: 'CMP-2026-01',
     name: 'GLOBAL TECH SOLUTIONS',
     country: 'United States',
+    type: 'HQ - Global Tech',
+    status: 'Active',
   },
   {
     id: 'CMP-2026-02',
     name: 'EURO SYSTEMS LTD',
     country: 'Germany',
+    type: 'Branch Office',
+    status: 'Active',
   },
   {
     id: 'CMP-2026-03',
     name: 'PACIFIC TECH CORP',
     country: 'Australia',
+    type: 'Subsidiary',
+    status: 'Pending',
   },
   {
     id: 'CMP-2026-04',
     name: 'ORIENT INNOVATIONS',
     country: 'Japan',
+    type: 'Branch Office',
+    status: 'Inactive',
   },
 ];
 
@@ -62,13 +70,30 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
     const query = search.toLowerCase().trim();
     if (!query) return true;
 
-    // Filter by name, country, or ID
     return (
       company.name.toLowerCase().includes(query) ||
       company.country.toLowerCase().includes(query) ||
       company.id.toLowerCase().includes(query)
     );
   });
+
+  const renderStatusBadge = (status: string) => {
+    let bgColor = colors.successBg;
+    let textColor = colors.success;
+    if (status === 'Inactive') {
+      bgColor = colors.iconBg;
+      textColor = colors.textSecond;
+    } else if (status === 'Pending') {
+      bgColor = colors.amberBg;
+      textColor = colors.amber;
+    }
+    return (
+      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
+        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
+        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
+      </View>
+    );
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
@@ -81,7 +106,7 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
           <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>COMPANY DETAILS</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Companies</Text>
         <View style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}>
           <Feather name="user" size={20} color={colors.brand} />
         </View>
@@ -96,7 +121,7 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
           <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search Registered Companies by Name..."
+            placeholder="Search companies..."
             placeholderTextColor={colors.textSecond}
             value={search}
             onChangeText={setSearch}
@@ -104,9 +129,6 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        {/* Section Header */}
-        <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>REGISTERED ENTITIES LEDGER</Text>
 
         {/* Company List */}
         {filteredCompanies.map((company) => {
@@ -117,44 +139,44 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
               activeOpacity={0.8}
               onPress={() => handleCardPress(company.id)}
               style={[
-                styles.companyCard,
+                styles.staffCard,
                 { 
                   backgroundColor: colors.card, 
                   borderColor: isSelected ? colors.brand : colors.borderLight 
                 }
               ]}
             >
-              <View style={styles.cardMainRow}>
-                {/* Icon Container */}
-                <View style={[
-                  styles.iconContainer, 
-                  { 
-                    backgroundColor: isSelected ? colors.brandBg : colors.cardAlt,
-                    borderColor: isSelected ? colors.brandBorder : colors.border
-                  }
-                ]}>
-                  <MaterialCommunityIcons 
-                    name="office-building" 
-                    size={22} 
-                    color={isSelected ? colors.brand : colors.textSecond} 
-                  />
+              <View style={styles.staffHeaderRow}>
+                <View style={styles.staffInfoRow}>
+                  <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
+                    <MaterialCommunityIcons 
+                      name="office-building" 
+                      size={22} 
+                      color={colors.brand} 
+                    />
+                  </View>
+                  <View>
+                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{company.name}</Text>
+                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{company.id}</Text>
+                  </View>
                 </View>
+              </View>
 
-                {/* Details */}
+              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
+
+              <View style={styles.staffDetailsRow}>
                 <View style={styles.detailCol}>
-                  <Text style={[styles.companyName, { color: colors.textPrimary }]}>{company.name}</Text>
-                  <Text style={[styles.companyId, { color: colors.textSecond }]}>ID: {company.id}</Text>
+                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Country</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{company.country}</Text>
                 </View>
+                <View style={styles.detailCol}>
+                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Entity Type</Text>
+                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{company.type}</Text>
+                </View>
+              </View>
 
-                {/* Country */}
-                <View style={styles.countryCol}>
-                  <Text style={[styles.companyCountry, { color: colors.textPrimary }]}>{company.country}</Text>
-                  {isSelected && (
-                    <View style={[styles.checkIndicator, { backgroundColor: colors.brand }]}>
-                      <Feather name="check" size={10} color="#FFFFFF" />
-                    </View>
-                  )}
-                </View>
+              <View style={styles.statusContainer}>
+                {renderStatusBadge(company.status)}
               </View>
             </TouchableOpacity>
           );
@@ -199,10 +221,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    borderBottomWidth: 1,
   },
   hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
   hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
   avatarCircle: {
     width: 36,
     height: 36,
@@ -211,31 +237,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backBtn: { 
-    width: 36, 
-    height: 36, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    borderRadius: 10,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  badgeContainer: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 38,
-  },
-  badgeText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
@@ -243,11 +244,13 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
     marginTop: 8,
     borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.02,
@@ -259,19 +262,16 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
+    color: '#0F172A',
   },
   divider: {
     height: 1,
+    backgroundColor: '#E2E8F0',
     marginVertical: 20,
   },
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginBottom: 16,
-    letterSpacing: 0.5,
-  },
-  companyCard: {
+  staffCard: {
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -282,54 +282,98 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
-  cardMainRow: {
+  staffHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  staffInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  iconContainer: {
+  staffAvatarInitials: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
-    borderWidth: 1,
+    marginRight: 12,
+  },
+  staffName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 2,
+  },
+  staffEmpId: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontWeight: '500',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#0A52D6',
+    borderColor: '#0A52D6',
+  },
+  staffDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 12,
+  },
+  staffDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   detailCol: {
     flex: 1,
-    justifyContent: 'center',
   },
-  companyName: {
-    fontSize: 15,
-    fontWeight: '700',
+  detailLabel: {
+    fontSize: 12,
+    color: '#94A3B8',
     marginBottom: 4,
   },
-  companyId: {
-    fontSize: 12,
+  detailValue: {
+    fontSize: 13,
+    color: '#475569',
     fontWeight: '500',
   },
-  countryCol: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    gap: 6,
+  statusContainer: {
+    alignItems: 'flex-start',
   },
-  companyCountry: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  checkIndicator: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    justifyContent: 'center',
+  statusBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   bottomTabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     paddingTop: 12,
     borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
     position: 'absolute',
     bottom: 0,
     left: 0,
@@ -347,6 +391,7 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 11,
     marginTop: 4,
+    color: '#64748B',
     fontWeight: '500',
   },
 });
