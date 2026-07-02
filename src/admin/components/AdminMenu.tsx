@@ -130,6 +130,9 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
                     else if (item === 'Leave Settings') handleNavigate('admin_leave_settings', { source: 'menu' });
                     else if (item === 'User Group') handleNavigate('admin_user_groups', { source: 'menu' });
                     else if (item === 'Project') handleNavigate('admin_projects', { source: 'menu' });
+                    else if (item === 'Holiday') handleNavigate('admin_holidays', { source: 'menu' });
+                    else if (item === 'Company Details') handleNavigate('admin_companies', { source: 'menu' });
+                    else if (item === 'Assets') handleNavigate('admin_assets', { source: 'menu' });
                   }}
                 >
                   <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item}</Text>

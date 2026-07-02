@@ -146,6 +146,9 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
                 if (action.name === 'Client') onNavigate?.('admin_client', { source: 'dashboard' });
                 else if (action.name === 'Leave Set') onNavigate?.('admin_leave_settings', { source: 'dashboard' });
                 else if (action.name === 'Project') onNavigate?.('admin_projects', { source: 'dashboard' });
+                else if (action.name === 'Holiday') onNavigate?.('admin_holidays', { source: 'dashboard' });
+                else if (action.name === 'Company') onNavigate?.('admin_companies', { source: 'dashboard' });
+                else if (action.name === 'Assets') onNavigate?.('admin_assets', { source: 'dashboard' });
               }}
             >
               <View style={[styles.quickActionIconBg, { backgroundColor: colors.iconBg }]}>

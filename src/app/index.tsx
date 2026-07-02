@@ -18,7 +18,13 @@ import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
 import AdminUserGroupsScreen from '@/admin/screens/AdminUserGroupsScreen';
 import AdminProjectsScreen from '@/admin/screens/AdminProjectsScreen';
 import AdminProfileScreen from '@/admin/screens/AdminProfileScreen';
+<<<<<<< Updated upstream
 import AdminHelpScreen from '@/admin/screens/AdminHelpScreen';
+=======
+import AdminHolidayScreen from '@/admin/screens/AdminHolidayScreen';
+import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
+import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
+>>>>>>> Stashed changes
 
 type ScreenName =
   | 'splash'
@@ -38,7 +44,13 @@ type ScreenName =
   | 'admin_user_groups'
   | 'admin_projects'
   | 'admin_profile'
+<<<<<<< Updated upstream
   | 'admin_help';
+=======
+  | 'admin_holidays'
+  | 'admin_companies'
+  | 'admin_assets';
+>>>>>>> Stashed changes
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -95,7 +107,7 @@ export default function MainApp() {
 
   /** Super smooth native-like slide transition */
   const transitionTo = (nextScreen: ScreenName, params?: any, direction: 'forward' | 'backward' = 'forward') => {
-    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects') && params?.source) {
+    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects' || nextScreen === 'admin_holidays' || nextScreen === 'admin_companies' || nextScreen === 'admin_assets') && params?.source) {
       setNavSource(params.source);
     }
     
@@ -242,6 +254,48 @@ export default function MainApp() {
       case 'admin_projects':
         return (
           <AdminProjectsScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('admin_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
+      case 'admin_holidays':
+        return (
+          <AdminHolidayScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('admin_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
+      case 'admin_companies':
+        return (
+          <AdminCompanyScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('admin_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
+      case 'admin_assets':
+        return (
+          <AdminAssetScreen
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {
