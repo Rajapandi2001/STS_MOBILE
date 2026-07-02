@@ -18,13 +18,10 @@ import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
 import AdminUserGroupsScreen from '@/admin/screens/AdminUserGroupsScreen';
 import AdminProjectsScreen from '@/admin/screens/AdminProjectsScreen';
 import AdminProfileScreen from '@/admin/screens/AdminProfileScreen';
-<<<<<<< Updated upstream
 import AdminHelpScreen from '@/admin/screens/AdminHelpScreen';
-=======
 import AdminHolidayScreen from '@/admin/screens/AdminHolidayScreen';
 import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
->>>>>>> Stashed changes
 
 type ScreenName =
   | 'splash'
@@ -44,13 +41,10 @@ type ScreenName =
   | 'admin_user_groups'
   | 'admin_projects'
   | 'admin_profile'
-<<<<<<< Updated upstream
-  | 'admin_help';
-=======
+  | 'admin_help'
   | 'admin_holidays'
   | 'admin_companies'
   | 'admin_assets';
->>>>>>> Stashed changes
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
