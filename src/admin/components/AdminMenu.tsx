@@ -161,13 +161,7 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
             <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Help</Text>
           </TouchableOpacity>
 
-          {/* Settings */}
-          <TouchableOpacity style={[styles.menuItem, { backgroundColor: colors.card }]} activeOpacity={0.7}>
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="cog-outline" size={22} color={colors.brand} />
-            </View>
-            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Settings</Text>
-          </TouchableOpacity>
+
         </ScrollView>
 
         {/* Logout */}
