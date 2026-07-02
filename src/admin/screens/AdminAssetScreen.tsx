@@ -58,16 +58,9 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const handleCardPress = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+    onNavigate?.('admin_asset_detail', { assetId: id });
   };
 
   const filteredAssets = ASSET_DATA.filter((asset) => {
@@ -140,7 +133,6 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
 
         {/* Asset List */}
         {filteredAssets.map((asset) => {
-          const isSelected = selectedIds.has(asset.id);
           return (
             <TouchableOpacity
               key={asset.id}
@@ -148,10 +140,7 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
               onPress={() => handleCardPress(asset.id)}
               style={[
                 styles.staffCard,
-                { 
-                  backgroundColor: colors.card, 
-                  borderColor: isSelected ? colors.brand : colors.borderLight 
-                }
+                { backgroundColor: colors.card, borderColor: colors.borderLight }
               ]}
             >
               <View style={styles.staffHeaderRow}>
