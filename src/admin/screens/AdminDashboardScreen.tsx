@@ -67,7 +67,12 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
       {/* ── Header ── */}
       <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
         {/* Left: Hamburger */}
-        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={openMenu} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+          onPress={openMenu}
+          activeOpacity={0.7}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+        >
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />

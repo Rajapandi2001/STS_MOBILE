@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -30,21 +31,40 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
   const [employeeExpanded, setEmployeeExpanded] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  const visibleRef = useRef(visible);
+  visibleRef.current = visible;
 
   useEffect(() => {
+    slideAnim.stopAnimation();
+    backdropAnim.stopAnimation();
+
     if (visible) {
       setIsRendered(true);
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: 0, duration: 320, useNativeDriver: true }),
         Animated.timing(backdropAnim, { toValue: 1, duration: 320, useNativeDriver: true }),
       ]).start();
+
+      const onBackPress = () => {
+        onClose();
+        return true; // prevent default (don't navigate back or exit app)
+      };
+
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        onBackPress
+      );
+
+      return () => subscription.remove();
     } else {
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: -SCREEN_WIDTH, duration: 280, useNativeDriver: true }),
         Animated.timing(backdropAnim, { toValue: 0, duration: 280, useNativeDriver: true }),
       ]).start(() => {
-        setIsRendered(false);
-        setEmployeeExpanded(false);
+        if (!visibleRef.current) {
+          setIsRendered(false);
+          setEmployeeExpanded(false);
+        }
       });
     }
   }, [visible]);

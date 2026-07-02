@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Animated, Dimensions, StyleSheet, View } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { Animated, Dimensions, StyleSheet, View, BackHandler } from 'react-native';
 import { ThemeProvider } from '@/context/ThemeContext';
 import SplashScreen from '@/common/screens/SplashScreen';
 import LoginScreen from '@/auth/screens/LoginScreen';
@@ -102,6 +102,86 @@ export default function MainApp() {
   const [navDirection, setNavDirection] = useState<'forward' | 'backward'>('forward');
   const transitionAnim = useRef(new Animated.Value(1)).current;
   const SCREEN_WIDTH = Dimensions.get('window').width;
+
+  // Custom hardware back handler logic
+  const handleBack = (): boolean => {
+    switch (screen) {
+      case 'splash':
+      case 'login':
+      case 'dashboard':
+      case 'admin_dashboard':
+        return false; // let the system handle it (exit app)
+
+      case 'forgot_password':
+        transitionTo('login', undefined, 'backward');
+        return true;
+
+      case 'otp_verification':
+        transitionTo('forgot_password', undefined, 'backward');
+        return true;
+
+      case 'new_password':
+        transitionTo('otp_verification', undefined, 'backward');
+        return true;
+
+      case 'admin_staff':
+      case 'admin_client':
+      case 'admin_leave_settings':
+      case 'admin_user_groups':
+      case 'admin_projects':
+      case 'admin_holidays':
+      case 'admin_companies':
+      case 'admin_assets':
+        if (navSource === 'menu') {
+          transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+        } else {
+          transitionTo('admin_dashboard', undefined, 'backward');
+        }
+        return true;
+
+      case 'admin_staff_detail':
+        transitionTo('admin_staff', undefined, 'backward');
+        return true;
+
+      case 'admin_client_detail':
+        transitionTo('admin_client', undefined, 'backward');
+        return true;
+
+      case 'admin_profile':
+      case 'admin_help':
+        transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+        return true;
+
+      case 'checkin_location':
+      case 'location_failed':
+        transitionTo('dashboard', undefined, 'backward');
+        return true;
+
+      case 'checkin_success':
+        transitionTo('dashboard', undefined, 'backward');
+        return true;
+
+      case 'attendance_history':
+        transitionTo('dashboard', undefined, 'backward');
+        return true;
+
+      default:
+        return false;
+    }
+  };
+
+  useEffect(() => {
+    const backAction = () => {
+      return handleBack();
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [screen, navSource]);
 
   /** Super smooth native-like slide transition */
   const transitionTo = (nextScreen: ScreenName, params?: any, direction: 'forward' | 'backward' = 'forward') => {
