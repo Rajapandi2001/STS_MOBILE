@@ -24,6 +24,7 @@ import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
 import AdminStaffDetailScreen from '@/admin/screens/AdminStaffDetailScreen';
 import AdminClientDetailScreen from '@/admin/screens/AdminClientDetailScreen';
+import AdminProjectDetailScreen from '@/admin/screens/AdminProjectDetailScreen';
 
 type ScreenName =
   | 'splash'
@@ -48,7 +49,8 @@ type ScreenName =
   | 'admin_companies'
   | 'admin_assets'
   | 'admin_staff_detail'
-  | 'admin_client_detail';
+  | 'admin_client_detail'
+  | 'admin_project_detail';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -145,6 +147,10 @@ export default function MainApp() {
 
       case 'admin_client_detail':
         transitionTo('admin_client', undefined, 'backward');
+        return true;
+
+      case 'admin_project_detail':
+        transitionTo('admin_projects', undefined, 'backward');
         return true;
 
       case 'admin_profile':
@@ -399,6 +405,15 @@ export default function MainApp() {
           <AdminClientDetailScreen
             clientId={p?.clientId}
             onBack={() => transitionTo('admin_client', undefined, 'backward')}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
+      case 'admin_project_detail':
+        return (
+          <AdminProjectDetailScreen
+            projectId={p?.projectId}
+            onBack={() => transitionTo('admin_projects', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />
         );

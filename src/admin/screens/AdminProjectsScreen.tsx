@@ -146,7 +146,12 @@ export default function AdminProjectsScreen({ onNavigate, onBack }: AdminProject
         {/* Projects List */}
         {filteredProjects.map((project) => {
           return (
-            <View key={project.id} style={[styles.projectCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <TouchableOpacity
+              key={project.id}
+              activeOpacity={0.8}
+              onPress={() => onNavigate?.('admin_project_detail', { projectId: project.id })}
+              style={[styles.projectCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+            >
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardInfoRow}>
                   <View style={[styles.iconContainer, { backgroundColor: project.color }]}>
@@ -175,7 +180,7 @@ export default function AdminProjectsScreen({ onNavigate, onBack }: AdminProject
               <View style={styles.statusContainer}>
                 {renderStatusBadge(project.status)}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
