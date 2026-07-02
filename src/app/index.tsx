@@ -24,11 +24,8 @@ import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
 import AdminStaffDetailScreen from '@/admin/screens/AdminStaffDetailScreen';
 import AdminClientDetailScreen from '@/admin/screens/AdminClientDetailScreen';
-<<<<<<< Updated upstream
 import AdminProjectDetailScreen from '@/admin/screens/AdminProjectDetailScreen';
-=======
 import AdminCompanyDetailScreen from '@/admin/screens/AdminCompanyDetailScreen';
->>>>>>> Stashed changes
 
 type ScreenName =
   | 'splash'
@@ -54,11 +51,8 @@ type ScreenName =
   | 'admin_assets'
   | 'admin_staff_detail'
   | 'admin_client_detail'
-<<<<<<< Updated upstream
-  | 'admin_project_detail';
-=======
+  | 'admin_project_detail'
   | 'admin_company_detail';
->>>>>>> Stashed changes
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -157,13 +151,12 @@ export default function MainApp() {
         transitionTo('admin_client', undefined, 'backward');
         return true;
 
-<<<<<<< Updated upstream
       case 'admin_project_detail':
         transitionTo('admin_projects', undefined, 'backward');
-=======
+        return true;
+
       case 'admin_company_detail':
         transitionTo('admin_companies', undefined, 'backward');
->>>>>>> Stashed changes
         return true;
 
       case 'admin_profile':
@@ -422,19 +415,20 @@ export default function MainApp() {
           />
         );
 
-<<<<<<< Updated upstream
       case 'admin_project_detail':
         return (
           <AdminProjectDetailScreen
             projectId={p?.projectId}
             onBack={() => transitionTo('admin_projects', undefined, 'backward')}
-=======
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
       case 'admin_company_detail':
         return (
           <AdminCompanyDetailScreen
             companyId={p?.companyId}
             onBack={() => transitionTo('admin_companies', undefined, 'backward')}
->>>>>>> Stashed changes
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />
         );
