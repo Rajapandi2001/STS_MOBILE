@@ -170,7 +170,12 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
         {/* Leave List */}
         {filteredLeaves.map((leave) => {
           return (
-            <View key={leave.id} style={[styles.leaveCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <TouchableOpacity
+              key={leave.id}
+              activeOpacity={0.8}
+              onPress={() => onNavigate?.('admin_leave_setting_detail', { leaveId: leave.id })}
+              style={[styles.leaveCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+            >
               <View style={styles.cardHeaderRow}>
                 <View style={styles.cardInfoRow}>
                   <View style={[styles.iconContainer, { backgroundColor: leave.color }]}>
@@ -199,7 +204,7 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
               <View style={styles.statusContainer}>
                 {renderStatusBadge(leave.status)}
               </View>
-            </View>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>

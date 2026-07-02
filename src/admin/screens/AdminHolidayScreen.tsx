@@ -54,16 +54,8 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
   const handleCardPress = (id: string) => {
-    const newSelected = new Set(selectedIds);
-    if (newSelected.has(id)) {
-      newSelected.delete(id);
-    } else {
-      newSelected.add(id);
-    }
-    setSelectedIds(newSelected);
+    onNavigate?.('admin_holiday_detail', { holidayId: id });
   };
 
   const filteredHolidays = HOLIDAY_DATA.filter((holiday) => {
@@ -136,7 +128,6 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
 
         {/* Holiday List */}
         {filteredHolidays.map((holiday) => {
-          const isSelected = selectedIds.has(holiday.id);
           return (
             <TouchableOpacity
               key={holiday.id}
@@ -144,10 +135,7 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
               onPress={() => handleCardPress(holiday.id)}
               style={[
                 styles.staffCard,
-                { 
-                  backgroundColor: colors.card, 
-                  borderColor: isSelected ? colors.brand : colors.borderLight 
-                }
+                { backgroundColor: colors.card, borderColor: colors.borderLight }
               ]}
             >
               <View style={styles.staffHeaderRow}>

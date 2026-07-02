@@ -27,6 +27,8 @@ import AdminClientDetailScreen from '@/admin/screens/AdminClientDetailScreen';
 import AdminProjectDetailScreen from '@/admin/screens/AdminProjectDetailScreen';
 import AdminCompanyDetailScreen from '@/admin/screens/AdminCompanyDetailScreen';
 import AdminAssetDetailScreen from '@/admin/screens/AdminAssetDetailScreen';
+import AdminLeaveSettingDetailScreen from '@/admin/screens/AdminLeaveSettingDetailScreen';
+import AdminHolidayDetailScreen from '@/admin/screens/AdminHolidayDetailScreen';
 
 type ScreenName =
   | 'splash'
@@ -54,7 +56,9 @@ type ScreenName =
   | 'admin_client_detail'
   | 'admin_project_detail'
   | 'admin_company_detail'
-  | 'admin_asset_detail';
+  | 'admin_asset_detail'
+  | 'admin_leave_setting_detail'
+  | 'admin_holiday_detail';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -163,6 +167,14 @@ export default function MainApp() {
 
       case 'admin_asset_detail':
         transitionTo('admin_assets', undefined, 'backward');
+        return true;
+
+      case 'admin_leave_setting_detail':
+        transitionTo('admin_leave_settings', undefined, 'backward');
+        return true;
+
+      case 'admin_holiday_detail':
+        transitionTo('admin_holidays', undefined, 'backward');
         return true;
 
       case 'admin_profile':
@@ -444,6 +456,24 @@ export default function MainApp() {
           <AdminAssetDetailScreen
             assetId={p?.assetId}
             onBack={() => transitionTo('admin_assets', undefined, 'backward')}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
+      case 'admin_leave_setting_detail':
+        return (
+          <AdminLeaveSettingDetailScreen
+            leaveId={p?.leaveId}
+            onBack={() => transitionTo('admin_leave_settings', undefined, 'backward')}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
+      case 'admin_holiday_detail':
+        return (
+          <AdminHolidayDetailScreen
+            holidayId={p?.holidayId}
+            onBack={() => transitionTo('admin_holidays', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />
         );
