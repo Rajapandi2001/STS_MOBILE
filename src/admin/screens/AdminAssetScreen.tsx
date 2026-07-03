@@ -7,6 +7,7 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -21,35 +22,35 @@ interface AdminAssetScreenProps {
 const ASSET_DATA = [
   {
     id: 'AST-001',
-    name: 'LAPTOP PRO',
-    user: 'John D.',
-    cost: '$1200',
-    icon: 'laptop',
+    name: 'MacBook Pro 16"',
+    serial: 'C02F9823MD6R',
+    image: require('../../../assets/images/asset_macbook.png'),
+    condition: 'Good',
     status: 'In Use',
   },
   {
     id: 'AST-002',
-    name: 'MONITOR 4K',
-    user: 'Sarah J.',
-    cost: '$400',
-    icon: 'monitor',
+    name: 'iPhone 14 Pro',
+    serial: 'F4G987HKL2',
+    image: require('../../../assets/images/asset_iphone.png'),
+    condition: 'Minor Wear',
     status: 'In Use',
   },
   {
     id: 'AST-003',
-    name: 'ERGO MOUSE',
-    user: 'Emily W.',
-    cost: '$80',
-    icon: 'mouse',
+    name: 'Dell UltraSharp 27"',
+    serial: 'CN-0YVW33-74261',
+    image: require('../../../assets/images/asset_monitor.png'),
+    condition: 'Good',
     status: 'Available',
   },
   {
     id: 'AST-004',
-    name: 'MECHANICAL KEYBOARD',
-    user: 'Robert K.',
-    cost: '$150',
-    icon: 'keyboard',
-    status: 'Maintenance',
+    name: 'Mechanical Keyboard',
+    serial: 'KB-20234-MX87',
+    image: require('../../../assets/images/asset_keyboard.png'),
+    condition: 'Good',
+    status: 'In Use',
   },
 ];
 
@@ -66,30 +67,32 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
   const filteredAssets = ASSET_DATA.filter((asset) => {
     const query = search.toLowerCase().trim();
     if (!query) return true;
-
     return (
       asset.name.toLowerCase().includes(query) ||
-      asset.user.toLowerCase().includes(query) ||
+      asset.serial.toLowerCase().includes(query) ||
       asset.id.toLowerCase().includes(query)
     );
   });
 
-  const renderStatusBadge = (status: string) => {
-    let bgColor = colors.successBg;
-    let textColor = colors.success;
-    if (status === 'Maintenance') {
-      bgColor = colors.iconBg;
-      textColor = colors.textSecond;
-    } else if (status === 'Available') {
-      bgColor = colors.amberBg;
-      textColor = colors.amber;
+  const getConditionStyle = (condition: string) => {
+    if (condition === 'Good') {
+      return {
+        bg: colors.successBg,
+        text: colors.success,
+        icon: 'check-circle' as const,
+      };
+    } else if (condition === 'Minor Wear') {
+      return {
+        bg: colors.amberBg,
+        text: colors.amber,
+        icon: 'alert-triangle' as const,
+      };
     }
-    return (
-      <View style={[styles.statusBadge, { backgroundColor: bgColor }]}>
-        <View style={[styles.statusDot, { backgroundColor: textColor }]} />
-        <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
-      </View>
-    );
+    return {
+      bg: colors.iconBg,
+      text: colors.textSecond,
+      icon: 'info' as const,
+    };
   };
 
   return (
@@ -133,48 +136,45 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
 
         {/* Asset List */}
         {filteredAssets.map((asset) => {
+          const condStyle = getConditionStyle(asset.condition);
           return (
             <TouchableOpacity
               key={asset.id}
               activeOpacity={0.8}
               onPress={() => handleCardPress(asset.id)}
-              style={[
-                styles.staffCard,
-                { backgroundColor: colors.card, borderColor: colors.borderLight }
-              ]}
+              style={[styles.assetCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
             >
-              <View style={styles.staffHeaderRow}>
-                <View style={styles.staffInfoRow}>
-                  <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
-                    <MaterialCommunityIcons 
-                      name={asset.icon as any} 
-                      size={22} 
-                      color={colors.brand} 
-                    />
+              {/* Top section: image thumbnail + info + type icon */}
+              <View style={styles.cardTopRow}>
+                {/* Product Image Thumbnail */}
+                <View style={[styles.thumbnailBox, { backgroundColor: colors.iconBg }]}>
+                  <Image
+                    source={asset.image}
+                    style={styles.thumbnailImage}
+                    resizeMode="contain"
+                  />
+                </View>
+
+                {/* Info */}
+                <View style={styles.assetInfo}>
+                  <View style={styles.assetNameRow}>
+                    <Text style={[styles.assetName, { color: colors.textPrimary }]} numberOfLines={2}>
+                      {asset.name}
+                    </Text>
                   </View>
-                  <View>
-                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{asset.name}</Text>
-                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{asset.id}</Text>
+                  <Text style={[styles.serialText, { color: colors.textSecond }]}>SN: {asset.serial}</Text>
+
+                  {/* Condition Badge */}
+                  <View style={[styles.conditionBadge, { backgroundColor: condStyle.bg }]}>
+                    <Feather name={condStyle.icon} size={12} color={condStyle.text} />
+                    <Text style={[styles.conditionText, { color: condStyle.text }]}>
+                      {asset.condition === 'Good' ? 'Condition: Good' : asset.condition}
+                    </Text>
                   </View>
                 </View>
               </View>
 
-              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
 
-              <View style={styles.staffDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>User</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{asset.user}</Text>
-                </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Cost</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{asset.cost}</Text>
-                </View>
-              </View>
-
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(asset.status)}
-              </View>
             </TouchableOpacity>
           );
         })}
@@ -267,10 +267,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#E2E8F0',
     marginVertical: 20,
   },
-  staffCard: {
+
+  /* Asset Card */
+  assetCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
     marginBottom: 16,
     borderWidth: 1.5,
     shadowColor: '#000',
@@ -278,91 +279,111 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 8,
     elevation: 2,
+    overflow: 'hidden',
   },
-  staffHeaderRow: {
+  cardTopRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    padding: 14,
     alignItems: 'flex-start',
   },
-  staffInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  staffAvatarInitials: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+
+  /* Thumbnail */
+  thumbnailBox: {
+    width: 90,
+    height: 90,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 14,
+    flexShrink: 0,
+    overflow: 'hidden',
   },
-  staffName: {
+  thumbnailImage: {
+    width: 80,
+    height: 80,
+  },
+
+  /* Asset Info */
+  assetInfo: {
+    flex: 1,
+    paddingTop: 2,
+  },
+  assetNameRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  assetName: {
     fontSize: 16,
     fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 2,
+    flex: 1,
+    marginRight: 6,
+    lineHeight: 22,
   },
-  staffEmpId: {
-    fontSize: 12,
+
+  serialText: {
+    fontSize: 13,
     color: '#94A3B8',
     fontWeight: '500',
+    marginBottom: 10,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
+  conditionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 5,
+  },
+  conditionText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  /* Card Divider */
+  cardDivider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+  },
+
+  /* Action Buttons */
+  actionRow: {
+    flexDirection: 'row',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    gap: 10,
+  },
+  reportBtn: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: '#CBD5E1',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxSelected: {
-    backgroundColor: '#0A52D6',
-    borderColor: '#0A52D6',
-  },
-  staffDivider: {
-    height: 1,
-    backgroundColor: '#F1F5F9',
-    marginVertical: 12,
-  },
-  staffDetailsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  detailCol: {
-    flex: 1,
-  },
-  detailLabel: {
-    fontSize: 12,
-    color: '#94A3B8',
-    marginBottom: 4,
-  },
-  detailValue: {
+  reportBtnText: {
     fontSize: 13,
-    color: '#475569',
-    fontWeight: '500',
+    fontWeight: '600',
+    color: '#0F172A',
   },
-  statusContainer: {
-    alignItems: 'flex-start',
-  },
-  statusBadge: {
-    flexDirection: 'row',
+  replaceBtn: {
+    flex: 1.6,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: 'transparent',
   },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusText: {
-    fontSize: 11,
+  replaceBtnText: {
+    fontSize: 13,
     fontWeight: '600',
   },
+
+  /* Bottom Tab Bar */
   bottomTabBar: {
     flexDirection: 'row',
     justifyContent: 'space-around',
