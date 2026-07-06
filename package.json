@@ -20,7 +20,11 @@
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.12",
     "expo-location": "~19.0.8",
+<<<<<<< HEAD
     "expo-print": "^57.0.0",
+=======
+    "expo-print": "~15.0.8",
+>>>>>>> 47afffc20361012e866ec930fc611a70a3f84004
     "expo-router": "~6.0.24",
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "~31.0.13",

@@ -478,6 +478,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
+<<<<<<< HEAD
   segmentContainer: {
     flexDirection: 'row',
     borderRadius: 10,
@@ -495,3 +496,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+=======
+});
+>>>>>>> 47afffc20361012e866ec930fc611a70a3f84004
