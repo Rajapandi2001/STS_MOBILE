@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Animated, Dimensions, StyleSheet, View, BackHandler } from 'react-native';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import SplashScreen from '@/common/screens/SplashScreen';
 import LoginScreen from '@/auth/screens/LoginScreen';
 import ForgotPasswordScreen from '@/auth/screens/ForgotPasswordScreen';
@@ -31,6 +32,8 @@ import AdminLeaveSettingDetailScreen from '@/admin/screens/AdminLeaveSettingDeta
 import AdminHolidayDetailScreen from '@/admin/screens/AdminHolidayDetailScreen';
 import AdminRolesPermissionsScreen from '@/admin/screens/AdminRolesPermissionsScreen';
 import AdminRoleDetailScreen from '@/admin/screens/AdminRoleDetailScreen';
+import AdminAlertsScreen from '@/admin/screens/AdminAlertsScreen';
+import AdminReportsScreen from '@/admin/screens/AdminReportsScreen';
 
 type ScreenName =
   | 'splash'
@@ -62,7 +65,9 @@ type ScreenName =
   | 'admin_leave_setting_detail'
   | 'admin_holiday_detail'
   | 'admin_roles_permissions'
-  | 'admin_role_detail';
+  | 'admin_role_detail'
+  | 'admin_alerts'
+  | 'admin_reports';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -103,7 +108,8 @@ function buildCheckInRecord(d: Date): AttendanceRecord {
 
 // ── Main App ─────────────────────────────────────────────────────────────────
 
-export default function MainApp() {
+function AppContent() {
+  const { user, isAuthenticated } = useAuth();
   const [screen, setScreen] = useState<ScreenName>('splash');
   const [navSource, setNavSource] = useState<'dashboard' | 'menu'>('dashboard');
   const [screenParams, setScreenParams] = useState<any>(null);
@@ -264,7 +270,21 @@ export default function MainApp() {
   const renderScreenComponent = (s: ScreenName, p: any) => {
     switch (s) {
       case 'splash':
-        return <SplashScreen onFinish={() => transitionTo('login')} />;
+        return (
+          <SplashScreen
+            onFinish={() => {
+              if (isAuthenticated && user) {
+                if (user.displayName?.toUpperCase() === 'ADMIN' || user.groupID === 5) {
+                  transitionTo('admin_dashboard');
+                } else {
+                  transitionTo('dashboard');
+                }
+              } else {
+                transitionTo('login');
+              }
+            }}
+          />
+        );
 
       case 'login':
         return (
@@ -554,6 +574,22 @@ export default function MainApp() {
           />
         );
 
+      case 'admin_alerts':
+        return (
+          <AdminAlertsScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => transitionTo('admin_dashboard', undefined, 'backward')}
+          />
+        );
+
+      case 'admin_reports':
+        return (
+          <AdminReportsScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => transitionTo('admin_dashboard', undefined, 'backward')}
+          />
+        );
+
       case 'attendance_history':
         return (
           <AttendanceHistoryScreen
@@ -609,6 +645,14 @@ export default function MainApp() {
         </Animated.View>
       </View>
     </ThemeProvider>
+  );
+}
+
+export default function MainApp() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

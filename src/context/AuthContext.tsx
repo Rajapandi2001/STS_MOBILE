@@ -6,7 +6,7 @@ interface AuthContextType {
   user: UserProfile | null;
   token: string | null;
   isLoading: boolean;
-  login: (username: string, password: string) => Promise<{ success: boolean; message: string; user?: UserProfile }>;
+  login: (username: string, password: string, forceOffline?: boolean) => Promise<{ success: boolean; message: string; user?: UserProfile; isNetworkError?: boolean }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -37,7 +37,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     restoreSession();
   }, []);
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, forceOffline: boolean = false) => {
+    if (forceOffline) {
+      const is_admin = username.trim().toLowerCase() === 'admin';
+      const mockUser: UserProfile = {
+        userID: is_admin ? 1 : 2,
+        userName: username.trim() || 'demo_user',
+        displayName: is_admin ? 'ADMIN' : 'Demo Employee',
+        empID: is_admin ? 100 : 101,
+        groupID: is_admin ? 5 : 1,
+      };
+      await storageService.setToken('mock_jwt_token_for_testing');
+      await storageService.setUser(mockUser);
+      setToken('mock_jwt_token_for_testing');
+      setUser(mockUser);
+      return { success: true, message: 'Logged in via Offline Demo Mode', user: mockUser };
+    }
     try {
       const response = await authApi.login(username, password);
       if (response.status && response.token && response.user) {
@@ -50,10 +65,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: response.message || 'Login failed. Invalid response status.' };
       }
     } catch (err: any) {
-      console.error('Login error in Context:', err);
-      // Try to parse error from backend response
+      console.log('Login error in Context:', err);
+      const isNetworkError = !err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK';
       const errorMessage = err.response?.data?.message || err.message || 'An unexpected login error occurred.';
-      return { success: false, message: errorMessage };
+      return { success: false, message: errorMessage, isNetworkError };
     }
   };
 

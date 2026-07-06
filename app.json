@@ -50,7 +50,15 @@
           "locationWhenInUsePermission": "Allow STS Mobile to access your location for attendance check-in."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

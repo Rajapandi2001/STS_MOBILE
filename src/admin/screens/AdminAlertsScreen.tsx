@@ -68,16 +68,8 @@ interface AdminAlertsScreenProps {
 export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark } = useTheme();
-  const [alerts, setAlerts] = useState<AlertItem[]>(INITIAL_ALERTS);
+  const [alerts] = useState<AlertItem[]>(INITIAL_ALERTS);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const handleToggleRead = (id: string) => {
-    setAlerts((prev) =>
-      prev.map((alert) =>
-        alert.id === id ? { ...alert, read: !alert.read } : alert
-      )
-    );
-  };
 
   const getLeftAccentColor = (item: AlertItem) => {
     if (item.type === 'warning') return '#F97316'; // Orange/Amber accent
@@ -103,11 +95,11 @@ export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScr
       case 'High Volume of Pending Claims':
         return <Feather name="alert-triangle" size={20} color="#F97316" />;
       case 'New Role Created':
-        return <Feather name="shield" size={20} color={colors.brand} />;
+        return <MaterialCommunityIcons name="shield-account" size={20} color={colors.brand} />;
       case 'System Update 2.4.0':
-        return <Feather name="smartphone" size={20} color={colors.success} />;
+        return <MaterialCommunityIcons name="package-down" size={20} color={colors.success} />;
       case 'Weekly Report Generated':
-        return <Feather name="file-text" size={20} color={colors.textSecond} />;
+        return <MaterialCommunityIcons name="chart-box-outline" size={20} color={colors.brand} />;
       default:
         if (item.type === 'warning') return <Feather name="alert-triangle" size={20} color="#F97316" />;
         if (item.type === 'success') return <Feather name="check" size={20} color={colors.success} />;
@@ -148,7 +140,6 @@ export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScr
       >
         {/* Page Title & Description */}
         <View style={styles.pageHeaderContainer}>
-
           <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
             Review and manage system alerts and administrative updates.
           </Text>
@@ -172,7 +163,7 @@ export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScr
             const iconBgColor = getIconBgColor(item);
 
             return (
-              <TouchableOpacity
+              <View
                 key={item.id}
                 style={[
                   styles.alertCard,
@@ -182,8 +173,6 @@ export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScr
                     opacity: item.read ? 0.85 : 1,
                   }
                 ]}
-                activeOpacity={0.9}
-                onPress={() => handleToggleRead(item.id)}
               >
                 {/* Left Accent Bar */}
                 <View style={[styles.cardAccent, { backgroundColor: accentColor }]} />
@@ -240,7 +229,6 @@ export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScr
                     <TouchableOpacity
                       style={[styles.actionBtn, { borderColor: colors.border }]}
                       activeOpacity={0.7}
-                      onPress={() => handleToggleRead(item.id)}
                     >
                       <Text style={[styles.actionBtnText, { color: colors.textPrimary }]}>{item.actionText}</Text>
                     </TouchableOpacity>
@@ -251,13 +239,12 @@ export default function AdminAlertsScreen({ onNavigate, onBack }: AdminAlertsScr
                     <TouchableOpacity
                       style={styles.linkBtn}
                       activeOpacity={0.7}
-                      onPress={() => handleToggleRead(item.id)}
                     >
                       <Text style={[styles.linkBtnText, { color: colors.brand }]}>{item.linkText}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })
         )}
@@ -490,5 +477,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     fontWeight: '500',
+  },
+  segmentContainer: {
+    flexDirection: 'row',
+    borderRadius: 10,
+    padding: 4,
+    marginBottom: 20,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  segmentText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

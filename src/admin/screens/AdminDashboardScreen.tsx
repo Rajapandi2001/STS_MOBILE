@@ -84,7 +84,11 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
           <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]} activeOpacity={0.8} onPress={toggleTheme}>
             <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]} activeOpacity={0.8}>
+          <TouchableOpacity 
+            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]} 
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('admin_alerts')}
+          >
             <View>
               <Feather name="bell" size={18} color={colors.brand} />
               <View style={[styles.notifDot, { borderColor: colors.header }]} />
@@ -231,7 +235,7 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
           <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_reports')}>
           <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
         </TouchableOpacity>

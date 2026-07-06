@@ -70,34 +70,7 @@ function InfoField({
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TwoColRow  — defined OUTSIDE
-// ─────────────────────────────────────────────────────────────────────────────
-type ColDef = {
-  label: string; value: string; icon?: React.ReactNode;
-  editable?: boolean; fieldKey?: keyof ProfileShape;
-  keyboardType?: 'default' | 'email-address' | 'phone-pad' | 'numeric';
-};
-type TwoColRowProps = {
-  left: ColDef; right: ColDef;
-  isEditing: boolean; editBuffer: ProfileShape;
-  onChangeBuffer: (key: keyof ProfileShape, val: string) => void;
-};
 
-function TwoColRow({ left, right, isEditing, editBuffer, onChangeBuffer }: TwoColRowProps) {
-  const { colors, isDark } = useTheme();
-  return (
-    <View style={styles.twoColRow}>
-      <View style={styles.twoColCell}>
-        <InfoField {...left} isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={onChangeBuffer} />
-      </View>
-      <View style={[styles.twoColDivider, { backgroundColor: colors.border }]} />
-      <View style={styles.twoColCell}>
-        <InfoField {...right} isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={onChangeBuffer} />
-      </View>
-    </View>
-  );
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DropdownField  — defined OUTSIDE
@@ -267,43 +240,34 @@ export default function AdminProfileScreen({ onNavigate, onBack }: AdminProfileS
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Personal Information</Text>
           </View>
 
-          <TwoColRow
-            left={{ label: 'Name', value: profile.name, editable: true, fieldKey: 'name' }}
-            right={{ label: 'Phone', value: profile.phone, icon: <Feather name="phone" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'phone', keyboardType: 'phone-pad' }}
-            isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-          />
-          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
-
-          <TwoColRow
-            left={{ label: 'Designation', value: profile.designation, editable: true, fieldKey: 'designation' }}
-            right={{ label: 'Email', value: profile.email, icon: <Feather name="mail" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'email', keyboardType: 'email-address' }}
-            isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-          />
-          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
-
-          <TwoColRow
-            left={{ label: 'Date of Joining', value: profile.dateOfJoining, icon: <Feather name="calendar" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'dateOfJoining' }}
-            right={{ label: 'Date of Birth', value: profile.dateOfBirth, icon: <Feather name="gift" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'dateOfBirth' }}
-            isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-          />
-          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
-
-          <View style={styles.twoColRow}>
-            <View style={styles.twoColCell}>
-              <InfoField label="Nationality" value={profile.nationality} editable fieldKey="nationality"
-                isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            </View>
-            <View style={styles.twoColDivider} />
-            <View style={styles.twoColCell}>
-              <DropdownField
-                label="Gender" value={profile.gender} options={genderOptions}
-                open={genderDropdownOpen}
-                onToggle={() => { setGenderDropdownOpen((p) => !p); setMaritalDropdownOpen(false); }}
-                fieldKey="gender"
-                isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-              />
-            </View>
-          </View>
+          <ScrollView
+            style={styles.cardScroll}
+            contentContainerStyle={styles.cardScrollContent}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
+          >
+            <InfoField label="Name" value={profile.name} editable={true} fieldKey="name"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Phone" value={profile.phone} icon={<Feather name="phone" size={14} color={colors.textSecond} />} editable={true} fieldKey="phone" keyboardType="phone-pad"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Designation" value={profile.designation} editable={true} fieldKey="designation"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Email" value={profile.email} icon={<Feather name="mail" size={14} color={colors.textSecond} />} editable={true} fieldKey="email" keyboardType="email-address"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Date of Joining" value={profile.dateOfJoining} icon={<Feather name="calendar" size={14} color={colors.textSecond} />} editable={true} fieldKey="dateOfJoining"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Date of Birth" value={profile.dateOfBirth} icon={<Feather name="gift" size={14} color={colors.textSecond} />} editable={true} fieldKey="dateOfBirth"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Nationality" value={profile.nationality} editable={true} fieldKey="nationality"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <DropdownField
+              label="Gender" value={profile.gender} options={genderOptions}
+              open={genderDropdownOpen}
+              onToggle={() => { setGenderDropdownOpen((p) => !p); setMaritalDropdownOpen(false); }}
+              fieldKey="gender"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
+            />
+          </ScrollView>
         </View>
 
         {/* ══ Contact Information ══ */}
@@ -315,71 +279,76 @@ export default function AdminProfileScreen({ onNavigate, onBack }: AdminProfileS
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Contact Information</Text>
           </View>
 
-          <TwoColRow
-            left={{ label: 'Address', value: profile.address, icon: <Feather name="home" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'address' }}
-            right={{ label: 'Postal Code', value: profile.postalCode, editable: true, fieldKey: 'postalCode', keyboardType: 'numeric' }}
-            isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-          />
-          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
-
-          <TwoColRow
-            left={{ label: 'City', value: profile.city, icon: <Feather name="map-pin" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'city' }}
-            right={{ label: 'Salary', value: profile.salary, icon: <MaterialCommunityIcons name="currency-inr" size={14} color={colors.textSecond} />, editable: true, fieldKey: 'salary', keyboardType: 'numeric' }}
-            isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-          />
-          <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
-
-          <View style={styles.twoColRow}>
-            <View style={styles.twoColCell}>
-              <InfoField label="Country" value={profile.country} icon={<Feather name="globe" size={14} color={colors.textSecond} />} editable fieldKey="country"
-                isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            </View>
-            <View style={styles.twoColDivider} />
-            <View style={styles.twoColCell}>
-              <DropdownField
-                label="Marital Status" value={profile.maritalStatus} options={maritalOptions}
-                open={maritalDropdownOpen}
-                onToggle={() => { setMaritalDropdownOpen((p) => !p); setGenderDropdownOpen(false); }}
-                fieldKey="maritalStatus"
-                isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
-              />
-            </View>
-          </View>
+          <ScrollView
+            style={styles.cardScroll}
+            contentContainerStyle={styles.cardScrollContent}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
+          >
+            <InfoField label="Address" value={profile.address} icon={<Feather name="home" size={14} color={colors.textSecond} />} editable={true} fieldKey="address"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Postal Code" value={profile.postalCode} editable={true} fieldKey="postalCode" keyboardType="numeric"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="City" value={profile.city} icon={<Feather name="map-pin" size={14} color={colors.textSecond} />} editable={true} fieldKey="city"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Salary" value={profile.salary} icon={<MaterialCommunityIcons name="currency-inr" size={14} color={colors.textSecond} />} editable={true} fieldKey="salary" keyboardType="numeric"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Country" value={profile.country} icon={<Feather name="globe" size={14} color={colors.textSecond} />} editable={true} fieldKey="country"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <DropdownField
+              label="Marital Status" value={profile.maritalStatus} options={maritalOptions}
+              open={maritalDropdownOpen}
+              onToggle={() => { setMaritalDropdownOpen((p) => !p); setGenderDropdownOpen(false); }}
+              fieldKey="maritalStatus"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
+            />
+          </ScrollView>
         </View>
 
-        {/* ══ Emergency Contact + Bank Information ══ */}
-        <View style={styles.bottomCardRow}>
-          {/* Emergency Contact */}
-          <View style={[styles.sectionCard, styles.halfCard, { backgroundColor: colors.card }]}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: colors.dangerBg }]}>
-                <MaterialCommunityIcons name="phone-alert-outline" size={20} color={colors.danger} />
-              </View>
-              <Text style={[styles.sectionTitle, { fontSize: 14, color: colors.textPrimary }]}>{'Emergency\nContact'}</Text>
+        {/* ══ Emergency Contact ══ */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: colors.dangerBg }]}>
+              <MaterialCommunityIcons name="phone-alert-outline" size={20} color={colors.danger} />
             </View>
-            <InfoField label="Name" value={profile.emergencyName} editable fieldKey="emergencyName"
-              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            <InfoField label="Relationship" value={profile.relationship} editable fieldKey="relationship"
-              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            <InfoField label="Phone" value={profile.emergencyPhone} icon={<Feather name="phone" size={14} color={colors.textSecond} />} editable fieldKey="emergencyPhone" keyboardType="phone-pad"
-              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Emergency Contact</Text>
           </View>
+          <ScrollView
+            style={styles.cardScroll}
+            contentContainerStyle={styles.cardScrollContent}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
+          >
+            <InfoField label="Name" value={profile.emergencyName} editable={true} fieldKey="emergencyName"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Relationship" value={profile.relationship} editable={true} fieldKey="relationship"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Phone" value={profile.emergencyPhone} icon={<Feather name="phone" size={14} color={colors.textSecond} />} editable={true} fieldKey="emergencyPhone" keyboardType="phone-pad"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+          </ScrollView>
+        </View>
 
-          {/* Bank Information */}
-          <View style={[styles.sectionCard, styles.halfCard, { backgroundColor: colors.card }]}>
-            <View style={styles.sectionHeader}>
-              <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name="bank-outline" size={20} color={colors.brand} />
-              </View>
-              <Text style={[styles.sectionTitle, { fontSize: 14, color: colors.textPrimary }]}>{'Bank\nInformation'}</Text>
+        {/* ══ Bank Information ══ */}
+        <View style={[styles.sectionCard, { backgroundColor: colors.card }]}>
+          <View style={styles.sectionHeader}>
+            <View style={[styles.sectionIconWrap, { backgroundColor: colors.iconBg }]}>
+              <MaterialCommunityIcons name="bank-outline" size={20} color={colors.brand} />
             </View>
-            <InfoField label="Bank Name" value={profile.bankName} icon={<MaterialCommunityIcons name="bank" size={14} color={colors.textSecond} />} editable fieldKey="bankName"
-              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            <InfoField label="Account No" value={profile.accountNo} editable fieldKey="accountNo" keyboardType="numeric"
-              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-            <InfoField label="IFSC Code" value={profile.ifscCode} editable fieldKey="ifscCode"
-              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Bank Information</Text>
           </View>
+          <ScrollView
+            style={styles.cardScroll}
+            contentContainerStyle={styles.cardScrollContent}
+            nestedScrollEnabled={true}
+            showsVerticalScrollIndicator={false}
+          >
+            <InfoField label="Bank Name" value={profile.bankName} icon={<MaterialCommunityIcons name="bank" size={14} color={colors.textSecond} />} editable={true} fieldKey="bankName"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="Account No" value={profile.accountNo} editable={true} fieldKey="accountNo" keyboardType="numeric"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+            <InfoField label="IFSC Code" value={profile.ifscCode} editable={true} fieldKey="ifscCode"
+              isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
+          </ScrollView>
         </View>
 
         {/* ══ Security ══ */}
@@ -454,7 +423,7 @@ export default function AdminProfileScreen({ onNavigate, onBack }: AdminProfileS
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_reports')}>
           <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
         </TouchableOpacity>
@@ -507,15 +476,13 @@ const styles = StyleSheet.create({
   sectionIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#EFF6FF', justifyContent: 'center', alignItems: 'center' },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', flex: 1 },
 
-  /* Two-column layout */
-  twoColRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  twoColCell: { flex: 1 },
-  twoColDivider: { width: 1, backgroundColor: '#E2E8F0', marginHorizontal: 10, marginTop: 20, alignSelf: 'stretch' },
-  rowDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 6 },
-
-  /* Bottom side-by-side cards */
-  bottomCardRow: { flexDirection: 'row', gap: 12 },
-  halfCard: { flex: 1, padding: 14 },
+  /* Card Scrolling */
+  cardScroll: {
+    maxHeight: 240,
+  },
+  cardScrollContent: {
+    paddingBottom: 8,
+  },
 
   /* Fields */
   fieldWrapper: { marginBottom: 10 },

@@ -5,7 +5,6 @@ import {
   View,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
   ImageBackground,
   KeyboardAvoidingView,
   ScrollView,
@@ -14,8 +13,15 @@ import {
   Alert,
   Animated,
   Keyboard,
+  Modal,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '@/context/AuthContext';
+import { storageService, DEFAULT_BASE_URL } from '@/services/storageService';
+import CustomInput from '@/components/CustomInput';
+import PasswordInput from '@/components/PasswordInput';
+import CustomButton from '@/components/CustomButton';
+import Loader from '@/components/Loader';
 
 interface LoginScreenProps {
   onForgotPassword: () => void;
@@ -30,6 +36,23 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
   const slideAnim = useRef(new Animated.Value(200)).current; // starts 200px down
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const keyboardShift = useRef(new Animated.Value(0)).current;
+
+  const { login } = useAuth();
+
+  // Developer Settings States
+  const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+  const [serverUrl, setServerUrl] = useState(DEFAULT_BASE_URL);
+  const [tempUrl, setTempUrl] = useState('');
+
+  useEffect(() => {
+    async function loadServerUrl() {
+      const url = await storageService.getBaseUrl();
+      if (url) {
+        setServerUrl(url);
+      }
+    }
+    loadServerUrl();
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -74,29 +97,76 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
   // State variables for the form
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-
-  // Focus states for input styling
-  const [isUsernameFocused, setIsUsernameFocused] = useState(false);
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // References for programmatically triggering input focus
   const usernameInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
 
+  // Offline Bypass Sign In handler
+  const handleOfflineLogin = async (userVal: string) => {
+    setIsLoading(true);
+    try {
+      // Simulate brief loading for smooth transition UX
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      const result = await login(userVal, 'offline_bypass', true);
+      if (result.success && result.user) {
+        const loggedInUser = result.user;
+        if (loggedInUser.displayName.toUpperCase() === 'ADMIN' || loggedInUser.groupID === 5) {
+          if (onAdminSignIn) {
+            onAdminSignIn();
+          } else {
+            onSignInSuccess();
+          }
+        } else {
+          onSignInSuccess();
+        }
+      } else {
+        Alert.alert('Offline Bypass Failed', result.message);
+      }
+    } catch (e: any) {
+      Alert.alert('Offline Login Error', e.message || 'An unexpected bypass error occurred.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openSettings = async () => {
+    const url = await storageService.getBaseUrl() || DEFAULT_BASE_URL;
+    setTempUrl(url);
+    setIsSettingsVisible(true);
+  };
+
+  const handleSaveSettings = async () => {
+    if (!tempUrl.trim()) {
+      Alert.alert('Error', 'Base URL cannot be empty.');
+      return;
+    }
+    await storageService.setBaseUrl(tempUrl.trim());
+    setServerUrl(tempUrl.trim());
+    setIsSettingsVisible(false);
+    Alert.alert('Settings Saved', 'API Server URL updated successfully.');
+  };
+
+  const handleResetSettings = async () => {
+    await storageService.removeBaseUrl();
+    setServerUrl(DEFAULT_BASE_URL);
+    setTempUrl(DEFAULT_BASE_URL);
+    setIsSettingsVisible(false);
+    Alert.alert('Settings Reset', 'Reverted to default API Server URL.');
+  };
+
+  const handleQuickLogin = async (role: 'admin' | 'employee') => {
+    setIsSettingsVisible(false);
+    await handleOfflineLogin(role);
+  };
+
   // Form submission handler
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     const trimmedUsername = username.trim();
     if (!trimmedUsername) {
       Alert.alert('Validation Error', 'Please enter your Username.');
-      return;
-    }
-    
-    // Email regex validation (skip if admin)
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (trimmedUsername.toLowerCase() !== 'admin' && !emailRegex.test(trimmedUsername)) {
-      Alert.alert('Validation Error', 'Please enter a valid email address.');
       return;
     }
     
@@ -105,12 +175,41 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
       return;
     }
     
-    
-    // Transition to Dashboard or Admin Dashboard
-    if (trimmedUsername.toLowerCase() === 'admin' && onAdminSignIn) {
-      onAdminSignIn();
-    } else {
-      onSignInSuccess();
+    setIsLoading(true);
+    try {
+      const result = await login(trimmedUsername, password);
+      if (result.success && result.user) {
+        const loggedInUser = result.user;
+        if (loggedInUser.displayName.toUpperCase() === 'ADMIN' || loggedInUser.groupID === 5) {
+          if (onAdminSignIn) {
+            onAdminSignIn();
+          } else {
+            onSignInSuccess();
+          }
+        } else {
+          onSignInSuccess();
+        }
+      } else {
+        if (result.isNetworkError) {
+          Alert.alert(
+            'Connection Issue',
+            'Network Error: The login server is unreachable. Would you like to use Offline Demo Mode for testing?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Use Demo Mode',
+                onPress: () => handleOfflineLogin(trimmedUsername)
+              }
+            ]
+          );
+        } else {
+          Alert.alert('Login Failed', result.message);
+        }
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'An unexpected error occurred.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -130,6 +229,94 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
       behavior={undefined}
       style={styles.container}
     >
+      <Loader visible={isLoading} />
+
+      {/* Settings Gear Button */}
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={openSettings}
+        activeOpacity={0.7}
+      >
+        <MaterialCommunityIcons name="cog" size={22} color="#ffffff" />
+      </TouchableOpacity>
+
+      {/* Developer Settings Modal */}
+      <Modal
+        visible={isSettingsVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsSettingsVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Developer Settings</Text>
+              <TouchableOpacity onPress={() => setIsSettingsVisible(false)} activeOpacity={0.7}>
+                <MaterialCommunityIcons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <Text style={styles.inputLabel}>API SERVER URL (CURRENT: {serverUrl})</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={tempUrl}
+                onChangeText={setTempUrl}
+                placeholder="http://example.com/api"
+                autoCapitalize="none"
+                autoCorrect={false}
+                placeholderTextColor="#94a3b8"
+              />
+
+              <View style={styles.modalActionRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={handleSaveSettings}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.saveButtonText}>Save Changes</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.resetButton]}
+                  onPress={handleResetSettings}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.resetButtonText}>Reset to Default</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.divider} />
+
+              <Text style={styles.sectionHeaderTitle}>Testing Quick Bypass</Text>
+              <Text style={styles.sectionHeaderSubtitle}>
+                Bypass the server and login immediately with offline mock data.
+              </Text>
+
+              <View style={styles.quickLoginRow}>
+                <TouchableOpacity
+                  style={[styles.quickLoginButton, { backgroundColor: '#e2f6e9' }]}
+                  onPress={() => handleQuickLogin('admin')}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="shield-account" size={20} color="#16a34a" />
+                  <Text style={[styles.quickLoginText, { color: '#16a34a' }]}>Login as Admin</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.quickLoginButton, { backgroundColor: '#ebf2ff' }]}
+                  onPress={() => handleQuickLogin('employee')}
+                  activeOpacity={0.8}
+                >
+                  <MaterialCommunityIcons name="account" size={20} color="#0a52d6" />
+                  <Text style={[styles.quickLoginText, { color: '#0a52d6' }]}>Login as Staff</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
@@ -178,77 +365,24 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
           </Text>
 
           {/* Username Field */}
-          <Text style={styles.label}>USERNAME</Text>
-          <TouchableWithoutFeedback onPress={() => usernameInputRef.current?.focus()}>
-            <View
-              style={[
-                styles.inputWrapper,
-                isUsernameFocused && styles.inputWrapperFocused,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="email-outline"
-                size={20}
-                color={isUsernameFocused ? '#0c44ac' : '#94a3b8'}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                ref={usernameInputRef}
-                style={styles.textInput}
-                placeholder="Enter your email"
-                placeholderTextColor="#94a3b8"
-                value={username}
-                onChangeText={setUsername}
-                onFocus={() => setIsUsernameFocused(true)}
-                onBlur={() => setIsUsernameFocused(false)}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-              />
-            </View>
-          </TouchableWithoutFeedback>
+          <CustomInput
+            label="username"
+            iconName="email-outline"
+            inputRef={usernameInputRef}
+            placeholder="Enter your email"
+            value={username}
+            onChangeText={setUsername}
+            keyboardType="email-address"
+          />
 
           {/* Password Field */}
-          <Text style={styles.label}>PASSWORD</Text>
-          <TouchableWithoutFeedback onPress={() => passwordInputRef.current?.focus()}>
-            <View
-              style={[
-                styles.inputWrapper,
-                isPasswordFocused && styles.inputWrapperFocused,
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="lock-outline"
-                size={20}
-                color={isPasswordFocused ? '#0c44ac' : '#94a3b8'}
-                style={styles.inputIcon}
-              />
-              <TextInput
-                ref={passwordInputRef}
-                style={styles.textInput}
-                placeholder="Enter your password"
-                placeholderTextColor="#94a3b8"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!isPasswordVisible}
-                onFocus={() => setIsPasswordFocused(true)}
-                onBlur={() => setIsPasswordFocused(false)}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <TouchableOpacity
-                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                activeOpacity={0.6}
-              >
-                <MaterialCommunityIcons
-                  name={isPasswordVisible ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.eyeIcon}
-                />
-              </TouchableOpacity>
-            </View>
-          </TouchableWithoutFeedback>
+          <PasswordInput
+            label="password"
+            inputRef={passwordInputRef}
+            placeholder="Enter your password"
+            value={password}
+            onChangeText={setPassword}
+          />
 
           {/* Remember Me & Forgot Password Row */}
           <View style={styles.rowActions}>
@@ -271,14 +405,12 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
           </View>
 
           {/* Sign In Button */}
-          <TouchableOpacity
-            style={styles.button}
+          <CustomButton
+            title="Sign In"
             onPress={handleSignIn}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.buttonText}>Sign In</Text>
-            <MaterialCommunityIcons name="arrow-right" size={20} color="#ffffff" style={styles.buttonIcon} />
-          </TouchableOpacity>
+            isLoading={isLoading}
+            iconName="arrow-right"
+          />
 
           {/* Support Footer */}
           <View style={styles.footer}>
@@ -380,45 +512,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 28,
   },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#475569',
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 12,
-    height: 52,
-    paddingHorizontal: 16,
-    marginBottom: 20,
-    backgroundColor: '#f8fafc',
-  },
-  inputWrapperFocused: {
-    borderColor: '#0c44ac',
-    backgroundColor: '#ffffff',
-    shadowColor: '#0c44ac',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  inputIcon: {
-    marginRight: 12,
-  },
-  textInput: {
-    flex: 1,
-    height: 50,
-    color: '#0f172a',
-    fontSize: 15,
-  },
-  eyeIcon: {
-    marginLeft: 8,
-  },
   rowActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -439,28 +532,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#0c44ac',
   },
-  button: {
-    flexDirection: 'row',
-    backgroundColor: '#0c44ac',
-    borderRadius: 12,
-    height: 54,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#0c44ac',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
-    marginBottom: 32,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  buttonIcon: {
-    marginLeft: 8,
-  },
   footer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -474,5 +545,135 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#b45309', // Warm orange/brown link
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 56 : 24,
+    right: 20,
+    zIndex: 99,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: '85%',
+    paddingBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  modalBody: {
+    padding: 24,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748b',
+    letterSpacing: 0.8,
+    marginBottom: 8,
+  },
+  modalInput: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 14,
+    color: '#0f172a',
+    marginBottom: 20,
+  },
+  modalActionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  saveButton: {
+    backgroundColor: '#0c44ac',
+  },
+  saveButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  resetButton: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1',
+  },
+  resetButtonText: {
+    color: '#475569',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f1f5f9',
+    marginVertical: 12,
+    marginBottom: 24,
+  },
+  sectionHeaderTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 4,
+  },
+  sectionHeaderSubtitle: {
+    fontSize: 13,
+    color: '#64748b',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  quickLoginRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  quickLoginButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    gap: 8,
+  },
+  quickLoginText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

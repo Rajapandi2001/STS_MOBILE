@@ -534,7 +534,7 @@ export default function AdminStaffDetailScreen({
           <Text style={[styles.tabText, { color: colors.tabActive }]}>Staff</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_reports')}>
           <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
         </TouchableOpacity>

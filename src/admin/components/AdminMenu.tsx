@@ -13,6 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -25,6 +26,7 @@ export interface AdminMenuProps {
 export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { logout, user } = useAuth();
 
   const slideAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -78,9 +80,14 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
     }, 320);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setLogoutModalVisible(false);
     onClose();
+    try {
+      await logout();
+    } catch (e) {
+      console.error('Error during logout:', e);
+    }
     setTimeout(() => {
       onNavigate?.('login');
     }, 320);
@@ -99,8 +106,8 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
             <MaterialCommunityIcons name="account" size={28} color={colors.brand} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.textPrimary }]}>Admin</Text>
-            <Text style={[styles.profileRole, { color: colors.textSecond }]}>Admin</Text>
+            <Text style={[styles.profileName, { color: colors.textPrimary }]}>{user?.displayName || 'Admin'}</Text>
+            <Text style={[styles.profileRole, { color: colors.textSecond }]} numberOfLines={1}>{user?.userName || 'admin@cybervault.in'}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Feather name="x" size={22} color={colors.textPrimary} />

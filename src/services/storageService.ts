@@ -2,6 +2,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'user_profile';
+const BASE_URL_KEY = 'api_base_url';
+
+export const DEFAULT_BASE_URL = 'http://smartdigitalbuild360.com:91/STSMobileAPI/api';
 
 export const storageService = {
   async setToken(token: string): Promise<void> {
@@ -52,6 +55,31 @@ export const storageService = {
       await AsyncStorage.removeItem(USER_KEY);
     } catch (error) {
       console.error('Error removing user profile from storage:', error);
+    }
+  },
+
+  async getBaseUrl(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(BASE_URL_KEY);
+    } catch (error) {
+      console.error('Error getting base URL from storage:', error);
+      return null;
+    }
+  },
+
+  async setBaseUrl(url: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(BASE_URL_KEY, url);
+    } catch (error) {
+      console.error('Error setting base URL in storage:', error);
+    }
+  },
+
+  async removeBaseUrl(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(BASE_URL_KEY);
+    } catch (error) {
+      console.error('Error removing base URL from storage:', error);
     }
   },
 

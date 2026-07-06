@@ -88,13 +88,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   const [tempStartDate, setTempStartDate] = useState<string | null>(null);
   const [tempEndDate, setTempEndDate] = useState<string | null>(null);
 
-  const [selectedDept, setSelectedDept] = useState('Select Team / Department');
-  const [selectedStaff, setSelectedStaff] = useState('Select Staff Full Name');
-  const [selectedClient, setSelectedClient] = useState('All Clients');
-  const [selectedProject, setSelectedProject] = useState('All Projects');
-  const [selectedHoliday, setSelectedHoliday] = useState('All Holidays (Public & Custom)');
+  const [selectedDept, setSelectedDept] = useState('admin/hr/employee/manager/director');
+  const [selectedStaff, setSelectedStaff] = useState('Select Employee Full Name');
+  const [selectedClient, setSelectedClient] = useState('Select Corporate Client');
+  const [selectedProject, setSelectedProject] = useState('Select Active Project ID');
+  const [selectedHoliday, setSelectedHoliday] = useState('Select Calendar Holiday Event');
 
-  const departments = ['Select Team / Department', 'Admin', 'HR', 'Employee', 'Manager', 'Director', 'All Teams'];
+  const departments = ['admin/hr/employee/manager/director', 'Admin', 'HR', 'Employee', 'Manager', 'Director'];
 
   const recentReports = [
     {
@@ -406,7 +406,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
       } else {
         let csvContent = '';
         if (selectedCard === 'staff') {
-          csvContent = `Name,Department,Role,Status\n` + 
+          csvContent = `Name,Department,Role,Status\n` +
             STAFF_LIST.map(staff => `"${staff.name}","${staff.department}","${staff.role}","${staff.status}"`).join('\n') + '\n';
         } else if (selectedCard === 'client') {
           csvContent = `Client Name,Client ID,Email,Country,Status\n` +
@@ -418,7 +418,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           csvContent = `Holiday Name,Date,Emoji,Status\n` +
             HOLIDAY_LIST.map(h => `"${h.name}","${h.date}","${h.emoji}","${h.status}"`).join('\n') + '\n';
         }
-        
+
         const fileName = `${fileBaseName}.csv`;
         tempFileUri = `${FileSystem.documentDirectory}${fileName}`;
         await FileSystem.writeAsStringAsync(tempFileUri, csvContent, {
@@ -479,25 +479,25 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   const renderCalendarModal = () => {
     const totalDays = 31;
     const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
-    
+
     return (
       <Modal visible={dateModalOpen} transparent animationType="fade">
-        <TouchableOpacity 
-          style={[styles.modalBackdrop, { backgroundColor: colors.modalBackdrop }]} 
-          activeOpacity={1} 
+        <TouchableOpacity
+          style={[styles.modalBackdrop, { backgroundColor: colors.modalBackdrop }]}
+          activeOpacity={1}
           onPress={() => setDateModalOpen(false)}
         >
           <TouchableOpacity activeOpacity={1} style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]}>Select Date Range</Text>
             <Text style={[styles.calendarMonthHeader, { color: colors.textPrimary }]}>October 2023</Text>
-            
+
             {/* Weekdays */}
             <View style={styles.weekdayRow}>
               {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
                 <Text key={day} style={[styles.weekdayText, { color: colors.textSecond }]}>{day}</Text>
               ))}
             </View>
-            
+
             {/* Days Grid */}
             <View style={styles.daysGrid}>
               {daysArray.map(day => {
@@ -506,7 +506,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                 const isSelectedEnd = tempEndDate === dateStr;
                 const isSelected = isSelectedStart || isSelectedEnd;
                 const inRange = tempStartDate && tempEndDate && dateStr > tempStartDate && dateStr < tempEndDate;
-                
+
                 return (
                   <TouchableOpacity
                     key={day}
@@ -528,13 +528,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                 );
               })}
             </View>
-            
+
             <View style={styles.modalActions}>
               <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setDateModalOpen(false)}>
                 <Text style={[styles.modalCancelBtnText, { color: colors.textSecond }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalConfirmBtn, { backgroundColor: colors.brand }]} 
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, { backgroundColor: colors.brand }]}
                 onPress={handleConfirmDateRange}
               >
                 <Text style={styles.modalConfirmBtnText}>Confirm</Text>
@@ -554,8 +554,8 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             {/* Date Range Selector */}
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity 
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]} 
+              <TouchableOpacity
+                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
                 onPress={() => setDateModalOpen(true)}
               >
@@ -572,12 +572,12 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             {/* Team / Department Selector */}
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>TEAM / DEPARTMENT</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.dropdownSelector, 
+                  styles.dropdownSelector,
                   { backgroundColor: colors.cardAlt, borderColor: colors.border },
                   deptDropdownOpen && { borderColor: colors.brand }
-                ]} 
+                ]}
                 activeOpacity={0.7}
                 onPress={() => {
                   setDeptDropdownOpen(!deptDropdownOpen);
@@ -586,7 +586,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="users" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedDept === 'Select Team / Department' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedDept === 'admin/hr/employee/manager/director' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedDept}
                   </Text>
                 </View>
@@ -597,10 +597,10 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               {deptDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {departments.map((dept) => (
-                    <TouchableOpacity 
-                      key={dept} 
+                    <TouchableOpacity
+                      key={dept}
                       style={[
-                        styles.dropdownOption, 
+                        styles.dropdownOption,
                         { borderBottomColor: colors.borderLight },
                         selectedDept === dept && { backgroundColor: colors.brandBg }
                       ]}
@@ -611,7 +611,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                       activeOpacity={0.7}
                     >
                       <Text style={[
-                        styles.dropdownOptionText, 
+                        styles.dropdownOptionText,
                         { color: selectedDept === dept ? colors.brand : colors.textPrimary }
                       ]}>
                         {dept}
@@ -625,13 +625,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
             {/* Staff Name Selector */}
             <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>STAFF NAME</Text>
-              <TouchableOpacity 
+              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>FULL NAME</Text>
+              <TouchableOpacity
                 style={[
-                  styles.dropdownSelector, 
+                  styles.dropdownSelector,
                   { backgroundColor: colors.cardAlt, borderColor: colors.border },
                   staffDropdownOpen && { borderColor: colors.brand }
-                ]} 
+                ]}
                 activeOpacity={0.7}
                 onPress={() => {
                   setStaffDropdownOpen(!staffDropdownOpen);
@@ -640,7 +640,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="user" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedStaff === 'Select Staff Full Name' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedStaff === 'Select Employee Full Name' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedStaff}
                   </Text>
                 </View>
@@ -651,33 +651,33 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               {staffDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {/* Select Staff Option */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[
-                      styles.dropdownOption, 
+                      styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedStaff === 'Select Staff Full Name' && { backgroundColor: colors.brandBg }
+                      selectedStaff === 'Select Employee Full Name' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedStaff('Select Staff Full Name');
+                      setSelectedStaff('Select Employee Full Name');
                       setStaffDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
-                      styles.dropdownOptionText, 
-                      { color: selectedStaff === 'Select Staff Full Name' ? colors.brand : colors.textPrimary }
+                      styles.dropdownOptionText,
+                      { color: selectedStaff === 'Select Employee Full Name' ? colors.brand : colors.textPrimary }
                     ]}>
-                      Select Staff Full Name
+                      Select Employee Full Name
                     </Text>
-                    {selectedStaff === 'Select Staff Full Name' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedStaff === 'Select Employee Full Name' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Staff List Options */}
                   {STAFF_LIST.map((staff) => (
-                    <TouchableOpacity 
-                      key={staff.name} 
+                    <TouchableOpacity
+                      key={staff.name}
                       style={[
-                        styles.dropdownOption, 
+                        styles.dropdownOption,
                         { borderBottomColor: colors.borderLight },
                         selectedStaff === staff.name && { backgroundColor: colors.brandBg }
                       ]}
@@ -688,7 +688,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                       activeOpacity={0.7}
                     >
                       <Text style={[
-                        styles.dropdownOptionText, 
+                        styles.dropdownOptionText,
                         { color: selectedStaff === staff.name ? colors.brand : colors.textPrimary }
                       ]}>
                         {staff.name}
@@ -707,8 +707,8 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           <>
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity 
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]} 
+              <TouchableOpacity
+                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
                 onPress={() => setDateModalOpen(true)}
               >
@@ -724,12 +724,12 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>CLIENT NAME</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[
-                  styles.dropdownSelector, 
+                  styles.dropdownSelector,
                   { backgroundColor: colors.cardAlt, borderColor: colors.border },
                   clientDropdownOpen && { borderColor: colors.brand }
-                ]} 
+                ]}
                 activeOpacity={0.7}
                 onPress={() => {
                   setClientDropdownOpen(!clientDropdownOpen);
@@ -741,7 +741,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="briefcase" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedClient === 'All Clients' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedClient === 'Select Corporate Client' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedClient}
                   </Text>
                 </View>
@@ -752,33 +752,33 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               {clientDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {/* Select All Option */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[
-                      styles.dropdownOption, 
+                      styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedClient === 'All Clients' && { backgroundColor: colors.brandBg }
+                      selectedClient === 'Select Corporate Client' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedClient('All Clients');
+                      setSelectedClient('Select Corporate Client');
                       setClientDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
-                      styles.dropdownOptionText, 
-                      { color: selectedClient === 'All Clients' ? colors.brand : colors.textPrimary }
+                      styles.dropdownOptionText,
+                      { color: selectedClient === 'Select Corporate Client' ? colors.brand : colors.textPrimary }
                     ]}>
-                      All Clients
+                      Select Corporate Client
                     </Text>
-                    {selectedClient === 'All Clients' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedClient === 'Select Corporate Client' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Client List Options */}
                   {CLIENT_LIST.map((client) => (
-                    <TouchableOpacity 
-                      key={client.name} 
+                    <TouchableOpacity
+                      key={client.name}
                       style={[
-                        styles.dropdownOption, 
+                        styles.dropdownOption,
                         { borderBottomColor: colors.borderLight },
                         selectedClient === client.name && { backgroundColor: colors.brandBg }
                       ]}
@@ -789,7 +789,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                       activeOpacity={0.7}
                     >
                       <Text style={[
-                        styles.dropdownOptionText, 
+                        styles.dropdownOptionText,
                         { color: selectedClient === client.name ? colors.brand : colors.textPrimary }
                       ]}>
                         {client.name}
@@ -808,8 +808,8 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           <>
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity 
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]} 
+              <TouchableOpacity
+                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
                 onPress={() => setDateModalOpen(true)}
               >
@@ -824,13 +824,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             </View>
 
             <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>PROJECT</Text>
-              <TouchableOpacity 
+              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>PROJECT NAME</Text>
+              <TouchableOpacity
                 style={[
-                  styles.dropdownSelector, 
+                  styles.dropdownSelector,
                   { backgroundColor: colors.cardAlt, borderColor: colors.border },
                   projectDropdownOpen && { borderColor: colors.brand }
-                ]} 
+                ]}
                 activeOpacity={0.7}
                 onPress={() => {
                   setProjectDropdownOpen(!projectDropdownOpen);
@@ -842,7 +842,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="folder" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedProject === 'All Projects' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedProject === 'Select Active Project ID' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedProject}
                   </Text>
                 </View>
@@ -853,33 +853,33 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               {projectDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {/* Select All Option */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[
-                      styles.dropdownOption, 
+                      styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedProject === 'All Projects' && { backgroundColor: colors.brandBg }
+                      selectedProject === 'Select Active Project ID' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedProject('All Projects');
+                      setSelectedProject('Select Active Project ID');
                       setProjectDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
-                      styles.dropdownOptionText, 
-                      { color: selectedProject === 'All Projects' ? colors.brand : colors.textPrimary }
+                      styles.dropdownOptionText,
+                      { color: selectedProject === 'Select Active Project ID' ? colors.brand : colors.textPrimary }
                     ]}>
-                      All Projects
+                      Select Active Project ID
                     </Text>
-                    {selectedProject === 'All Projects' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedProject === 'Select Active Project ID' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Project List Options */}
                   {PROJECT_LIST.map((proj) => (
-                    <TouchableOpacity 
-                      key={proj.name} 
+                    <TouchableOpacity
+                      key={proj.name}
                       style={[
-                        styles.dropdownOption, 
+                        styles.dropdownOption,
                         { borderBottomColor: colors.borderLight },
                         selectedProject === proj.name && { backgroundColor: colors.brandBg }
                       ]}
@@ -890,7 +890,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                       activeOpacity={0.7}
                     >
                       <Text style={[
-                        styles.dropdownOptionText, 
+                        styles.dropdownOptionText,
                         { color: selectedProject === proj.name ? colors.brand : colors.textPrimary }
                       ]}>
                         {proj.name}
@@ -909,8 +909,8 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           <>
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity 
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]} 
+              <TouchableOpacity
+                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
                 onPress={() => setDateModalOpen(true)}
               >
@@ -925,13 +925,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             </View>
 
             <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>HOLIDAY TYPE</Text>
-              <TouchableOpacity 
+              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>HOLIDAY NAME</Text>
+              <TouchableOpacity
                 style={[
-                  styles.dropdownSelector, 
+                  styles.dropdownSelector,
                   { backgroundColor: colors.cardAlt, borderColor: colors.border },
                   holidayDropdownOpen && { borderColor: colors.brand }
-                ]} 
+                ]}
                 activeOpacity={0.7}
                 onPress={() => {
                   setHolidayDropdownOpen(!holidayDropdownOpen);
@@ -942,8 +942,8 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                 }}
               >
                 <View style={styles.dropdownLeftCol}>
-                  <Feather name="sun" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedHoliday === 'All Holidays (Public & Custom)' ? colors.textSecond : colors.textPrimary }]}>
+                  <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
+                  <Text style={[styles.dropdownText, { color: selectedHoliday === 'Select Calendar Holiday Event' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedHoliday}
                   </Text>
                 </View>
@@ -954,33 +954,33 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               {holidayDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {/* Select All Option */}
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[
-                      styles.dropdownOption, 
+                      styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedHoliday === 'All Holidays (Public & Custom)' && { backgroundColor: colors.brandBg }
+                      selectedHoliday === 'Select Calendar Holiday Event' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedHoliday('All Holidays (Public & Custom)');
+                      setSelectedHoliday('Select Calendar Holiday Event');
                       setHolidayDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
-                      styles.dropdownOptionText, 
-                      { color: selectedHoliday === 'All Holidays (Public & Custom)' ? colors.brand : colors.textPrimary }
+                      styles.dropdownOptionText,
+                      { color: selectedHoliday === 'Select Calendar Holiday Event' ? colors.brand : colors.textPrimary }
                     ]}>
-                      All Holidays (Public & Custom)
+                      Select Calendar Holiday Event
                     </Text>
-                    {selectedHoliday === 'All Holidays (Public & Custom)' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedHoliday === 'Select Calendar Holiday Event' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Holiday List Options */}
                   {HOLIDAY_LIST.map((hol) => (
-                    <TouchableOpacity 
-                      key={hol.name} 
+                    <TouchableOpacity
+                      key={hol.name}
                       style={[
-                        styles.dropdownOption, 
+                        styles.dropdownOption,
                         { borderBottomColor: colors.borderLight },
                         selectedHoliday === hol.name && { backgroundColor: colors.brandBg }
                       ]}
@@ -991,7 +991,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                       activeOpacity={0.7}
                     >
                       <Text style={[
-                        styles.dropdownOptionText, 
+                        styles.dropdownOptionText,
                         { color: selectedHoliday === hol.name ? colors.brand : colors.textPrimary }
                       ]}>
                         {hol.name}
@@ -1040,7 +1040,6 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
       >
         {/* Page Title & Description */}
         <View style={styles.pageHeaderContainer}>
-          <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Reports Hub</Text>
           <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
             Generate and manage team performance and operational reports.
           </Text>
@@ -1145,23 +1144,23 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
           <View style={{ height: 16 }} />
 
-          {/* Export Buttons (EXPORT PDF First, EXPORT EXCEL Second) */}
-          <TouchableOpacity 
-            style={[styles.exportBtnFilled, { backgroundColor: colors.textPrimary }]} 
-            activeOpacity={0.7}
-            onPress={() => handleExport('pdf')}
-          >
-            <MaterialCommunityIcons name="file-pdf-box" size={18} color={colors.card} style={{ marginRight: 8 }} />
-            <Text style={[styles.exportBtnFilledText, { color: colors.card }]}>EXPORT PDF</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.exportBtnDashed, { borderColor: colors.textPrimary, backgroundColor: 'transparent' }]} 
+          {/* Export Buttons (EXPORT EXCEL First (Filled), EXPORT PDF Second (Dashed)) */}
+          <TouchableOpacity
+            style={[styles.exportBtnFilled, { backgroundColor: colors.textPrimary }]}
             activeOpacity={0.7}
             onPress={() => handleExport('excel')}
           >
-            <MaterialCommunityIcons name="file-excel" size={18} color={colors.textPrimary} style={{ marginRight: 8 }} />
-            <Text style={[styles.exportBtnDashedText, { color: colors.textPrimary }]}>EXPORT EXCEL</Text>
+            <MaterialCommunityIcons name="file-excel" size={18} color={colors.card} style={{ marginRight: 8 }} />
+            <Text style={[styles.exportBtnFilledText, { color: colors.card }]}>EXPORT EXCEL</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.exportBtnDashed, { borderColor: colors.textPrimary, backgroundColor: 'transparent' }]}
+            activeOpacity={0.7}
+            onPress={() => handleExport('pdf')}
+          >
+            <MaterialCommunityIcons name="file-pdf-box" size={18} color={colors.textPrimary} style={{ marginRight: 8 }} />
+            <Text style={[styles.exportBtnDashedText, { color: colors.textPrimary }]}>EXPORT PDF</Text>
           </TouchableOpacity>
         </View>
 
