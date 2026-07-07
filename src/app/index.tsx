@@ -18,6 +18,9 @@ import ManagerCheckInLocationScreen from '@/manager/screens/ManagerCheckInLocati
 import ManagerCheckInSuccessScreen from '@/manager/screens/ManagerCheckInSuccessScreen';
 import ManagerLocationFailedScreen from '@/manager/screens/ManagerLocationFailedScreen';
 import ManagerAttendanceHistoryScreen from '@/manager/screens/ManagerAttendanceHistoryScreen';
+import ManagerRolesPermissionsScreen from '@/manager/screens/ManagerRolesPermissionsScreen';
+import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
+import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -73,7 +76,10 @@ type ScreenName =
   | 'admin_roles_permissions'
   | 'admin_role_detail'
   | 'admin_alerts'
-  | 'admin_reports';
+  | 'admin_reports'
+  | 'manager_roles_permissions'
+  | 'manager_help'
+  | 'manager_profile';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -206,6 +212,12 @@ function AppContent() {
       case 'admin_profile':
       case 'admin_help':
         transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+        return true;
+
+      case 'manager_roles_permissions':
+      case 'manager_help':
+      case 'manager_profile':
+        transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
         return true;
 
       case 'checkin_location':
@@ -580,6 +592,30 @@ function AppContent() {
         return (
           <AdminHelpScreen
             onBack={() => transitionTo('admin_dashboard', { menuOpen: true }, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'manager_roles_permissions':
+        return (
+          <ManagerRolesPermissionsScreen
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+            onBack={() => transitionTo('manager_dashboard', { menuOpen: true }, 'backward')}
+          />
+        );
+
+      case 'manager_help':
+        return (
+          <ManagerHelpScreen
+            onBack={() => transitionTo('manager_dashboard', { menuOpen: true }, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'manager_profile':
+        return (
+          <ManagerProfileScreen
+            onBack={() => transitionTo('manager_dashboard', { menuOpen: true }, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );

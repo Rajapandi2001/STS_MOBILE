@@ -119,7 +119,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
             activeOpacity={0.7}
-            onPress={() => handleNavigate('admin_profile', { source: 'menu' })}
+            onPress={() => handleNavigate('manager_profile', { source: 'menu' })}
           >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="account-outline" size={22} color={colors.brand} />
@@ -143,7 +143,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
             activeOpacity={0.7}
-            onPress={() => handleNavigate('roles_permissions', { source: 'menu' })}
+            onPress={() => handleNavigate('manager_roles_permissions', { source: 'menu' })}
           >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="shield-account-outline" size={22} color={colors.brand} />
@@ -155,7 +155,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
             activeOpacity={0.7}
-            onPress={() => handleNavigate('admin_help', { source: 'menu' })}
+            onPress={() => handleNavigate('manager_help', { source: 'menu' })}
           >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="help-circle-outline" size={22} color={colors.brand} />
