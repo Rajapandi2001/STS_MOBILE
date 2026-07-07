@@ -9,6 +9,7 @@ import {
   StatusBar,
   Alert,
   TextInput,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -17,7 +18,7 @@ import ManagerMenu from '../components/ManagerMenu';
 
 interface ManagerDashboardScreenProps {
   onNavigate?: (screen: any, params?: any) => void;
-  routeParams?: { menuOpen?: boolean };
+  routeParams?: { menuOpen?: boolean; tab?: string };
   isCheckedInGlobal?: boolean;
   checkInTimeGlobal?: Date | null;
   onCheckInPress?: () => void;
@@ -48,7 +49,23 @@ export default function ManagerDashboardScreen({
     if (routeParams?.menuOpen) {
       setMenuOpen(true);
     }
+    if (routeParams?.tab) {
+      setCurrentTab(routeParams.tab as any);
+    }
   }, [routeParams]);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (currentTab !== 'home') {
+        setCurrentTab('home');
+        return true;
+      }
+      return false;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [currentTab]);
 
   // Functional States
   const [isCheckedIn, setIsCheckedIn] = useState(false);
@@ -62,7 +79,7 @@ export default function ManagerDashboardScreen({
 
     if (isCheckedInGlobal && checkInTimeGlobal) {
       setIsCheckedIn(true);
-      
+
       const hours = checkInTimeGlobal.getHours();
       const minutes = checkInTimeGlobal.getMinutes().toString().padStart(2, '0');
       const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -194,7 +211,7 @@ export default function ManagerDashboardScreen({
         const minutes = now.getMinutes().toString().padStart(2, '0');
         const ampm = hours >= 12 ? 'PM' : 'AM';
         const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
-        
+
         setIsCheckedIn(true);
         setCheckInTime(`${formattedHours}:${minutes} ${ampm}`);
         setSecondsElapsed(0);
@@ -495,7 +512,7 @@ export default function ManagerDashboardScreen({
     for (let i = 1; i <= totalDays; i++) {
       const cellDate = new Date(year, month, i);
       const dayOfWeek = cellDate.getDay();
-      
+
       let status = 'none';
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         const hash = (year + month * 31 + i) % 15;
@@ -567,7 +584,7 @@ export default function ManagerDashboardScreen({
     for (let i = 1; i <= totalDays; i++) {
       const cellDate = new Date(year, month, i);
       const dayOfWeek = cellDate.getDay();
-      
+
       let status = 'none';
       if (dayOfWeek !== 0 && dayOfWeek !== 6) {
         const dateZero = new Date(year, month, i);
@@ -980,8 +997,8 @@ export default function ManagerDashboardScreen({
                         member.status === 'On-time'
                           ? '#F0FDF4'
                           : member.status === 'Late'
-                          ? '#FFFBEB'
-                          : '#FEF2F2',
+                            ? '#FFFBEB'
+                            : '#FEF2F2',
                     },
                   ]}
                 >
@@ -993,8 +1010,8 @@ export default function ManagerDashboardScreen({
                           member.status === 'On-time'
                             ? '#16A34A'
                             : member.status === 'Late'
-                            ? '#D97706'
-                            : '#EF4444',
+                              ? '#D97706'
+                              : '#EF4444',
                       },
                     ]}
                   >
@@ -1121,7 +1138,7 @@ export default function ManagerDashboardScreen({
         >
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
-            <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Good Morning, Lingesvaran</Text>
+            <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Welcome, Lingesvaran</Text>
             <Text style={[styles.welcomeDate, { color: colors.textSecond }]}>Monday, 20 Nov - 09:45 AM</Text>
           </View>
 
@@ -1181,10 +1198,51 @@ export default function ManagerDashboardScreen({
             <View style={[styles.statBox, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
               <View style={styles.statInfo}>
                 <Text style={[styles.statTitle, { color: '#991B1B' }]}>Absent</Text>
-                <Text style={[styles.statCount, { color: '#DC2626' }]}>8</Text>
+                <Text style={[styles.statCount, { color: '#EF4444' }]}>12</Text>
               </View>
               <View style={styles.redDecorationCircle} />
             </View>
+          </View>
+
+
+
+          {/* Pending Approvals Blue Banner */}
+          <TouchableOpacity
+            style={[styles.approvalsBanner, { backgroundColor: colors.brand }]}
+            activeOpacity={0.8}
+            onPress={() => setCurrentTab('approvals')}
+          >
+            <View style={styles.bannerDecorationCircle} />
+            <Text style={styles.bannerText}>Pending Approvals</Text>
+            <Text style={styles.bannerCount}>{pendingCount}</Text>
+          </TouchableOpacity>
+          {/* Quick Actions Header */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Quick Actions</Text>
+          </View>
+          {/* Leaves, Reports, Claims Grid */}
+          <View style={styles.gridContainer}>
+            {[
+              { name: 'Leaves', icon: 'calendar-blank', color: '#3B82F6' },
+              { name: 'Reports', icon: 'chart-bar', color: '#10B981' },
+              { name: 'Claims', icon: 'credit-card-outline', color: '#F59E0B' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.name}
+                style={[styles.gridCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={0.7}
+                onPress={() => {
+                  if (item.name === 'Claims') {
+                    onNavigate?.('manager_create_claim');
+                  }
+                }}
+              >
+                <View style={[styles.gridIconBg, { backgroundColor: colors.iconBg }]}>
+                  <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
+                </View>
+                <Text style={[styles.gridLabel, { color: colors.textPrimary }]}>{item.name}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           {/* Attendance Overview Card */}

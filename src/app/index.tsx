@@ -22,6 +22,7 @@ import ManagerRolesPermissionsScreen from '@/manager/screens/ManagerRolesPermiss
 import ManagerRoleDetailScreen from '@/manager/screens/ManagerRoleDetailScreen';
 import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
+import ManagerCreateClaimScreen from '@/manager/screens/ManagerCreateClaimScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -81,11 +82,12 @@ type ScreenName =
   | 'manager_roles_permissions'
   | 'manager_role_detail'
   | 'manager_help'
-  | 'manager_profile';
+  | 'manager_profile'
+  | 'manager_create_claim';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** Format a Date object to "09:05 AM" */
 function formatTime(d: Date): string {
@@ -167,13 +169,16 @@ function AppContent() {
       case 'admin_projects':
       case 'admin_holidays':
       case 'admin_companies':
-      case 'admin_assets':
+      case 'admin_assets': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        const destDashboard = isManager ? 'manager_dashboard' : 'admin_dashboard';
         if (navSource === 'menu') {
-          transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+          transitionTo(destDashboard, { menuOpen: true }, 'backward');
         } else {
-          transitionTo('admin_dashboard', undefined, 'backward');
+          transitionTo(destDashboard, undefined, 'backward');
         }
         return true;
+      }
 
       case 'admin_staff_detail':
         transitionTo('admin_staff', undefined, 'backward');
@@ -229,6 +234,10 @@ function AppContent() {
         transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
         return true;
 
+      case 'manager_create_claim':
+        transitionTo('manager_dashboard', undefined, 'backward');
+        return true;
+
       case 'checkin_location':
       case 'location_failed':
       case 'checkin_success':
@@ -261,18 +270,18 @@ function AppContent() {
     if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects' || nextScreen === 'admin_holidays' || nextScreen === 'admin_companies' || nextScreen === 'admin_assets') && params?.source) {
       setNavSource(params.source);
     }
-    
+
     // Set up overlapping state
     setNavDirection(direction);
     setPrevScreen(screen);
     setPrevScreenParams(screenParams);
-    
+
     setScreen(nextScreen);
     setScreenParams(params);
-    
+
     // Reset animation to 0 (start of transition)
     transitionAnim.setValue(0);
-    
+
     Animated.timing(transitionAnim, {
       toValue: 1,
       duration: 350,
@@ -303,7 +312,7 @@ function AppContent() {
       const durationMs = now.getTime() - checkInTime.getTime();
       const hrs = Math.floor(durationMs / 3600000);
       const mins = Math.floor((durationMs % 3600000) / 60000);
-      
+
       updated[0] = {
         ...updated[0],
         checkOut: formatTime(now),
@@ -638,6 +647,14 @@ function AppContent() {
           />
         );
 
+      case 'manager_create_claim':
+        return (
+          <ManagerCreateClaimScreen
+            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
@@ -749,13 +766,13 @@ function AppContent() {
       <View style={styles.container}>
         {/* Previous Screen */}
         {prevScreen && (
-          <Animated.View style={[StyleSheet.absoluteFill, { 
+          <Animated.View style={[StyleSheet.absoluteFill, {
             zIndex: navDirection === 'forward' ? 0 : 10,
-            transform: [{ 
+            transform: [{
               translateX: transitionAnim.interpolate({
                 inputRange: [0, 1],
                 outputRange: navDirection === 'forward' ? [0, -SCREEN_WIDTH * 0.3] : [0, SCREEN_WIDTH]
-              }) 
+              })
             }],
             shadowColor: '#000',
             shadowOffset: { width: -5, height: 0 },
@@ -768,9 +785,9 @@ function AppContent() {
         )}
 
         {/* Current/Incoming Screen */}
-        <Animated.View style={[StyleSheet.absoluteFill, { 
+        <Animated.View style={[StyleSheet.absoluteFill, {
           zIndex: navDirection === 'forward' ? 10 : 0,
-          transform: [{ 
+          transform: [{
             translateX: prevScreen ? transitionAnim.interpolate({
               inputRange: [0, 1],
               outputRange: navDirection === 'forward' ? [SCREEN_WIDTH, 0] : [-SCREEN_WIDTH * 0.3, 0]
@@ -806,4 +823,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-
