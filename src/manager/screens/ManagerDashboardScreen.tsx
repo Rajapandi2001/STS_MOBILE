@@ -1113,7 +1113,6 @@ export default function ManagerDashboardScreen({
         </View>
       </View>
 
-<<<<<<< Updated upstream
       {/* ── MAIN SCROLL CONTENT (HOME) ── */}
       {currentTab === 'home' && (
         <ScrollView
@@ -1124,48 +1123,6 @@ export default function ManagerDashboardScreen({
           <View style={styles.welcomeContainer}>
             <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Good Morning, Lingesvaran</Text>
             <Text style={[styles.welcomeDate, { color: colors.textSecond }]}>Monday, 20 Nov - 09:45 AM</Text>
-=======
-      {/* ── MAIN SCROLL CONTENT ── */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
-      >
-        {/* Welcome Text */}
-        <View style={styles.welcomeContainer}>
-          <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Welcome, Lingesvaran</Text>
-          <Text style={[styles.welcomeDate, { color: colors.textSecond }]}>Monday, 20 Nov - 09:45 AM</Text>
-        </View>
-
-        {/* Current Status Card */}
-        <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
-          <Text style={[styles.statusLocation, { color: colors.textPrimary }]}>
-            Location : {isCheckedIn ? 'HQ Block A' : 'Not checked in'}
-          </Text>
-
-          <View style={styles.statusTimesContainer}>
-            {/* Check-In */}
-            <View style={styles.statusTimeBox}>
-              <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name="logout" size={20} color={colors.brand} style={{ transform: [{ scaleX: -1 }] }} />
-              </View>
-              <View style={styles.statusTimeTextWrap}>
-                <Text style={[styles.timeLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
-                <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{checkInTime}</Text>
-              </View>
-            </View>
-
-            {/* Worked */}
-            <View style={styles.statusTimeBox}>
-              <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name="timer-sand" size={20} color={colors.brand} />
-              </View>
-              <View style={styles.statusTimeTextWrap}>
-                <Text style={[styles.timeLabel, { color: colors.textSecond }]}>WORKED</Text>
-                <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{workedHours}</Text>
-              </View>
-            </View>
->>>>>>> Stashed changes
           </View>
 
           {/* Current Status Card */}
@@ -1471,7 +1428,6 @@ export default function ManagerDashboardScreen({
                         setCalendarViewMode('calendar');
                       }}
                     >
-<<<<<<< Updated upstream
                       <Text
                         style={[
                           styles.selectorGridItemText,
@@ -1482,85 +1438,18 @@ export default function ManagerDashboardScreen({
                       </Text>
                     </TouchableOpacity>
                   ))}
-=======
-                      {m.substring(0, 3)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.calendarHeader}>
-                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Year</Text>
-                <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
-                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.selectorGrid}>
-                {yearOptions.map((y) => (
-                  <TouchableOpacity
-                    key={y}
-                    style={[
-                      styles.selectorGridItem,
-                      { backgroundColor: colors.iconBg },
-                      currentCalendarDate.getFullYear() === y && { backgroundColor: colors.brand }
-                    ]}
-                    onPress={() => {
-                      handleSelectYear(y);
-                      setCalendarViewMode('calendar');
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.selectorGridItemText,
-                        { color: currentCalendarDate.getFullYear() === y ? '#FFFFFF' : colors.textPrimary }
-                      ]}
-                    >
-                      {y}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Pending Approvals List */}
-        <View style={styles.pendingSectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pending Approvals</Text>
-          <TouchableOpacity onPress={() => setViewAllPending(!viewAllPending)}>
-            <Text style={[styles.viewAllText, { color: colors.brand }]}>
-              {viewAllPending ? 'Show Less' : 'View All'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.approvalsList}>
-          {pendingRequests.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
-          ) : (
-            (viewAllPending ? pendingRequests : pendingRequests.slice(0, 2)).map((req) => (
-              <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
-                <View style={styles.approvalDetails}>
-                  <Text style={[styles.approvalName, { color: colors.textPrimary }]}>{req.name}</Text>
-                  <Text style={[styles.approvalType, { color: colors.textSecond }]}>
-                    {req.type} {req.date ? `• ${req.date}` : req.detail ? `• ${req.detail}` : ''}
-                  </Text>
->>>>>>> Stashed changes
                 </View>
               </>
             )}
           </View>
 
-<<<<<<< Updated upstream
           {/* Pending Approvals List */}
           <View style={styles.pendingSectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pending Approvals</Text>
-            <TouchableOpacity onPress={() => setCurrentTab('approvals')}>
-              <Text style={[styles.viewAllText, { color: colors.brand }]}>View All</Text>
+            <TouchableOpacity onPress={() => setViewAllPending(!viewAllPending)}>
+              <Text style={[styles.viewAllText, { color: colors.brand }]}>
+                {viewAllPending ? 'Show Less' : 'View All'}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -1568,7 +1457,7 @@ export default function ManagerDashboardScreen({
             {pendingRequests.length === 0 ? (
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
             ) : (
-              pendingRequests.map((req) => (
+              (viewAllPending ? pendingRequests : pendingRequests.slice(0, 2)).map((req) => (
                 <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
                   <View style={styles.approvalDetails}>
@@ -1601,89 +1490,36 @@ export default function ManagerDashboardScreen({
           {/* This Week's Celebrations */}
           <View style={styles.pendingSectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{"This Week's Celebrations"}</Text>
-            <TouchableOpacity>
-              <Feather name="more-horizontal" size={18} color={colors.textSecond} />
+            <TouchableOpacity onPress={() => setViewAllCelebrations(!viewAllCelebrations)}>
+              <Text style={[styles.viewAllText, { color: colors.brand }]}>
+                {viewAllCelebrations ? 'Show Less' : 'View All'}
+              </Text>
             </TouchableOpacity>
           </View>
-=======
-        {/* This Week's Celebrations */}
-        <View style={styles.pendingSectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{"This Week's Celebrations"}</Text>
-          <TouchableOpacity onPress={() => setViewAllCelebrations(!viewAllCelebrations)}>
-            <Text style={[styles.viewAllText, { color: colors.brand }]}>
-              {viewAllCelebrations ? 'Show Less' : 'View All'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.celebrationsList}>
-          {celebrations.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No celebrations this week</Text>
-          ) : (
-            (viewAllCelebrations ? celebrations : celebrations.slice(0, 2)).map((celeb) => (
-              <View key={celeb.id} style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={styles.celebLeft}>
-                  <Image source={{ uri: celeb.avatar }} style={styles.celebAvatar} />
-                  <View style={styles.celebTextContainer}>
-                    <Text style={[styles.celebName, { color: colors.textPrimary }]}>{celeb.name}</Text>
-                    <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>{celeb.subtitle}</Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
-                  onPress={() => handleCelebrateAction(celeb.name, celeb.type as any)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.celebActionText, { color: colors.brand }]}>{celeb.actionLabel}</Text>
-                </TouchableOpacity>
-              </View>
-            ))
-          )}
-        </View>
->>>>>>> Stashed changes
 
           <View style={styles.celebrationsList}>
-            {/* Sarah Mitchell */}
-            <View style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.celebLeft}>
-                <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?fit=crop&w=100' }}
-                  style={styles.celebAvatar}
-                />
-                <View style={styles.celebTextContainer}>
-                  <Text style={[styles.celebName, { color: colors.textPrimary }]}>Sarah Mitchell</Text>
-                  <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>Birthday Tomorrow</Text>
+            {celebrations.length === 0 ? (
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No celebrations this week</Text>
+            ) : (
+              (viewAllCelebrations ? celebrations : celebrations.slice(0, 2)).map((celeb) => (
+                <View key={celeb.id} style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.celebLeft}>
+                    <Image source={{ uri: celeb.avatar }} style={styles.celebAvatar} />
+                    <View style={styles.celebTextContainer}>
+                      <Text style={[styles.celebName, { color: colors.textPrimary }]}>{celeb.name}</Text>
+                      <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>{celeb.subtitle}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
+                    onPress={() => handleCelebrateAction(celeb.name, celeb.type as any)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.celebActionText, { color: colors.brand }]}>{celeb.actionLabel}</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
-                onPress={() => handleCelebrateAction('Sarah Mitchell', 'birthday')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.celebActionText, { color: colors.brand }]}>WISH HER</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* David Chen Anniversary */}
-            <View style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.celebLeft}>
-                <Image
-                  source={{ uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=100' }}
-                  style={styles.celebAvatar}
-                />
-                <View style={styles.celebTextContainer}>
-                  <Text style={[styles.celebName, { color: colors.textPrimary }]}>David Chen</Text>
-                  <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>3rd Work Anniversary • May 15</Text>
-                </View>
-              </View>
-              <TouchableOpacity
-                style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
-                onPress={() => handleCelebrateAction('David Chen', 'anniversary')}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.celebActionText, { color: colors.brand }]}>CONGRATULATE</Text>
-              </TouchableOpacity>
-            </View>
+              ))
+            )}
           </View>
 
           {/* Recent Activity */}

@@ -98,7 +98,7 @@ export default function ManagerHelpScreen({ onNavigate, onBack }: ManagerHelpScr
         <TouchableOpacity
           style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
           activeOpacity={0.8}
-          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
+          onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
         >
           <Feather name="user" size={20} color={colors.brand} />
         </TouchableOpacity>

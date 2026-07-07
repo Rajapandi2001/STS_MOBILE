@@ -136,7 +136,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="lock-outline" size={22} color={colors.brand} />
             </View>
-            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Changepassword</Text>
+            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Change password</Text>
           </TouchableOpacity>
 
           {/* Roles & permissions */}

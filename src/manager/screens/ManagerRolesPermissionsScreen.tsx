@@ -125,7 +125,7 @@ export default function ManagerRolesPermissionsScreen({
         <TouchableOpacity
           style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
           activeOpacity={0.8}
-          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
+          onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
         >
           <Feather name="user" size={20} color={colors.brand} />
         </TouchableOpacity>
@@ -159,7 +159,7 @@ export default function ManagerRolesPermissionsScreen({
           <TouchableOpacity
             key={role.id}
             activeOpacity={0.8}
-            onPress={() => onNavigate?.('admin_role_detail', { roleId: role.id })}
+            onPress={() => onNavigate?.('manager_role_detail', { roleId: role.id })}
             style={[styles.roleCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
           >
             <View style={styles.cardTop}>

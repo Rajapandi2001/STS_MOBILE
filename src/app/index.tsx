@@ -19,6 +19,7 @@ import ManagerCheckInSuccessScreen from '@/manager/screens/ManagerCheckInSuccess
 import ManagerLocationFailedScreen from '@/manager/screens/ManagerLocationFailedScreen';
 import ManagerAttendanceHistoryScreen from '@/manager/screens/ManagerAttendanceHistoryScreen';
 import ManagerRolesPermissionsScreen from '@/manager/screens/ManagerRolesPermissionsScreen';
+import ManagerRoleDetailScreen from '@/manager/screens/ManagerRoleDetailScreen';
 import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
@@ -78,6 +79,7 @@ type ScreenName =
   | 'admin_alerts'
   | 'admin_reports'
   | 'manager_roles_permissions'
+  | 'manager_role_detail'
   | 'manager_help'
   | 'manager_profile';
 
@@ -215,6 +217,13 @@ function AppContent() {
         return true;
 
       case 'manager_roles_permissions':
+        transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
+        return true;
+
+      case 'manager_role_detail':
+        transitionTo('manager_roles_permissions', undefined, 'backward');
+        return true;
+
       case 'manager_help':
       case 'manager_profile':
         transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
@@ -601,6 +610,15 @@ function AppContent() {
           <ManagerRolesPermissionsScreen
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
             onBack={() => transitionTo('manager_dashboard', { menuOpen: true }, 'backward')}
+          />
+        );
+
+      case 'manager_role_detail':
+        return (
+          <ManagerRoleDetailScreen
+            roleId={screenParams?.roleId}
+            onBack={() => transitionTo('manager_roles_permissions', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
 
