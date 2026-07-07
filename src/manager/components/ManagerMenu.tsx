@@ -127,28 +127,28 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Profile</Text>
           </TouchableOpacity>
 
-          {/* Dashboard */}
+          {/* Change password */}
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
             activeOpacity={0.7}
-            onPress={onClose}
+            onPress={() => handleNavigate('change_password', { source: 'menu' })}
           >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="view-dashboard-outline" size={22} color={colors.brand} />
+              <MaterialCommunityIcons name="lock-outline" size={22} color={colors.brand} />
             </View>
-            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Manager Dashboard</Text>
+            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Changepassword</Text>
           </TouchableOpacity>
 
-          {/* Team */}
+          {/* Roles & permissions */}
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
             activeOpacity={0.7}
-            onPress={() => handleNavigate('admin_staff', { source: 'menu' })}
+            onPress={() => handleNavigate('roles_permissions', { source: 'menu' })}
           >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="account-group-outline" size={22} color={colors.brand} />
+              <MaterialCommunityIcons name="shield-account-outline" size={22} color={colors.brand} />
             </View>
-            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Team</Text>
+            <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Roles & permissions</Text>
           </TouchableOpacity>
 
           {/* Help */}
