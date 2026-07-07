@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Animated, Dimensions, StyleSheet, View, BackHandler } from 'react-native';
+import { Animated, Dimensions, StyleSheet, View, BackHandler, Alert } from 'react-native';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import SplashScreen from '@/common/screens/SplashScreen';
@@ -14,6 +14,10 @@ import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
 import ManagerDashboardScreen from '@/manager/screens/ManagerDashboardScreen';
+import ManagerCheckInLocationScreen from '@/manager/screens/ManagerCheckInLocationScreen';
+import ManagerCheckInSuccessScreen from '@/manager/screens/ManagerCheckInSuccessScreen';
+import ManagerLocationFailedScreen from '@/manager/screens/ManagerLocationFailedScreen';
+import ManagerAttendanceHistoryScreen from '@/manager/screens/ManagerAttendanceHistoryScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -118,6 +122,7 @@ function AppContent() {
   const [checkInTime, setCheckInTime] = useState<Date>(new Date());
   const [failedDistance, setFailedDistance] = useState<number>(0);
   const [checkInHistory, setCheckInHistory] = useState<AttendanceRecord[]>([]);
+  const [isCheckedIn, setIsCheckedIn] = useState<boolean>(false);
   // For smooth overlapping transitions
   const [prevScreen, setPrevScreen] = useState<ScreenName | null>(null);
   const [prevScreenParams, setPrevScreenParams] = useState<any>(null);
@@ -205,16 +210,12 @@ function AppContent() {
 
       case 'checkin_location':
       case 'location_failed':
-        transitionTo('dashboard', undefined, 'backward');
-        return true;
-
       case 'checkin_success':
-        transitionTo('dashboard', undefined, 'backward');
+      case 'attendance_history': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward');
         return true;
-
-      case 'attendance_history':
-        transitionTo('dashboard', undefined, 'backward');
-        return true;
+      }
 
       default:
         return false;
@@ -265,9 +266,31 @@ function AppContent() {
   const handleCheckInConfirmed = () => {
     const now = new Date();
     setCheckInTime(now);
+    setIsCheckedIn(true);
     // Save the real record with correct time & date
     setCheckInHistory(prev => [buildCheckInRecord(now), ...prev]);
     transitionTo('checkin_success');
+  };
+
+  const handleCheckOut = () => {
+    setIsCheckedIn(false);
+    // Update checkOut and total fields of the latest record
+    setCheckInHistory(prev => {
+      if (prev.length === 0) return prev;
+      const updated = [...prev];
+      const now = new Date();
+      const durationMs = now.getTime() - checkInTime.getTime();
+      const hrs = Math.floor(durationMs / 3600000);
+      const mins = Math.floor((durationMs % 3600000) / 60000);
+      
+      updated[0] = {
+        ...updated[0],
+        checkOut: formatTime(now),
+        total: `${hrs.toString().padStart(2, '0')}.${mins.toString().padStart(2, '0')} Hr`,
+      };
+      return updated;
+    });
+    Alert.alert('Success', 'Successfully checked out!');
   };
 
   const renderScreenComponent = (s: ScreenName, p: any) => {
@@ -346,6 +369,10 @@ function AppContent() {
           <ManagerDashboardScreen
             onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
             routeParams={p}
+            isCheckedInGlobal={isCheckedIn}
+            checkInTimeGlobal={isCheckedIn ? checkInTime : null}
+            onCheckInPress={() => transitionTo('checkin_location')}
+            onCheckOutPress={handleCheckOut}
           />
         );
 
@@ -558,7 +585,20 @@ function AppContent() {
         );
 
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
-      case 'checkin_location':
+      case 'checkin_location': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        if (isManager) {
+          return (
+            <ManagerCheckInLocationScreen
+              onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+              onConfirm={handleCheckInConfirmed}
+              onValidationFailed={(distance) => {
+                setFailedDistance(distance);
+                transitionTo('location_failed');
+              }}
+            />
+          );
+        }
         return (
           <CheckInLocationScreen
             onBack={() => transitionTo('dashboard', undefined, 'backward')}
@@ -569,8 +609,19 @@ function AppContent() {
             }}
           />
         );
+      }
 
-      case 'checkin_success':
+      case 'checkin_success': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        if (isManager) {
+          return (
+            <ManagerCheckInSuccessScreen
+              checkInTime={checkInTime}
+              locationName="HQ Block A"
+              onGoToHistory={() => transitionTo('attendance_history')}
+            />
+          );
+        }
         return (
           <CheckInSuccessScreen
             checkInTime={checkInTime}
@@ -578,8 +629,19 @@ function AppContent() {
             onGoToHistory={() => transitionTo('attendance_history')}
           />
         );
+      }
 
-      case 'location_failed':
+      case 'location_failed': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        if (isManager) {
+          return (
+            <ManagerLocationFailedScreen
+              distance={failedDistance}
+              onRetry={() => transitionTo('checkin_location')}
+              onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            />
+          );
+        }
         return (
           <LocationFailedScreen
             distance={failedDistance}
@@ -587,6 +649,7 @@ function AppContent() {
             onBack={() => transitionTo('dashboard', undefined, 'backward')}
           />
         );
+      }
 
       case 'admin_alerts':
         return (
@@ -604,13 +667,23 @@ function AppContent() {
           />
         );
 
-      case 'attendance_history':
+      case 'attendance_history': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        if (isManager) {
+          return (
+            <ManagerAttendanceHistoryScreen
+              liveRecords={checkInHistory}
+              onReturnHome={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            />
+          );
+        }
         return (
           <AttendanceHistoryScreen
             liveRecords={checkInHistory}
             onReturnHome={() => transitionTo('dashboard', undefined, 'backward')}
           />
         );
+      }
 
       default:
         return null;

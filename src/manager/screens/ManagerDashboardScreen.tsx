@@ -17,9 +17,20 @@ import ManagerMenu from '../components/ManagerMenu';
 interface ManagerDashboardScreenProps {
   onNavigate?: (screen: any, params?: any) => void;
   routeParams?: { menuOpen?: boolean };
+  isCheckedInGlobal?: boolean;
+  checkInTimeGlobal?: Date | null;
+  onCheckInPress?: () => void;
+  onCheckOutPress?: () => void;
 }
 
-export default function ManagerDashboardScreen({ onNavigate, routeParams }: ManagerDashboardScreenProps = {}) {
+export default function ManagerDashboardScreen({
+  onNavigate,
+  routeParams,
+  isCheckedInGlobal,
+  checkInTimeGlobal,
+  onCheckInPress,
+  onCheckOutPress,
+}: ManagerDashboardScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const { colors, toggleTheme, isDark } = useTheme();
 
@@ -37,7 +48,54 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
   const [checkInTime, setCheckInTime] = useState('00:00 AM/PM');
   const [workedHours, setWorkedHours] = useState('00.00 Hr');
   const [timerIntervalId, setTimerIntervalId] = useState<ReturnType<typeof setInterval> | null>(null);
-  const [, setSecondsElapsed] = useState(0);
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
+
+  useEffect(() => {
+    if (isCheckedInGlobal === undefined) return;
+
+    if (isCheckedInGlobal && checkInTimeGlobal) {
+      setIsCheckedIn(true);
+      
+      const hours = checkInTimeGlobal.getHours();
+      const minutes = checkInTimeGlobal.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
+      setCheckInTime(`${formattedHours}:${minutes} ${ampm}`);
+
+      const diffMs = Date.now() - checkInTimeGlobal.getTime();
+      const initialSeconds = Math.max(0, Math.floor(diffMs / 1000));
+      setSecondsElapsed(initialSeconds);
+
+      const initHrs = Math.floor(initialSeconds / 3600);
+      const initMins = Math.floor((initialSeconds % 3600) / 60);
+      setWorkedHours(`${initHrs}.${initMins.toString().padStart(2, '0')} Hr`);
+
+      const interval = setInterval(() => {
+        setSecondsElapsed(prev => {
+          const next = prev + 1;
+          const hrs = Math.floor(next / 3600);
+          const mins = Math.floor((next % 3600) / 60);
+          setWorkedHours(`${hrs}.${mins.toString().padStart(2, '0')} Hr`);
+          return next;
+        });
+      }, 1000);
+
+      setTimerIntervalId(interval);
+
+      return () => {
+        clearInterval(interval);
+      };
+    } else {
+      setIsCheckedIn(false);
+      setCheckInTime('00:00 AM/PM');
+      setWorkedHours('00.00 Hr');
+      setSecondsElapsed(0);
+      if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+        setTimerIntervalId(null);
+      }
+    }
+  }, [isCheckedInGlobal, checkInTimeGlobal]);
 
   // Pending Approvals state
   const [pendingCount, setPendingCount] = useState(5);
@@ -61,41 +119,49 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
   // Check In/Out handler
   const handleCheckInToggle = () => {
     if (!isCheckedIn) {
-      // Check In
-      const now = new Date();
-      const hours = now.getHours();
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      const ampm = hours >= 12 ? 'PM' : 'AM';
-      const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
-      
-      setIsCheckedIn(true);
-      setCheckInTime(`${formattedHours}:${minutes} ${ampm}`);
-      setSecondsElapsed(0);
-      setWorkedHours('00.00 Hr');
+      if (onCheckInPress) {
+        onCheckInPress();
+      } else {
+        // Check In Fallback
+        const now = new Date();
+        const hours = now.getHours();
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
+        
+        setIsCheckedIn(true);
+        setCheckInTime(`${formattedHours}:${minutes} ${ampm}`);
+        setSecondsElapsed(0);
+        setWorkedHours('00.00 Hr');
 
-      const interval = setInterval(() => {
-        setSecondsElapsed(prev => {
-          const next = prev + 1;
-          const hrs = Math.floor(next / 3600);
-          const mins = Math.floor((next % 3600) / 60);
-          const formattedMins = mins.toString().padStart(2, '0');
-          setWorkedHours(`${hrs}.${formattedMins} Hr`);
-          return next;
-        });
-      }, 1000);
+        const interval = setInterval(() => {
+          setSecondsElapsed(prev => {
+            const next = prev + 1;
+            const hrs = Math.floor(next / 3600);
+            const mins = Math.floor((next % 3600) / 60);
+            const formattedMins = mins.toString().padStart(2, '0');
+            setWorkedHours(`${hrs}.${formattedMins} Hr`);
+            return next;
+          });
+        }, 1000);
 
-      setTimerIntervalId(interval);
-      Alert.alert('Success', 'Successfully checked in!');
-    } else {
-      // Check Out
-      setIsCheckedIn(false);
-      setCheckInTime('00:00 AM/PM');
-      setWorkedHours('00.00 Hr');
-      if (timerIntervalId) {
-        clearInterval(timerIntervalId);
-        setTimerIntervalId(null);
+        setTimerIntervalId(interval);
+        Alert.alert('Success', 'Successfully checked in!');
       }
-      Alert.alert('Success', 'Successfully checked out!');
+    } else {
+      if (onCheckOutPress) {
+        onCheckOutPress();
+      } else {
+        // Check Out Fallback
+        setIsCheckedIn(false);
+        setCheckInTime('00:00 AM/PM');
+        setWorkedHours('00.00 Hr');
+        if (timerIntervalId) {
+          clearInterval(timerIntervalId);
+          setTimerIntervalId(null);
+        }
+        Alert.alert('Success', 'Successfully checked out!');
+      }
     }
   };
 
@@ -124,72 +190,166 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
     Alert.alert('Sent', `${action} successfully sent to ${name}!`);
   };
 
-  // Static Days for Attendance Overview Grid
-  const overviewDays = [
-    { day: 'Mon', active: false },
-    { day: 'Tue', active: false },
-    { day: 'Wed', active: true },
-    { day: 'Thu', active: false },
-    { day: 'Fri', active: false },
+
+
+  // Dynamic Attendance Overview Chart States
+  const [selectedWeekLabel, setSelectedWeekLabel] = useState('This Week');
+  const [overviewViewMode, setOverviewViewMode] = useState<'chart' | 'week_select'>('chart');
+  const [chartData, setChartData] = useState([
+    { h: '50%', l: 'Mon' },
+    { h: '75%', l: 'Tue' },
+    { h: '40%', l: 'Wed' },
+    { h: '95%', l: 'Thu' },
+    { h: '70%', l: 'Fri' }
+  ]);
+
+  const handleSelectWeek = (week: string) => {
+    setSelectedWeekLabel(week);
+    if (week === 'This Week') {
+      setChartData([
+        { h: '50%', l: 'Mon' },
+        { h: '75%', l: 'Tue' },
+        { h: '40%', l: 'Wed' },
+        { h: '95%', l: 'Thu' },
+        { h: '70%', l: 'Fri' }
+      ]);
+    } else if (week === 'Last Week') {
+      setChartData([
+        { h: '80%', l: 'Mon' },
+        { h: '60%', l: 'Tue' },
+        { h: '90%', l: 'Wed' },
+        { h: '50%', l: 'Thu' },
+        { h: '85%', l: 'Fri' }
+      ]);
+    } else if (week.includes('Week 1')) {
+      setChartData([
+        { h: '90%', l: 'Mon' },
+        { h: '95%', l: 'Tue' },
+        { h: '85%', l: 'Wed' },
+        { h: '90%', l: 'Thu' },
+        { h: '80%', l: 'Fri' }
+      ]);
+    } else if (week.includes('Week 2')) {
+      setChartData([
+        { h: '60%', l: 'Mon' },
+        { h: '70%', l: 'Tue' },
+        { h: '55%', l: 'Wed' },
+        { h: '80%', l: 'Thu' },
+        { h: '65%', l: 'Fri' }
+      ]);
+    } else if (week.includes('Week 3')) {
+      setChartData([
+        { h: '40%', l: 'Mon' },
+        { h: '50%', l: 'Tue' },
+        { h: '75%', l: 'Wed' },
+        { h: '60%', l: 'Thu' },
+        { h: '90%', l: 'Fri' }
+      ]);
+    } else {
+      setChartData([
+        { h: '70%', l: 'Mon' },
+        { h: '80%', l: 'Tue' },
+        { h: '85%', l: 'Wed' },
+        { h: '75%', l: 'Thu' },
+        { h: '95%', l: 'Fri' }
+      ]);
+    }
+  };
+
+  // Calendar States & Navigation
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+  const [calendarViewMode, setCalendarViewMode] = useState<'calendar' | 'month' | 'year'>('calendar');
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  // Calendar static data for October 2023 grid
-  const calendarGrid = [
-    [
-      { day: 25, current: false, status: 'none' },
-      { day: 26, current: false, status: 'none' },
-      { day: 27, current: false, status: 'none' },
-      { day: 28, current: false, status: 'none' },
-      { day: 29, current: false, status: 'none' },
-      { day: 30, current: false, status: 'none' },
-      { day: 1, current: true, status: 'holiday' },
-    ],
-    [
-      { day: 2, current: true, status: 'absent' },
-      { day: 3, current: true, status: 'absent' },
-      { day: 4, current: true, status: 'present' },
-      { day: 5, current: true, status: 'present' },
-      { day: 6, current: true, status: 'present' },
-      { day: 7, current: true, status: 'present' },
-      { day: 8, current: true, status: 'present' },
-    ],
-    [
-      { day: 9, current: true, status: 'present' },
-      { day: 10, current: true, status: 'present' },
-      { day: 11, current: true, status: 'present' },
-      { day: 12, current: true, status: 'present' },
-      { day: 13, current: true, status: 'present' },
-      { day: 14, current: true, status: 'present' },
-      { day: 15, current: true, status: 'leave' },
-    ],
-    [
-      { day: 16, current: true, status: 'present' },
-      { day: 17, current: true, status: 'present' },
-      { day: 18, current: true, status: 'present' },
-      { day: 19, current: true, status: 'present' },
-      { day: 20, current: true, status: 'halfday' },
-      { day: 21, current: true, status: 'present' },
-      { day: 22, current: true, status: 'present' },
-    ],
-    [
-      { day: 23, current: true, status: 'present' },
-      { day: 24, current: true, status: 'present', selected: true },
-      { day: 25, current: true, status: 'present' },
-      { day: 26, current: true, status: 'present' },
-      { day: 27, current: true, status: 'present' },
-      { day: 28, current: true, status: 'present' },
-      { day: 29, current: true, status: 'present' },
-    ],
-    [
-      { day: 30, current: true, status: 'present' },
-      { day: 31, current: true, status: 'present' },
-      { day: 1, current: false, status: 'none' },
-      { day: 2, current: false, status: 'none' },
-      { day: 3, current: false, status: 'none' },
-      { day: 4, current: false, status: 'none' },
-      { day: 5, current: false, status: 'none' },
-    ]
-  ];
+  const currentYear = new Date().getFullYear();
+  const yearOptions = Array.from({ length: 12 }, (_, i) => currentYear - 6 + i);
+
+  const handleSelectMonth = (monthIndex: number) => {
+    setCurrentCalendarDate(prev => new Date(prev.getFullYear(), monthIndex, 1));
+  };
+
+  const handleSelectYear = (year: number) => {
+    setCurrentCalendarDate(prev => new Date(year, prev.getMonth(), 1));
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const generateDynamicCalendarGrid = () => {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const totalDaysPrev = new Date(year, month, 0).getDate();
+
+    let startDayOffset = firstDay.getDay();
+    if (startDayOffset === 0) {
+      startDayOffset = 6;
+    } else {
+      startDayOffset -= 1;
+    }
+
+    const cells: { day: number; current: boolean; status: string; selected?: boolean }[] = [];
+
+    for (let i = startDayOffset - 1; i >= 0; i--) {
+      cells.push({
+        day: totalDaysPrev - i,
+        current: false,
+        status: 'none',
+      });
+    }
+
+    const today = new Date();
+    for (let i = 1; i <= totalDays; i++) {
+      const cellDate = new Date(year, month, i);
+      const dayOfWeek = cellDate.getDay();
+      
+      let status = 'none';
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        const hash = (year + month * 31 + i) % 15;
+        if (hash === 1) status = 'absent';
+        else if (hash === 2) status = 'leave';
+        else if (hash === 3) status = 'holiday';
+        else if (hash === 4) status = 'halfday';
+        else status = 'present';
+      }
+
+      const isToday = today.getDate() === i && today.getMonth() === month && today.getFullYear() === year;
+
+      cells.push({
+        day: i,
+        current: true,
+        status,
+        selected: isToday,
+      });
+    }
+
+    const remaining = 35 - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      cells.push({
+        day: i,
+        current: false,
+        status: 'none',
+      });
+    }
+
+    const finalCells = cells.slice(0, 35);
+    const rows = [];
+    for (let i = 0; i < finalCells.length; i += 7) {
+      rows.push(finalCells.slice(i, i + 7));
+    }
+    return rows;
+  };
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
@@ -205,7 +365,6 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
           <Feather name="menu" size={20} color={colors.brand} />
         </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { color: colors.brand }]}>Manager Dashboard</Text>
 
         <View style={styles.headerRight}>
           <TouchableOpacity
@@ -306,6 +465,7 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
 
         {/* Pending Approvals Blue Banner */}
         <View style={[styles.approvalsBanner, { backgroundColor: colors.brand }]}>
+          <View style={styles.bannerDecorationCircle} />
           <Text style={styles.bannerText}>Pending Approvals</Text>
           <Text style={styles.bannerCount}>{pendingCount}</Text>
         </View>
@@ -336,116 +496,258 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
         </View>
 
         <View style={[styles.overviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.overviewHeader}>
-            <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Attendance Overview</Text>
-            <View style={styles.dropdownSelector}>
-              <Text style={[styles.dropdownText, { color: colors.textSecond }]}>This Week</Text>
-              <Feather name="chevron-down" size={14} color={colors.textSecond} />
-            </View>
-          </View>
-
-          <View style={styles.daysRow}>
-            {overviewDays.map((d) => (
-              <View
-                key={d.day}
-                style={[
-                  styles.dayColumn,
-                  d.active && [styles.activeDayColumn, { backgroundColor: colors.brand }]
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.dayLabel,
-                    { color: d.active ? '#FFFFFF' : colors.textSecond }
-                  ]}
+          {overviewViewMode === 'chart' ? (
+            <>
+              <View style={styles.overviewHeader}>
+                <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Attendance Overview</Text>
+                <TouchableOpacity
+                  style={styles.dropdownSelector}
+                  activeOpacity={0.7}
+                  onPress={() => setOverviewViewMode('week_select')}
                 >
-                  {d.day}
-                </Text>
-                {d.active && <View style={styles.activeDayDot} />}
+                  <Text style={[styles.dropdownText, { color: colors.textSecond }]}>{selectedWeekLabel}</Text>
+                  <Feather name="chevron-down" size={14} color={colors.textSecond} />
+                </TouchableOpacity>
               </View>
-            ))}
-          </View>
+
+              <View style={styles.chartContainer}>
+                <View style={[styles.gridLine, { bottom: '0%', backgroundColor: colors.borderLight }]} />
+                <View style={[styles.gridLine, { bottom: '25%', backgroundColor: colors.borderLight }]} />
+                <View style={[styles.gridLine, { bottom: '50%', backgroundColor: colors.borderLight }]} />
+                <View style={[styles.gridLine, { bottom: '75%', backgroundColor: colors.borderLight }]} />
+                <View style={styles.barsRow}>
+                  {chartData.map((item) => (
+                    <View key={item.l} style={styles.barGroup}>
+                      <View style={[styles.bar, { height: item.h as any, backgroundColor: colors.brand }]} />
+                      <Text style={[styles.barLabel, { color: colors.textSecond }]}>{item.l}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.overviewHeader}>
+                <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Select Week</Text>
+                <TouchableOpacity onPress={() => setOverviewViewMode('chart')}>
+                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.selectorGrid}>
+                {[
+                  'This Week',
+                  'Last Week',
+                  'Week 1 (1st - 7th)',
+                  'Week 2 (8th - 14th)',
+                  'Week 3 (15th - 21st)',
+                  'Week 4 (22nd - End)'
+                ].map((week) => (
+                  <TouchableOpacity
+                    key={week}
+                    style={[
+                      styles.selectorGridItem,
+                      { backgroundColor: colors.iconBg },
+                      selectedWeekLabel === week && { backgroundColor: colors.brand }
+                    ]}
+                    onPress={() => {
+                      handleSelectWeek(week);
+                      setOverviewViewMode('chart');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorGridItemText,
+                        { color: selectedWeekLabel === week ? '#FFFFFF' : colors.textPrimary }
+                      ]}
+                    >
+                      {week.replace(' (1st - 7th)', '').replace(' (8th - 14th)', '').replace(' (15th - 21st)', '').replace(' (22nd - End)', '')}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
         </View>
 
         {/* Calendar Card */}
         <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.calendarHeader}>
-            <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>October 2023</Text>
-            <View style={styles.calendarArrows}>
-              <TouchableOpacity style={styles.arrowBtn}>
-                <Feather name="chevron-left" size={18} color={colors.textSecond} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.arrowBtn}>
-                <Feather name="chevron-right" size={18} color={colors.textSecond} />
-              </TouchableOpacity>
-            </View>
-          </View>
+          {calendarViewMode === 'calendar' ? (
+            <>
+              <View style={styles.calendarHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {/* Month Selector */}
+                  <TouchableOpacity
+                    onPress={() => setCalendarViewMode('month')}
+                    style={styles.calendarHeaderClickable}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                      {currentCalendarDate.toLocaleString('en-US', { month: 'long' })}
+                    </Text>
+                    <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                  </TouchableOpacity>
 
-          {/* Weekday Labels */}
-          <View style={styles.weekdayRow}>
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
-              <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
-            ))}
-          </View>
+                  {/* Year Selector */}
+                  <TouchableOpacity
+                    onPress={() => setCalendarViewMode('year')}
+                    style={[styles.calendarHeaderClickable, { marginLeft: 8 }]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                      {currentCalendarDate.getFullYear()}
+                    </Text>
+                    <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                  </TouchableOpacity>
+                </View>
 
-          {/* Days Grid */}
-          <View style={styles.calendarGrid}>
-            {calendarGrid.map((row, rIdx) => (
-              <View key={rIdx} style={styles.calendarRow}>
-                {row.map((cell, cIdx) => {
-                  let dotColor = 'transparent';
-                  if (cell.status === 'present') dotColor = '#22C55E';
-                  else if (cell.status === 'absent') dotColor = '#EF4444';
-                  else if (cell.status === 'leave') dotColor = '#F59E0B';
-                  else if (cell.status === 'holiday') dotColor = '#3B82F6';
-                  else if (cell.status === 'halfday') dotColor = '#A855F7';
-
-                  return (
-                    <View key={cIdx} style={styles.calendarCell}>
-                      <View
-                        style={[
-                          styles.dayNumberContainer,
-                          cell.selected && [styles.selectedDayNumber, { backgroundColor: colors.brand }]
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.dayNumberText,
-                            {
-                              color: cell.selected
-                                ? '#FFFFFF'
-                                : cell.current
-                                  ? colors.textPrimary
-                                  : colors.textEmpty
-                            }
-                          ]}
-                        >
-                          {cell.day}
-                        </Text>
-                      </View>
-                      <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
-                    </View>
-                  );
-                })}
+                <View style={styles.calendarArrows}>
+                  <TouchableOpacity style={styles.arrowBtn} onPress={handlePrevMonth}>
+                    <Feather name="chevron-left" size={18} color={colors.textSecond} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.arrowBtn} onPress={handleNextMonth}>
+                    <Feather name="chevron-right" size={18} color={colors.textSecond} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            ))}
-          </View>
 
-          {/* Legend */}
-          <View style={styles.legendContainer}>
-            {[
-              { label: 'PRESENT', color: '#22C55E' },
-              { label: 'ABSENT', color: '#EF4444' },
-              { label: 'LEAVE', color: '#F59E0B' },
-              { label: 'HOLIDAY', color: '#3B82F6' },
-              { label: 'HALF DAY', color: '#A855F7' },
-            ].map((leg) => (
-              <View key={leg.label} style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: leg.color }]} />
-                <Text style={[styles.legendText, { color: colors.textSecond }]}>{leg.label}</Text>
+              {/* Weekday Labels */}
+              <View style={styles.weekdayRow}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                  <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
+                ))}
               </View>
-            ))}
-          </View>
+
+              {/* Days Grid */}
+              <View style={styles.calendarGrid}>
+                {generateDynamicCalendarGrid().map((row, rIdx) => (
+                  <View key={rIdx} style={styles.calendarRow}>
+                    {row.map((cell, cIdx) => {
+                      let dotColor = 'transparent';
+                      if (cell.status === 'present') dotColor = '#22C55E';
+                      else if (cell.status === 'absent') dotColor = '#EF4444';
+                      else if (cell.status === 'leave') dotColor = '#F59E0B';
+                      else if (cell.status === 'holiday') dotColor = '#3B82F6';
+                      else if (cell.status === 'halfday') dotColor = '#A855F7';
+
+                      return (
+                        <View key={cIdx} style={styles.calendarCell}>
+                          <View
+                            style={[
+                              styles.dayNumberContainer,
+                              cell.selected && [styles.selectedDayNumber, { backgroundColor: colors.brand }]
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.dayNumberText,
+                                {
+                                  color: cell.selected
+                                    ? '#FFFFFF'
+                                    : cell.current
+                                      ? colors.textPrimary
+                                      : colors.textEmpty
+                                }
+                              ]}
+                            >
+                              {cell.day}
+                            </Text>
+                          </View>
+                          <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
+                        </View>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+
+              {/* Legend */}
+              <View style={styles.legendContainer}>
+                {[
+                  { label: 'PRESENT', color: '#22C55E' },
+                  { label: 'ABSENT', color: '#EF4444' },
+                  { label: 'LEAVE', color: '#F59E0B' },
+                  { label: 'HOLIDAY', color: '#3B82F6' },
+                  { label: 'HALF DAY', color: '#A855F7' },
+                ].map((leg) => (
+                  <View key={leg.label} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: leg.color }]} />
+                    <Text style={[styles.legendText, { color: colors.textSecond }]}>{leg.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : calendarViewMode === 'month' ? (
+            <>
+              <View style={styles.calendarHeader}>
+                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Month</Text>
+                <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
+                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.selectorGrid}>
+                {monthNames.map((m, idx) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[
+                      styles.selectorGridItem,
+                      { backgroundColor: colors.iconBg },
+                      currentCalendarDate.getMonth() === idx && { backgroundColor: colors.brand }
+                    ]}
+                    onPress={() => {
+                      handleSelectMonth(idx);
+                      setCalendarViewMode('calendar');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorGridItemText,
+                        { color: currentCalendarDate.getMonth() === idx ? '#FFFFFF' : colors.textPrimary }
+                      ]}
+                    >
+                      {m.substring(0, 3)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.calendarHeader}>
+                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Year</Text>
+                <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
+                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.selectorGrid}>
+                {yearOptions.map((y) => (
+                  <TouchableOpacity
+                    key={y}
+                    style={[
+                      styles.selectorGridItem,
+                      { backgroundColor: colors.iconBg },
+                      currentCalendarDate.getFullYear() === y && { backgroundColor: colors.brand }
+                    ]}
+                    onPress={() => {
+                      handleSelectYear(y);
+                      setCalendarViewMode('calendar');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorGridItemText,
+                        { color: currentCalendarDate.getFullYear() === y ? '#FFFFFF' : colors.textPrimary }
+                      ]}
+                    >
+                      {y}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
         </View>
 
         {/* Pending Approvals List */}
@@ -584,22 +886,7 @@ export default function ManagerDashboardScreen({ onNavigate, routeParams }: Mana
           ))}
         </View>
 
-        {/* Announcements */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Announcements</Text>
-        </View>
 
-        <View style={[styles.announcementCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <View style={styles.announcementIconBox}>
-            <MaterialCommunityIcons name="bullhorn-outline" size={24} color="#FD8D3C" />
-          </View>
-          <View style={styles.announcementTextWrap}>
-            <Text style={[styles.announcementTitle, { color: colors.textPrimary }]}>Townhall Meeting Scheduled</Text>
-            <Text style={[styles.announcementDesc, { color: colors.textSecond }]}>
-              Join us this Friday at 3 PM in the Main Auditorium for the Q4 kickoff and strategy alignment.
-            </Text>
-          </View>
-        </View>
       </ScrollView>
 
       {/* ── BOTTOM NAV TAB BAR ── */}
@@ -847,16 +1134,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  bannerDecorationCircle: {
+    position: 'absolute',
+    right: -10,
+    top: -10,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.15,
   },
   bannerText: {
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+    zIndex: 2,
   },
   bannerCount: {
     color: '#FFFFFF',
     fontSize: 22,
     fontWeight: '800',
+    zIndex: 2,
   },
   gridContainer: {
     flexDirection: 'row',
@@ -917,29 +1218,60 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  daysRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  dayColumn: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+  weekDropdownMenu: {
+    position: 'absolute',
+    top: 25,
+    right: 0,
+    width: 150,
     borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 4,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  activeDayColumn: {
-    alignItems: 'center',
+  dropdownItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
-  dayLabel: {
-    fontSize: 12,
+  dropdownItemText: {
+    fontSize: 11,
     fontWeight: '600',
   },
-  activeDayDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#FFFFFF',
-    marginTop: 4,
+  chartContainer: {
+    height: 180,
+    position: 'relative',
+    marginTop: 10,
+  },
+  gridLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+  },
+  barsRow: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: 10,
+  },
+  barGroup: {
+    alignItems: 'center',
+    height: '100%',
+    justifyContent: 'flex-end',
+    width: 30,
+  },
+  bar: {
+    width: 24,
+    borderRadius: 4,
+  },
+  barLabel: {
+    fontSize: 11,
+    marginTop: 8,
   },
   calendarCard: {
     borderRadius: 24,
@@ -955,6 +1287,33 @@ const styles = StyleSheet.create({
   },
   calendarTitle: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  calendarHeaderClickable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  selectorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'space-between',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  selectorGridItem: {
+    width: '30%',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  selectorGridItemText: {
+    fontSize: 13,
     fontWeight: '700',
   },
   calendarArrows: {

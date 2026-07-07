@@ -45,19 +45,19 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
 
   // ── Dashboard data ───────────────────────────────────────────────────────────
   const quickActions = [
-    { id: 1, name: 'Client',    icon: 'account-tie-outline' },
-    { id: 2, name: 'Project',   icon: 'briefcase-outline' },
-    { id: 3, name: 'Holiday',   icon: 'beach' },
+    { id: 1, name: 'Client', icon: 'account-tie-outline' },
+    { id: 2, name: 'Project', icon: 'briefcase-outline' },
+    { id: 3, name: 'Holiday', icon: 'beach' },
     { id: 4, name: 'Leave Set', icon: 'calendar-remove-outline' },
-    { id: 5, name: 'Company',   icon: 'office-building-outline' },
-    { id: 6, name: 'Assets',    icon: 'package-variant-closed' },
+    { id: 5, name: 'Company', icon: 'office-building-outline' },
+    { id: 6, name: 'Assets', icon: 'package-variant-closed' },
   ];
 
   const activities = [
-    { id: 1, title: 'New Proj',          time: '2h ago',    desc: 'Project Alpha assigned to Dev Team A.',          dotColor: colors.brand },
-    { id: 2, title: 'Role Updated',      time: '1h ago',    desc: 'System Admin permissions granted to G. Smith.',  dotColor: colors.amber },
-    { id: 3, title: 'Workflow Deployed', time: '3h ago',    desc: 'V2 Expense Approval workflow is now active.',    dotColor: colors.textSecond },
-    { id: 4, title: 'System Backup',     time: 'Yesterday', desc: 'Automated daily backup completed successfully.', dotColor: colors.success },
+    { id: 1, title: 'New Proj', time: '2h ago', desc: 'Project Alpha assigned to Dev Team A.', dotColor: colors.brand },
+    { id: 2, title: 'Role Updated', time: '1h ago', desc: 'System Admin permissions granted to G. Smith.', dotColor: colors.amber },
+    { id: 3, title: 'Workflow Deployed', time: '3h ago', desc: 'V2 Expense Approval workflow is now active.', dotColor: colors.textSecond },
+    { id: 4, title: 'System Backup', time: 'Yesterday', desc: 'Automated daily backup completed successfully.', dotColor: colors.success },
   ];
 
   return (
@@ -84,8 +84,8 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
           <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]} activeOpacity={0.8} onPress={toggleTheme}>
             <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]} 
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]}
             activeOpacity={0.8}
             onPress={() => onNavigate?.('admin_alerts')}
           >
@@ -118,11 +118,11 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
         {/* Overview Cards */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.overviewScroll}>
           {[
-            { label: 'Total Staff',  value: '120', badge: '+12%', icon: 'account-group' },
-            { label: 'Active Staff', value: '115', badge: '+4%',  icon: 'account-check' },
-            { label: 'Clients',      value: '18',  badge: '+2',   icon: 'account-tie' },
-            { label: 'Projects',     value: '32',  badge: '+5',   icon: 'briefcase-outline' },
-            { label: 'Holidays',     value: '12',  badge: 'Rem',  icon: 'beach', neutral: true },
+            { label: 'Total Staff', value: '120', badge: '+12%', icon: 'account-group' },
+            { label: 'Active Staff', value: '115', badge: '+4%', icon: 'account-check' },
+            { label: 'Clients', value: '18', badge: '+2', icon: 'account-tie' },
+            { label: 'Projects', value: '32', badge: '+5', icon: 'briefcase-outline' },
+            { label: 'Holidays', value: '12', badge: 'Rem', icon: 'beach', neutral: true },
           ].map((card) => (
             <View key={card.label} style={[styles.overviewCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
               <View style={styles.overviewHeader}>
@@ -184,7 +184,7 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
             <View style={[styles.gridLine, { bottom: '50%', backgroundColor: colors.borderLight }]} />
             <View style={[styles.gridLine, { bottom: '75%', backgroundColor: colors.borderLight }]} />
             <View style={styles.barsRow}>
-              {[['50%','Mon'],['70%','Tue'],['40%','Wed'],['90%','Thu'],['60%','Fri']].map(([h, l]) => (
+              {[['50%', 'Mon'], ['70%', 'Tue'], ['40%', 'Wed'], ['90%', 'Thu'], ['60%', 'Fri']].map(([h, l]) => (
                 <View key={l} style={styles.barGroup}>
                   <View style={[styles.bar, { height: h as any, backgroundColor: colors.brand }]} />
                   <Text style={[styles.barLabel, { color: colors.textSecond }]}>{l}</Text>
