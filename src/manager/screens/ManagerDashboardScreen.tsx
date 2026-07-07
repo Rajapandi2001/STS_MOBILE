@@ -8,6 +8,7 @@ import {
   Image,
   StatusBar,
   Alert,
+  TextInput,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
@@ -36,6 +37,12 @@ export default function ManagerDashboardScreen({
 
   // Navigation menu drawer state
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // Tab Navigation and Filter States
+  const [currentTab, setCurrentTab] = useState<'home' | 'team' | 'time' | 'approvals' | 'assets'>('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'on-time' | 'late' | 'absent'>('all');
+  const [showAllLogs, setShowAllLogs] = useState(false);
 
   useEffect(() => {
     if (routeParams?.menuOpen) {
@@ -256,9 +263,14 @@ export default function ManagerDashboardScreen({
     }
   };
 
-  // Calendar States & Navigation
+  // Calendar States & Navigation (Home Calendar)
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
   const [calendarViewMode, setCalendarViewMode] = useState<'calendar' | 'month' | 'year'>('calendar');
+
+  // Calendar States & Navigation (Team Calendar)
+  const [teamCalendarDate, setTeamCalendarDate] = useState(new Date());
+  const [teamCalendarViewMode, setTeamCalendarViewMode] = useState<'calendar' | 'month' | 'year'>('calendar');
+  const [teamSelectedDate, setTeamSelectedDate] = useState(new Date());
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -267,6 +279,16 @@ export default function ManagerDashboardScreen({
 
   const currentYear = new Date().getFullYear();
   const yearOptions = Array.from({ length: 12 }, (_, i) => currentYear - 6 + i);
+
+  const getDayOfWeekLabelStr = (date: Date) => {
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return days[date.getDay()];
+  };
+
+  const getMonthLabelStr = (monthIndex: number) => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return months[monthIndex];
+  };
 
   const handleSelectMonth = (monthIndex: number) => {
     setCurrentCalendarDate(prev => new Date(prev.getFullYear(), monthIndex, 1));
@@ -282,6 +304,107 @@ export default function ManagerDashboardScreen({
 
   const handleNextMonth = () => {
     setCurrentCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleSelectTeamMonth = (monthIndex: number) => {
+    setTeamCalendarDate(prev => new Date(prev.getFullYear(), monthIndex, 1));
+  };
+
+  const handleSelectTeamYear = (year: number) => {
+    setTeamCalendarDate(prev => new Date(year, prev.getMonth(), 1));
+  };
+
+  const handlePrevTeamMonth = () => {
+    setTeamCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  };
+
+  const handleNextTeamMonth = () => {
+    setTeamCalendarDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  // Team members list
+  const [teamMembers, setTeamMembers] = useState([
+    {
+      id: '1',
+      name: 'Sarah Jenkins',
+      initials: 'SJ',
+      checkInTime: '08:45 AM',
+      status: 'On-time',
+      avatarColor: '#E0F2FE',
+      textColor: '#0284C7',
+      dotColor: '#22C55E', // Green dot for on-time
+    },
+    {
+      id: '2',
+      name: 'Marcus Chen',
+      initials: 'MC',
+      checkInTime: '09:12 AM',
+      status: 'Late',
+      avatarColor: '#FFE4E6',
+      textColor: '#E11D48',
+      dotColor: '#F59E0B', // Orange dot for late
+    },
+    {
+      id: '3',
+      name: 'David Kim',
+      initials: 'DK',
+      checkInTime: '08:52 AM',
+      status: 'On-time',
+      avatarColor: '#F0FDF4',
+      textColor: '#16A34A',
+      dotColor: '#22C55E',
+    },
+    {
+      id: '4',
+      name: 'Alex Patel',
+      initials: 'AP',
+      checkInTime: 'No check-in',
+      status: 'Absent',
+      avatarColor: '#F1F5F9',
+      textColor: '#64748B',
+      dotColor: '#EF4444', // Red dot for absent
+    },
+    {
+      id: '5',
+      name: 'Priya Sharma',
+      initials: 'PS',
+      checkInTime: '08:58 AM',
+      status: 'On-time',
+      avatarColor: '#FAE8FF',
+      textColor: '#C084FC',
+      dotColor: '#22C55E',
+    },
+    {
+      id: '6',
+      name: 'Ryan Cooper',
+      initials: 'RC',
+      checkInTime: '09:30 AM',
+      status: 'Late',
+      avatarColor: '#FEF9C3',
+      textColor: '#CA8A04',
+      dotColor: '#F59E0B',
+    },
+  ]);
+
+  const filteredTeamMembers = teamMembers.filter(member => {
+    const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase());
+    if (activeFilter === 'all') return matchesSearch;
+    return matchesSearch && member.status.toLowerCase() === activeFilter.toLowerCase();
+  });
+
+  const getHolidayForMonth = (month: number, year: number) => {
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    for (let i = 1; i <= totalDays; i++) {
+      const cellDate = new Date(year, month, i);
+      const dayOfWeek = cellDate.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        const hash = (year + month * 31 + i) % 15;
+        if (hash === 3) {
+          return { day: i, label: 'Company Holiday' };
+        }
+      }
+    }
+    return { day: 25, label: 'Christmas Day' };
   };
 
   const generateDynamicCalendarGrid = () => {
@@ -351,19 +474,560 @@ export default function ManagerDashboardScreen({
     return rows;
   };
 
+  const generateDynamicTeamCalendarGrid = () => {
+    const year = teamCalendarDate.getFullYear();
+    const month = teamCalendarDate.getMonth();
+
+    const firstDay = new Date(year, month, 1);
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const totalDaysPrev = new Date(year, month, 0).getDate();
+
+    let startDayOffset = firstDay.getDay();
+    if (startDayOffset === 0) {
+      startDayOffset = 6;
+    } else {
+      startDayOffset -= 1;
+    }
+
+    const cells: { day: number; current: boolean; status: string; dateObj: Date }[] = [];
+
+    const prevMonth = month === 0 ? 11 : month - 1;
+    const prevMonthYear = month === 0 ? year - 1 : year;
+    for (let i = startDayOffset - 1; i >= 0; i--) {
+      const dNum = totalDaysPrev - i;
+      cells.push({
+        day: dNum,
+        current: false,
+        status: 'none',
+        dateObj: new Date(prevMonthYear, prevMonth, dNum)
+      });
+    }
+
+    const today = new Date();
+    const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    for (let i = 1; i <= totalDays; i++) {
+      const cellDate = new Date(year, month, i);
+      const dayOfWeek = cellDate.getDay();
+      
+      let status = 'none';
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        const dateZero = new Date(year, month, i);
+        if (dateZero < todayZero) {
+          if (i === 13) {
+            status = 'absent';
+          } else if (i === 16) {
+            status = 'halfday';
+          } else if (i === 22) {
+            status = 'leave';
+          } else {
+            status = 'present';
+          }
+        }
+      }
+
+      cells.push({
+        day: i,
+        current: true,
+        status,
+        dateObj: cellDate
+      });
+    }
+
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextMonthYear = month === 11 ? year + 1 : year;
+    const remaining = 35 - cells.length;
+    for (let i = 1; i <= remaining; i++) {
+      cells.push({
+        day: i,
+        current: false,
+        status: 'none',
+        dateObj: new Date(nextMonthYear, nextMonth, i)
+      });
+    }
+
+    const finalCells = cells.slice(0, 35);
+    const rows = [];
+    for (let i = 0; i < finalCells.length; i += 7) {
+      rows.push(finalCells.slice(i, i + 7));
+    }
+    return rows;
+  };
+
+  const renderTeamOverviewContent = () => {
+    const currentCalendarGrid = generateDynamicTeamCalendarGrid();
+    const holiday = getHolidayForMonth(teamCalendarDate.getMonth(), teamCalendarDate.getFullYear());
+    const holidayCount = currentCalendarGrid.reduce((count, row) => count + row.filter(cell => cell.current && cell.status === 'holiday').length, 0);
+
+    return (
+      <View style={{ marginTop: 16 }}>
+        {/* Search Bar Container */}
+        <View style={[styles.searchBarContainer, { backgroundColor: colors.iconBg, borderColor: colors.border }]}>
+          <Feather name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+            placeholder="Search team members..."
+            placeholderTextColor={colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        {/* Filter Pills */}
+        <View style={styles.filterPillsContainer}>
+          {(['all', 'on-time', 'late', 'absent'] as const).map((filter) => {
+            const isActive = activeFilter === filter;
+            const label = filter === 'all' ? 'All' : filter === 'on-time' ? 'On-time' : filter.charAt(0).toUpperCase() + filter.slice(1);
+            return (
+              <TouchableOpacity
+                key={filter}
+                style={[
+                  styles.filterPill,
+                  isActive
+                    ? { backgroundColor: colors.brand }
+                    : { backgroundColor: isDark ? colors.border : '#EFF6FF' },
+                ]}
+                onPress={() => setActiveFilter(filter)}
+              >
+                <Text
+                  style={[
+                    styles.filterPillText,
+                    isActive
+                      ? { color: '#FFFFFF', fontWeight: '700' }
+                      : { color: colors.textSecond },
+                  ]}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Team Attendance Header */}
+        <View style={styles.attendanceHeader}>
+          <View>
+            <Text style={[styles.attendanceTitle, { color: colors.textPrimary }]}>Team Attendance</Text>
+            <Text style={[styles.attendanceSubtitle, { color: colors.textSecond }]}>
+              {getDayOfWeekLabelStr(teamSelectedDate)}, {getMonthLabelStr(teamSelectedDate.getMonth())} {teamSelectedDate.getDate()}, {teamSelectedDate.getFullYear()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Calendar Card */}
+        <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          {teamCalendarViewMode === 'calendar' ? (
+            <>
+              <View style={styles.calendarHeader}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {/* Month Selector */}
+                  <TouchableOpacity
+                    onPress={() => setTeamCalendarViewMode('month')}
+                    style={styles.calendarHeaderClickable}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                      {teamCalendarDate.toLocaleString('en-US', { month: 'long' })}
+                    </Text>
+                    <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                  </TouchableOpacity>
+
+                  {/* Year Selector */}
+                  <TouchableOpacity
+                    onPress={() => setTeamCalendarViewMode('year')}
+                    style={[styles.calendarHeaderClickable, { marginLeft: 8 }]}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                      {teamCalendarDate.getFullYear()}
+                    </Text>
+                    <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.calendarArrows}>
+                  <TouchableOpacity style={styles.arrowBtn} onPress={handlePrevTeamMonth}>
+                    <Feather name="chevron-left" size={18} color={colors.textSecond} />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.arrowBtn} onPress={handleNextTeamMonth}>
+                    <Feather name="chevron-right" size={18} color={colors.textSecond} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Weekday Labels */}
+              <View style={styles.weekdayRow}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                  <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
+                ))}
+              </View>
+
+              {/* Days Grid */}
+              <View style={styles.calendarGrid}>
+                {currentCalendarGrid.map((row, rIdx) => (
+                  <View key={rIdx} style={styles.calendarRow}>
+                    {row.map((cell, cIdx) => {
+                      let dotColor = 'transparent';
+                      if (cell.status === 'present') dotColor = '#22C55E';
+                      else if (cell.status === 'absent') dotColor = '#EF4444';
+                      else if (cell.status === 'leave') dotColor = '#F59E0B';
+                      else if (cell.status === 'holiday') dotColor = '#3B82F6';
+                      else if (cell.status === 'halfday') dotColor = '#A855F7';
+
+                      const isSelected = cell.current &&
+                        cell.dateObj.getDate() === teamSelectedDate.getDate() &&
+                        cell.dateObj.getMonth() === teamSelectedDate.getMonth() &&
+                        cell.dateObj.getFullYear() === teamSelectedDate.getFullYear();
+
+                      return (
+                        <TouchableOpacity
+                          key={cIdx}
+                          style={styles.calendarCell}
+                          onPress={() => {
+                            if (cell.current) {
+                              setTeamSelectedDate(cell.dateObj);
+                            }
+                          }}
+                        >
+                          <View
+                            style={[
+                              styles.dayNumberContainer,
+                              isSelected && [styles.selectedDayNumber, { backgroundColor: colors.brand }]
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.dayNumberText,
+                                {
+                                  color: isSelected
+                                    ? '#FFFFFF'
+                                    : cell.current
+                                      ? colors.textPrimary
+                                      : colors.textEmpty
+                                }
+                              ]}
+                            >
+                              {cell.day}
+                            </Text>
+                          </View>
+                          <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                ))}
+              </View>
+
+              {/* Legend */}
+              <View style={styles.legendContainer}>
+                {[
+                  { label: 'PRESENT', color: '#22C55E' },
+                  { label: 'ABSENT', color: '#EF4444' },
+                  { label: 'LEAVE', color: '#F59E0B' },
+                  { label: 'HOLIDAY', color: '#3B82F6' },
+                  { label: 'HALF DAY', color: '#A855F7' },
+                ].map((leg) => (
+                  <View key={leg.label} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: leg.color }]} />
+                    <Text style={[styles.legendText, { color: colors.textSecond }]}>{leg.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : teamCalendarViewMode === 'month' ? (
+            <>
+              <View style={styles.calendarHeader}>
+                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Month</Text>
+                <TouchableOpacity onPress={() => setTeamCalendarViewMode('calendar')}>
+                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.selectorGrid}>
+                {monthNames.map((m, idx) => (
+                  <TouchableOpacity
+                    key={m}
+                    style={[
+                      styles.selectorGridItem,
+                      { backgroundColor: colors.iconBg },
+                      teamCalendarDate.getMonth() === idx && { backgroundColor: colors.brand }
+                    ]}
+                    onPress={() => {
+                      handleSelectTeamMonth(idx);
+                      setTeamCalendarViewMode('calendar');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorGridItemText,
+                        { color: teamCalendarDate.getMonth() === idx ? '#FFFFFF' : colors.textPrimary }
+                      ]}
+                    >
+                      {m.substring(0, 3)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          ) : (
+            <>
+              <View style={styles.calendarHeader}>
+                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Year</Text>
+                <TouchableOpacity onPress={() => setTeamCalendarViewMode('calendar')}>
+                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.selectorGrid}>
+                {yearOptions.map((y) => (
+                  <TouchableOpacity
+                    key={y}
+                    style={[
+                      styles.selectorGridItem,
+                      { backgroundColor: colors.iconBg },
+                      teamCalendarDate.getFullYear() === y && { backgroundColor: colors.brand }
+                    ]}
+                    onPress={() => {
+                      handleSelectTeamYear(y);
+                      setTeamCalendarViewMode('calendar');
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.selectorGridItemText,
+                        { color: teamCalendarDate.getFullYear() === y ? '#FFFFFF' : colors.textPrimary }
+                      ]}
+                    >
+                      {y}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          )}
+        </View>
+
+        {/* Stats Cards Row */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statsScrollContainer}
+          style={{ marginBottom: 20, marginTop: 20 }}
+        >
+          {/* Present card */}
+          <View style={[styles.statCardTeam, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.statCardHeader}>
+              <View style={[styles.statCardDot, { backgroundColor: '#22C55E' }]} />
+              <Text style={[styles.statCardLabel, { color: colors.textSecond }]}>Present</Text>
+            </View>
+            <Text style={[styles.statCardNumber, { color: colors.textPrimary }]}>42</Text>
+            <View style={[styles.statCardBadge, { backgroundColor: '#F0FDF4' }]}>
+              <Feather name="arrow-up-right" size={12} color="#16A34A" style={{ marginRight: 2 }} />
+              <Text style={[styles.statCardBadgeText, { color: '#16A34A' }]}>91%</Text>
+            </View>
+            <View style={[styles.cardDecoratorCircle, { backgroundColor: '#22C55E' }]} />
+          </View>
+
+          {/* Late card */}
+          <View style={[styles.statCardTeam, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.statCardHeader}>
+              <View style={[styles.statCardDot, { backgroundColor: '#F59E0B' }]} />
+              <Text style={[styles.statCardLabel, { color: colors.textSecond }]}>Late</Text>
+            </View>
+            <Text style={[styles.statCardNumber, { color: colors.textPrimary }]}>3</Text>
+            <View style={[styles.statCardBadge, { backgroundColor: '#FFFBEB' }]}>
+              <Feather name="clock" size={12} color="#D97706" style={{ marginRight: 2 }} />
+              <Text style={[styles.statCardBadgeText, { color: '#D97706' }]}>6.5%</Text>
+            </View>
+            <View style={[styles.cardDecoratorCircle, { backgroundColor: '#F59E0B' }]} />
+          </View>
+
+          {/* Absent card */}
+          <View style={[styles.statCardTeam, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.statCardHeader}>
+              <View style={[styles.statCardDot, { backgroundColor: '#EF4444' }]} />
+              <Text style={[styles.statCardLabel, { color: colors.textSecond }]}>Absent</Text>
+            </View>
+            <Text style={[styles.statCardNumber, { color: colors.textPrimary }]}>1</Text>
+            <View style={[styles.statCardBadge, { backgroundColor: '#FEF2F2' }]}>
+              <Feather name="x" size={12} color="#EF4444" style={{ marginRight: 2 }} />
+              <Text style={[styles.statCardBadgeText, { color: '#EF4444' }]}>2.1%</Text>
+            </View>
+            <View style={[styles.cardDecoratorCircle, { backgroundColor: '#EF4444' }]} />
+          </View>
+
+          {/* Holiday card */}
+          <View style={[styles.statCardTeam, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.statCardHeader}>
+              <View style={[styles.statCardDot, { backgroundColor: '#3B82F6' }]} />
+              <Text style={[styles.statCardLabel, { color: colors.textSecond }]}>Holiday</Text>
+            </View>
+            <Text style={[styles.statCardNumber, { color: colors.textPrimary }]}>
+              {holidayCount}
+            </Text>
+            <View style={[styles.statCardBadge, { backgroundColor: isDark ? colors.border : '#EFF6FF' }]}>
+              <Feather name="calendar" size={12} color="#3B82F6" style={{ marginRight: 2 }} />
+              <Text style={[styles.statCardBadgeText, { color: '#3B82F6' }]}>{getMonthLabelStr(teamCalendarDate.getMonth())} {holiday.day}</Text>
+            </View>
+            <View style={[styles.cardDecoratorCircle, { backgroundColor: '#3B82F6' }]} />
+          </View>
+        </ScrollView>
+
+        {/* Today's Logs */}
+        <View style={styles.teamLogsHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Today's Logs</Text>
+          {filteredTeamMembers.length > 4 && (
+            <TouchableOpacity onPress={() => setShowAllLogs(!showAllLogs)}>
+              <Text style={[styles.viewAllText, { color: colors.brand }]}>
+                {showAllLogs ? 'Show Less' : 'View All'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.teamLogsList}>
+          {filteredTeamMembers.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No team members found</Text>
+          ) : (
+            (showAllLogs ? filteredTeamMembers : filteredTeamMembers.slice(0, 4)).map((member) => (
+              <View key={member.id} style={[styles.teamLogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <View style={styles.teamLogAvatarWrap}>
+                  <View style={[styles.teamLogInitialsAvatar, { backgroundColor: member.avatarColor }]}>
+                    <Text style={[styles.teamLogInitialsText, { color: member.textColor }]}>
+                      {member.initials}
+                    </Text>
+                  </View>
+                  <View style={[styles.teamLogActiveDot, { backgroundColor: member.dotColor }]} />
+                </View>
+
+                <View style={styles.teamLogDetails}>
+                  <Text style={[styles.teamLogName, { color: colors.textPrimary }]}>{member.name}</Text>
+                  <View style={styles.teamLogCheckInWrap}>
+                    {member.status === 'Absent' ? (
+                      <Feather name="x" size={12} color={colors.textSecond} style={{ marginRight: 4 }} />
+                    ) : (
+                      <Feather name="log-in" size={12} color={colors.textSecond} style={{ marginRight: 4 }} />
+                    )}
+                    <Text style={[styles.teamLogCheckInText, { color: colors.textSecond }]}>
+                      {member.checkInTime}
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={[
+                    styles.statusBadge,
+                    {
+                      backgroundColor:
+                        member.status === 'On-time'
+                          ? '#F0FDF4'
+                          : member.status === 'Late'
+                          ? '#FFFBEB'
+                          : '#FEF2F2',
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBadgeText,
+                      {
+                        color:
+                          member.status === 'On-time'
+                            ? '#16A34A'
+                            : member.status === 'Late'
+                            ? '#D97706'
+                            : '#EF4444',
+                      },
+                    ]}
+                  >
+                    {member.status}
+                  </Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      </View>
+    );
+  };
+
+  const renderPlaceholderTab = (tabName: string) => (
+    <View style={styles.placeholderContainer}>
+      <MaterialCommunityIcons
+        name={
+          tabName === 'time'
+            ? 'clock-outline'
+            : 'package-variant-closed'
+        }
+        size={64}
+        color={colors.textMuted}
+        style={{ marginBottom: 16 }}
+      />
+      <Text style={[styles.placeholderTitle, { color: colors.textPrimary }]}>
+        {tabName.charAt(0).toUpperCase() + tabName.slice(1)} Screen
+      </Text>
+      <Text style={[styles.placeholderDesc, { color: colors.textSecond }]}>
+        This section is currently under development. Please check back later.
+      </Text>
+    </View>
+  );
+
+  const renderApprovalsTab = () => (
+    <View style={{ marginTop: 8 }}>
+      <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>Pending Approvals</Text>
+      {pendingRequests.length === 0 ? (
+        <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
+      ) : (
+        pendingRequests.map((req) => (
+          <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
+            <View style={styles.approvalDetails}>
+              <Text style={[styles.approvalName, { color: colors.textPrimary }]}>{req.name}</Text>
+              <Text style={[styles.approvalType, { color: colors.textSecond }]}>
+                {req.type} {req.date ? `• ${req.date}` : req.detail ? `• ${req.detail}` : ''}
+              </Text>
+            </View>
+            <View style={styles.approvalActions}>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.approveBtn, { backgroundColor: '#F0FDF4' }]}
+                onPress={() => handleApprove(req.id, req.name)}
+                activeOpacity={0.7}
+              >
+                <Feather name="check" size={16} color="#16A34A" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.rejectBtn, { backgroundColor: '#FEF2F2' }]}
+                onPress={() => handleReject(req.id, req.name)}
+                activeOpacity={0.7}
+              >
+                <Feather name="x" size={16} color="#EF4444" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+    </View>
+  );
+
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── HEADER ── */}
       <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Feather name="menu" size={20} color={colors.brand} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          {currentTab === 'team' && (
+            <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+              Team Overview
+            </Text>
+          )}
+        </View>
 
 
         <View style={styles.headerRight}>
@@ -390,530 +1054,539 @@ export default function ManagerDashboardScreen({
         </View>
       </View>
 
-      {/* ── MAIN SCROLL CONTENT ── */}
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
-      >
-        {/* Welcome Text */}
-        <View style={styles.welcomeContainer}>
-          <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Good Morning, Lingesvaran</Text>
-          <Text style={[styles.welcomeDate, { color: colors.textSecond }]}>Monday, 20 Nov - 09:45 AM</Text>
-        </View>
-
-        {/* Current Status Card */}
-        <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
-          <Text style={[styles.statusLocation, { color: colors.textPrimary }]}>
-            Location : {isCheckedIn ? 'HQ Block A' : 'Not checked in'}
-          </Text>
-
-          <View style={styles.statusTimesContainer}>
-            {/* Check-In */}
-            <View style={styles.statusTimeBox}>
-              <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name="logout" size={20} color={colors.brand} style={{ transform: [{ scaleX: -1 }] }} />
-              </View>
-              <View style={styles.statusTimeTextWrap}>
-                <Text style={[styles.timeLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
-                <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{checkInTime}</Text>
-              </View>
-            </View>
-
-            {/* Worked */}
-            <View style={styles.statusTimeBox}>
-              <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name="timer-sand" size={20} color={colors.brand} />
-              </View>
-              <View style={styles.statusTimeTextWrap}>
-                <Text style={[styles.timeLabel, { color: colors.textSecond }]}>WORKED</Text>
-                <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{workedHours}</Text>
-              </View>
-            </View>
+      {/* ── MAIN SCROLL CONTENT (HOME) ── */}
+      {currentTab === 'home' && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
+        >
+          {/* Welcome Text */}
+          <View style={styles.welcomeContainer}>
+            <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Good Morning, Lingesvaran</Text>
+            <Text style={[styles.welcomeDate, { color: colors.textSecond }]}>Monday, 20 Nov - 09:45 AM</Text>
           </View>
 
-          {/* Action Button */}
-          <TouchableOpacity
-            style={[styles.checkInBtn, { backgroundColor: isCheckedIn ? '#EF4444' : colors.brand }]}
-            onPress={handleCheckInToggle}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.checkInBtnText}>
-              {isCheckedIn ? 'Check Out' : 'Check In'}
+          {/* Current Status Card */}
+          <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
+            <Text style={[styles.statusLocation, { color: colors.textPrimary }]}>
+              Location : {isCheckedIn ? 'HQ Block A' : 'Not checked in'}
             </Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Present & Absent Stats */}
-        <View style={styles.statsRow}>
-          <View style={[styles.statBox, { backgroundColor: '#EFF6FF', borderColor: '#DBEAFE' }]}>
-            <View style={styles.statInfo}>
-              <Text style={[styles.statTitle, { color: '#1E3A8A' }]}>Present</Text>
-              <Text style={[styles.statCount, { color: '#0A52D6' }]}>142</Text>
+            <View style={styles.statusTimesContainer}>
+              {/* Check-In */}
+              <View style={styles.statusTimeBox}>
+                <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
+                  <MaterialCommunityIcons name="logout" size={20} color={colors.brand} style={{ transform: [{ scaleX: -1 }] }} />
+                </View>
+                <View style={styles.statusTimeTextWrap}>
+                  <Text style={[styles.timeLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
+                  <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{checkInTime}</Text>
+                </View>
+              </View>
+
+              {/* Worked */}
+              <View style={styles.statusTimeBox}>
+                <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
+                  <MaterialCommunityIcons name="timer-sand" size={20} color={colors.brand} />
+                </View>
+                <View style={styles.statusTimeTextWrap}>
+                  <Text style={[styles.timeLabel, { color: colors.textSecond }]}>WORKED</Text>
+                  <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{workedHours}</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.blueDecorationCircle} />
-          </View>
 
-          <View style={[styles.statBox, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
-            <View style={styles.statInfo}>
-              <Text style={[styles.statTitle, { color: '#991B1B' }]}>Absent</Text>
-              <Text style={[styles.statCount, { color: '#EF4444' }]}>12</Text>
-            </View>
-            <View style={styles.redDecorationCircle} />
-          </View>
-        </View>
-
-        {/* Pending Approvals Blue Banner */}
-        <View style={[styles.approvalsBanner, { backgroundColor: colors.brand }]}>
-          <View style={styles.bannerDecorationCircle} />
-          <Text style={styles.bannerText}>Pending Approvals</Text>
-          <Text style={styles.bannerCount}>{pendingCount}</Text>
-        </View>
-
-        {/* Leaves, Reports, Claims Grid */}
-        <View style={styles.gridContainer}>
-          {[
-            { name: 'Leaves', icon: 'calendar-blank', color: '#3B82F6' },
-            { name: 'Reports', icon: 'chart-bar', color: '#10B981' },
-            { name: 'Claims', icon: 'credit-card-outline', color: '#F59E0B' },
-          ].map((item) => (
+            {/* Action Button */}
             <TouchableOpacity
-              key={item.name}
-              style={[styles.gridCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-              activeOpacity={0.7}
+              style={[styles.checkInBtn, { backgroundColor: isCheckedIn ? '#EF4444' : colors.brand }]}
+              onPress={handleCheckInToggle}
+              activeOpacity={0.8}
             >
-              <View style={[styles.gridIconBg, { backgroundColor: colors.iconBg }]}>
-                <MaterialCommunityIcons name={item.icon as any} size={22} color={item.color} />
-              </View>
-              <Text style={[styles.gridLabel, { color: colors.textPrimary }]}>{item.name}</Text>
+              <Text style={styles.checkInBtnText}>
+                {isCheckedIn ? 'Check Out' : 'Check In'}
+              </Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          </View>
 
-        {/* Quick Actions / Attendance Overview */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Quick Actions</Text>
-        </View>
-
-        <View style={[styles.overviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {overviewViewMode === 'chart' ? (
-            <>
-              <View style={styles.overviewHeader}>
-                <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Attendance Overview</Text>
-                <TouchableOpacity
-                  style={styles.dropdownSelector}
-                  activeOpacity={0.7}
-                  onPress={() => setOverviewViewMode('week_select')}
-                >
-                  <Text style={[styles.dropdownText, { color: colors.textSecond }]}>{selectedWeekLabel}</Text>
-                  <Feather name="chevron-down" size={14} color={colors.textSecond} />
-                </TouchableOpacity>
+          {/* Present & Absent Stats */}
+          <View style={styles.statsRow}>
+            <View style={[styles.statBox, { backgroundColor: '#EFF6FF', borderColor: '#DBEAFE' }]}>
+              <View style={styles.statInfo}>
+                <Text style={[styles.statTitle, { color: '#1E3A8A' }]}>Present</Text>
+                <Text style={[styles.statCount, { color: '#0A52D6' }]}>142</Text>
               </View>
+              <View style={styles.blueDecorationCircle} />
+            </View>
 
-              <View style={styles.chartContainer}>
-                <View style={[styles.gridLine, { bottom: '0%', backgroundColor: colors.borderLight }]} />
-                <View style={[styles.gridLine, { bottom: '25%', backgroundColor: colors.borderLight }]} />
-                <View style={[styles.gridLine, { bottom: '50%', backgroundColor: colors.borderLight }]} />
-                <View style={[styles.gridLine, { bottom: '75%', backgroundColor: colors.borderLight }]} />
-                <View style={styles.barsRow}>
-                  {chartData.map((item) => (
-                    <View key={item.l} style={styles.barGroup}>
-                      <View style={[styles.bar, { height: item.h as any, backgroundColor: colors.brand }]} />
-                      <Text style={[styles.barLabel, { color: colors.textSecond }]}>{item.l}</Text>
+            <View style={[styles.statBox, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}>
+              <View style={styles.statInfo}>
+                <Text style={[styles.statTitle, { color: '#991B1B' }]}>Absent</Text>
+                <Text style={[styles.statCount, { color: '#DC2626' }]}>8</Text>
+              </View>
+              <View style={styles.redDecorationCircle} />
+            </View>
+          </View>
+
+          {/* Attendance Overview Card */}
+          <View style={[styles.overviewCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {overviewViewMode === 'chart' ? (
+              <>
+                <View style={styles.overviewHeader}>
+                  <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Attendance Overview</Text>
+                  <TouchableOpacity
+                    style={styles.dropdownSelector}
+                    activeOpacity={0.7}
+                    onPress={() => setOverviewViewMode('week_select')}
+                  >
+                    <Text style={[styles.dropdownText, { color: colors.textSecond }]}>{selectedWeekLabel}</Text>
+                    <Feather name="chevron-down" size={14} color={colors.textSecond} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.chartContainer}>
+                  <View style={[styles.gridLine, { bottom: '0%', backgroundColor: colors.borderLight }]} />
+                  <View style={[styles.gridLine, { bottom: '25%', backgroundColor: colors.borderLight }]} />
+                  <View style={[styles.gridLine, { bottom: '50%', backgroundColor: colors.borderLight }]} />
+                  <View style={[styles.gridLine, { bottom: '75%', backgroundColor: colors.borderLight }]} />
+                  <View style={styles.barsRow}>
+                    {chartData.map((item) => (
+                      <View key={item.l} style={styles.barGroup}>
+                        <View style={[styles.bar, { height: item.h as any, backgroundColor: colors.brand }]} />
+                        <Text style={[styles.barLabel, { color: colors.textSecond }]}>{item.l}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.overviewHeader}>
+                  <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Select Week</Text>
+                  <TouchableOpacity onPress={() => setOverviewViewMode('chart')}>
+                    <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.selectorGrid}>
+                  {[
+                    'This Week',
+                    'Last Week',
+                    'Week 1 (1st - 7th)',
+                    'Week 2 (8th - 14th)',
+                    'Week 3 (15th - 21st)',
+                    'Week 4 (22nd - End)'
+                  ].map((week) => (
+                    <TouchableOpacity
+                      key={week}
+                      style={[
+                        styles.selectorGridItem,
+                        { backgroundColor: colors.iconBg },
+                        selectedWeekLabel === week && { backgroundColor: colors.brand }
+                      ]}
+                      onPress={() => {
+                        handleSelectWeek(week);
+                        setOverviewViewMode('chart');
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.selectorGridItemText,
+                          { color: selectedWeekLabel === week ? '#FFFFFF' : colors.textPrimary }
+                        ]}
+                      >
+                        {week.replace(' (1st - 7th)', '').replace(' (8th - 14th)', '').replace(' (15th - 21st)', '').replace(' (22nd - End)', '')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+          </View>
+
+          {/* Calendar Card */}
+          <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {calendarViewMode === 'calendar' ? (
+              <>
+                <View style={styles.calendarHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Month Selector */}
+                    <TouchableOpacity
+                      onPress={() => setCalendarViewMode('month')}
+                      style={styles.calendarHeaderClickable}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                        {currentCalendarDate.toLocaleString('en-US', { month: 'long' })}
+                      </Text>
+                      <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                    </TouchableOpacity>
+
+                    {/* Year Selector */}
+                    <TouchableOpacity
+                      onPress={() => setCalendarViewMode('year')}
+                      style={[styles.calendarHeaderClickable, { marginLeft: 8 }]}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
+                        {currentCalendarDate.getFullYear()}
+                      </Text>
+                      <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.calendarArrows}>
+                    <TouchableOpacity style={styles.arrowBtn} onPress={handlePrevMonth}>
+                      <Feather name="chevron-left" size={18} color={colors.textSecond} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.arrowBtn} onPress={handleNextMonth}>
+                      <Feather name="chevron-right" size={18} color={colors.textSecond} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Weekday Labels */}
+                <View style={styles.weekdayRow}>
+                  {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                    <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
+                  ))}
+                </View>
+
+                {/* Days Grid */}
+                <View style={styles.calendarGrid}>
+                  {generateDynamicCalendarGrid().map((row, rIdx) => (
+                    <View key={rIdx} style={styles.calendarRow}>
+                      {row.map((cell, cIdx) => {
+                        let dotColor = 'transparent';
+                        if (cell.status === 'present') dotColor = '#22C55E';
+                        else if (cell.status === 'absent') dotColor = '#EF4444';
+                        else if (cell.status === 'leave') dotColor = '#F59E0B';
+                        else if (cell.status === 'holiday') dotColor = '#3B82F6';
+                        else if (cell.status === 'halfday') dotColor = '#A855F7';
+
+                        return (
+                          <View key={cIdx} style={styles.calendarCell}>
+                            <View
+                              style={[
+                                styles.dayNumberContainer,
+                                cell.selected && [styles.selectedDayNumber, { backgroundColor: colors.brand }]
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.dayNumberText,
+                                  {
+                                    color: cell.selected
+                                      ? '#FFFFFF'
+                                      : cell.current
+                                        ? colors.textPrimary
+                                        : colors.textEmpty
+                                  }
+                                ]}
+                              >
+                                {cell.day}
+                              </Text>
+                            </View>
+                            <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
+                          </View>
+                        );
+                      })}
                     </View>
                   ))}
                 </View>
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.overviewHeader}>
-                <Text style={[styles.overviewTitle, { color: colors.textPrimary }]}>Select Week</Text>
-                <TouchableOpacity onPress={() => setOverviewViewMode('chart')}>
-                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
 
-              <View style={styles.selectorGrid}>
-                {[
-                  'This Week',
-                  'Last Week',
-                  'Week 1 (1st - 7th)',
-                  'Week 2 (8th - 14th)',
-                  'Week 3 (15th - 21st)',
-                  'Week 4 (22nd - End)'
-                ].map((week) => (
-                  <TouchableOpacity
-                    key={week}
-                    style={[
-                      styles.selectorGridItem,
-                      { backgroundColor: colors.iconBg },
-                      selectedWeekLabel === week && { backgroundColor: colors.brand }
-                    ]}
-                    onPress={() => {
-                      handleSelectWeek(week);
-                      setOverviewViewMode('chart');
-                    }}
-                  >
-                    <Text
+                {/* Legend */}
+                <View style={styles.legendContainer}>
+                  {[
+                    { label: 'PRESENT', color: '#22C55E' },
+                    { label: 'ABSENT', color: '#EF4444' },
+                    { label: 'LEAVE', color: '#F59E0B' },
+                    { label: 'HOLIDAY', color: '#3B82F6' },
+                    { label: 'HALF DAY', color: '#A855F7' },
+                  ].map((leg) => (
+                    <View key={leg.label} style={styles.legendItem}>
+                      <View style={[styles.legendDot, { backgroundColor: leg.color }]} />
+                      <Text style={[styles.legendText, { color: colors.textSecond }]}>{leg.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            ) : calendarViewMode === 'month' ? (
+              <>
+                <View style={styles.calendarHeader}>
+                  <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Month</Text>
+                  <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
+                    <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.selectorGrid}>
+                  {monthNames.map((m, idx) => (
+                    <TouchableOpacity
+                      key={m}
                       style={[
-                        styles.selectorGridItemText,
-                        { color: selectedWeekLabel === week ? '#FFFFFF' : colors.textPrimary }
+                        styles.selectorGridItem,
+                        { backgroundColor: colors.iconBg },
+                        currentCalendarDate.getMonth() === idx && { backgroundColor: colors.brand }
                       ]}
+                      onPress={() => {
+                        handleSelectMonth(idx);
+                        setCalendarViewMode('calendar');
+                      }}
                     >
-                      {week.replace(' (1st - 7th)', '').replace(' (8th - 14th)', '').replace(' (15th - 21st)', '').replace(' (22nd - End)', '')}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Calendar Card */}
-        <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {calendarViewMode === 'calendar' ? (
-            <>
-              <View style={styles.calendarHeader}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {/* Month Selector */}
-                  <TouchableOpacity
-                    onPress={() => setCalendarViewMode('month')}
-                    style={styles.calendarHeaderClickable}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
-                      {currentCalendarDate.toLocaleString('en-US', { month: 'long' })}
-                    </Text>
-                    <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
-                  </TouchableOpacity>
-
-                  {/* Year Selector */}
-                  <TouchableOpacity
-                    onPress={() => setCalendarViewMode('year')}
-                    style={[styles.calendarHeaderClickable, { marginLeft: 8 }]}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>
-                      {currentCalendarDate.getFullYear()}
-                    </Text>
-                    <Feather name="chevron-down" size={12} color={colors.textSecond} style={{ marginLeft: 3 }} />
+                      <Text
+                        style={[
+                          styles.selectorGridItemText,
+                          { color: currentCalendarDate.getMonth() === idx ? '#FFFFFF' : colors.textPrimary }
+                        ]}
+                      >
+                        {m.substring(0, 3)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            ) : (
+              <>
+                <View style={styles.calendarHeader}>
+                  <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Year</Text>
+                  <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
+                    <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.calendarArrows}>
-                  <TouchableOpacity style={styles.arrowBtn} onPress={handlePrevMonth}>
-                    <Feather name="chevron-left" size={18} color={colors.textSecond} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.arrowBtn} onPress={handleNextMonth}>
-                    <Feather name="chevron-right" size={18} color={colors.textSecond} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Weekday Labels */}
-              <View style={styles.weekdayRow}>
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
-                  <Text key={idx} style={[styles.weekdayText, { color: colors.textMuted }]}>{day}</Text>
-                ))}
-              </View>
-
-              {/* Days Grid */}
-              <View style={styles.calendarGrid}>
-                {generateDynamicCalendarGrid().map((row, rIdx) => (
-                  <View key={rIdx} style={styles.calendarRow}>
-                    {row.map((cell, cIdx) => {
-                      let dotColor = 'transparent';
-                      if (cell.status === 'present') dotColor = '#22C55E';
-                      else if (cell.status === 'absent') dotColor = '#EF4444';
-                      else if (cell.status === 'leave') dotColor = '#F59E0B';
-                      else if (cell.status === 'holiday') dotColor = '#3B82F6';
-                      else if (cell.status === 'halfday') dotColor = '#A855F7';
-
-                      return (
-                        <View key={cIdx} style={styles.calendarCell}>
-                          <View
-                            style={[
-                              styles.dayNumberContainer,
-                              cell.selected && [styles.selectedDayNumber, { backgroundColor: colors.brand }]
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.dayNumberText,
-                                {
-                                  color: cell.selected
-                                    ? '#FFFFFF'
-                                    : cell.current
-                                      ? colors.textPrimary
-                                      : colors.textEmpty
-                                }
-                              ]}
-                            >
-                              {cell.day}
-                            </Text>
-                          </View>
-                          <View style={[styles.calendarDot, { backgroundColor: dotColor }]} />
-                        </View>
-                      );
-                    })}
-                  </View>
-                ))}
-              </View>
-
-              {/* Legend */}
-              <View style={styles.legendContainer}>
-                {[
-                  { label: 'PRESENT', color: '#22C55E' },
-                  { label: 'ABSENT', color: '#EF4444' },
-                  { label: 'LEAVE', color: '#F59E0B' },
-                  { label: 'HOLIDAY', color: '#3B82F6' },
-                  { label: 'HALF DAY', color: '#A855F7' },
-                ].map((leg) => (
-                  <View key={leg.label} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: leg.color }]} />
-                    <Text style={[styles.legendText, { color: colors.textSecond }]}>{leg.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          ) : calendarViewMode === 'month' ? (
-            <>
-              <View style={styles.calendarHeader}>
-                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Month</Text>
-                <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
-                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.selectorGrid}>
-                {monthNames.map((m, idx) => (
-                  <TouchableOpacity
-                    key={m}
-                    style={[
-                      styles.selectorGridItem,
-                      { backgroundColor: colors.iconBg },
-                      currentCalendarDate.getMonth() === idx && { backgroundColor: colors.brand }
-                    ]}
-                    onPress={() => {
-                      handleSelectMonth(idx);
-                      setCalendarViewMode('calendar');
-                    }}
-                  >
-                    <Text
+                <View style={styles.selectorGrid}>
+                  {yearOptions.map((y) => (
+                    <TouchableOpacity
+                      key={y}
                       style={[
-                        styles.selectorGridItemText,
-                        { color: currentCalendarDate.getMonth() === idx ? '#FFFFFF' : colors.textPrimary }
+                        styles.selectorGridItem,
+                        { backgroundColor: colors.iconBg },
+                        currentCalendarDate.getFullYear() === y && { backgroundColor: colors.brand }
                       ]}
+                      onPress={() => {
+                        handleSelectYear(y);
+                        setCalendarViewMode('calendar');
+                      }}
                     >
-                      {m.substring(0, 3)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          ) : (
-            <>
-              <View style={styles.calendarHeader}>
-                <Text style={[styles.calendarTitle, { color: colors.textPrimary }]}>Select Year</Text>
-                <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
-                  <Text style={{ color: colors.brand, fontSize: 13, fontWeight: '700' }}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.selectorGrid}>
-                {yearOptions.map((y) => (
-                  <TouchableOpacity
-                    key={y}
-                    style={[
-                      styles.selectorGridItem,
-                      { backgroundColor: colors.iconBg },
-                      currentCalendarDate.getFullYear() === y && { backgroundColor: colors.brand }
-                    ]}
-                    onPress={() => {
-                      handleSelectYear(y);
-                      setCalendarViewMode('calendar');
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.selectorGridItemText,
-                        { color: currentCalendarDate.getFullYear() === y ? '#FFFFFF' : colors.textPrimary }
-                      ]}
-                    >
-                      {y}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </>
-          )}
-        </View>
-
-        {/* Pending Approvals List */}
-        <View style={styles.pendingSectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pending Approvals</Text>
-          <TouchableOpacity>
-            <Text style={[styles.viewAllText, { color: colors.brand }]}>View All</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.approvalsList}>
-          {pendingRequests.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
-          ) : (
-            pendingRequests.map((req) => (
-              <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
-                <View style={styles.approvalDetails}>
-                  <Text style={[styles.approvalName, { color: colors.textPrimary }]}>{req.name}</Text>
-                  <Text style={[styles.approvalType, { color: colors.textSecond }]}>
-                    {req.type} {req.date ? `• ${req.date}` : req.detail ? `• ${req.detail}` : ''}
-                  </Text>
+                      <Text
+                        style={[
+                          styles.selectorGridItemText,
+                          { color: currentCalendarDate.getFullYear() === y ? '#FFFFFF' : colors.textPrimary }
+                        ]}
+                      >
+                        {y}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
                 </View>
-                <View style={styles.approvalActions}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.approveBtn, { backgroundColor: '#F0FDF4' }]}
-                    onPress={() => handleApprove(req.id, req.name)}
-                    activeOpacity={0.7}
-                  >
-                    <Feather name="check" size={16} color="#16A34A" />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.rejectBtn, { backgroundColor: '#FEF2F2' }]}
-                    onPress={() => handleReject(req.id, req.name)}
-                    activeOpacity={0.7}
-                  >
-                    <Feather name="x" size={16} color="#EF4444" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
-          )}
-        </View>
+              </>
+            )}
+          </View>
 
-        {/* This Week's Celebrations */}
-        <View style={styles.pendingSectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{"This Week's Celebrations"}</Text>
-          <TouchableOpacity>
-            <Feather name="more-horizontal" size={18} color={colors.textSecond} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.celebrationsList}>
-          {/* Sarah Mitchell */}
-          <View style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.celebLeft}>
-              <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?fit=crop&w=100' }}
-                style={styles.celebAvatar}
-              />
-              <View style={styles.celebTextContainer}>
-                <Text style={[styles.celebName, { color: colors.textPrimary }]}>Sarah Mitchell</Text>
-                <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>Birthday Tomorrow</Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
-              onPress={() => handleCelebrateAction('Sarah Mitchell', 'birthday')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.celebActionText, { color: colors.brand }]}>WISH HER</Text>
+          {/* Pending Approvals List */}
+          <View style={styles.pendingSectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pending Approvals</Text>
+            <TouchableOpacity onPress={() => setCurrentTab('approvals')}>
+              <Text style={[styles.viewAllText, { color: colors.brand }]}>View All</Text>
             </TouchableOpacity>
           </View>
 
-          {/* David Chen Anniversary */}
-          <View style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={styles.celebLeft}>
-              <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=100' }}
-                style={styles.celebAvatar}
-              />
-              <View style={styles.celebTextContainer}>
-                <Text style={[styles.celebName, { color: colors.textPrimary }]}>David Chen</Text>
-                <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>3rd Work Anniversary • May 15</Text>
-              </View>
-            </View>
-            <TouchableOpacity
-              style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
-              onPress={() => handleCelebrateAction('David Chen', 'anniversary')}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.celebActionText, { color: colors.brand }]}>CONGRATULATE</Text>
+          <View style={styles.approvalsList}>
+            {pendingRequests.length === 0 ? (
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
+            ) : (
+              pendingRequests.map((req) => (
+                <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
+                  <View style={styles.approvalDetails}>
+                    <Text style={[styles.approvalName, { color: colors.textPrimary }]}>{req.name}</Text>
+                    <Text style={[styles.approvalType, { color: colors.textSecond }]}>
+                      {req.type} {req.date ? `• ${req.date}` : req.detail ? `• ${req.detail}` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.approvalActions}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.approveBtn, { backgroundColor: '#F0FDF4' }]}
+                      onPress={() => handleApprove(req.id, req.name)}
+                      activeOpacity={0.7}
+                    >
+                      <Feather name="check" size={16} color="#16A34A" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.rejectBtn, { backgroundColor: '#FEF2F2' }]}
+                      onPress={() => handleReject(req.id, req.name)}
+                      activeOpacity={0.7}
+                    >
+                      <Feather name="x" size={16} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+
+          {/* This Week's Celebrations */}
+          <View style={styles.pendingSectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>{"This Week's Celebrations"}</Text>
+            <TouchableOpacity>
+              <Feather name="more-horizontal" size={18} color={colors.textSecond} />
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Recent Activity */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Activity</Text>
-        </View>
-
-        <View style={[styles.activityTimeline, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          {[
-            {
-              id: 1,
-              title: 'Design Team Meeting',
-              desc: 'Started 10 mins ago • 5 Members present',
-              dotColor: colors.brand,
-              isLast: false,
-            },
-            {
-              id: 2,
-              title: 'Q3 Report Submission',
-              desc: 'Uploaded by Mark R. • 2 hours ago',
-              dotColor: colors.textMuted,
-              isLast: false,
-            },
-            {
-              id: 3,
-              title: 'System Maintenance Completed',
-              desc: 'IT Dept • Yesterday, 11:00 PM',
-              dotColor: colors.textMuted,
-              isLast: true,
-            },
-          ].map((act) => (
-            <View key={act.id} style={styles.timelineItem}>
-              <View style={styles.timelineLeftColumn}>
-                <View style={[styles.timelineDot, { backgroundColor: act.dotColor }]} />
-                {!act.isLast && <View style={[styles.timelineLine, { backgroundColor: colors.borderLight }]} />}
+          <View style={styles.celebrationsList}>
+            {/* Sarah Mitchell */}
+            <View style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.celebLeft}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?fit=crop&w=100' }}
+                  style={styles.celebAvatar}
+                />
+                <View style={styles.celebTextContainer}>
+                  <Text style={[styles.celebName, { color: colors.textPrimary }]}>Sarah Mitchell</Text>
+                  <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>Birthday Tomorrow</Text>
+                </View>
               </View>
-              <View style={styles.timelineRightColumn}>
-                <Text style={[styles.timelineTitle, { color: colors.textPrimary }]}>{act.title}</Text>
-                <Text style={[styles.timelineDesc, { color: colors.textSecond }]}>{act.desc}</Text>
-              </View>
+              <TouchableOpacity
+                style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
+                onPress={() => handleCelebrateAction('Sarah Mitchell', 'birthday')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.celebActionText, { color: colors.brand }]}>WISH HER</Text>
+              </TouchableOpacity>
             </View>
-          ))}
-        </View>
 
+            {/* David Chen Anniversary */}
+            <View style={[styles.celebrationCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <View style={styles.celebLeft}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?fit=crop&w=100' }}
+                  style={styles.celebAvatar}
+                />
+                <View style={styles.celebTextContainer}>
+                  <Text style={[styles.celebName, { color: colors.textPrimary }]}>David Chen</Text>
+                  <Text style={[styles.celebSubtitle, { color: colors.textSecond }]}>3rd Work Anniversary • May 15</Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.celebActionBtn, { backgroundColor: colors.iconBg, borderColor: colors.brandBorder }]}
+                onPress={() => handleCelebrateAction('David Chen', 'anniversary')}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.celebActionText, { color: colors.brand }]}>CONGRATULATE</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      </ScrollView>
+          {/* Recent Activity */}
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Recent Activity</Text>
+          </View>
+
+          <View style={[styles.activityTimeline, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {[
+              {
+                id: 1,
+                title: 'Design Team Meeting',
+                desc: 'Started 10 mins ago • 5 Members present',
+                dotColor: colors.brand,
+                isLast: false,
+              },
+              {
+                id: 2,
+                title: 'Q3 Report Submission',
+                desc: 'Uploaded by Mark R. • 2 hours ago',
+                dotColor: colors.textMuted,
+                isLast: false,
+              },
+              {
+                id: 3,
+                title: 'System Maintenance Completed',
+                desc: 'IT Dept • Yesterday, 11:00 PM',
+                dotColor: colors.textMuted,
+                isLast: true,
+              },
+            ].map((act) => (
+              <View key={act.id} style={styles.timelineItem}>
+                <View style={styles.timelineLeftColumn}>
+                  <View style={[styles.timelineDot, { backgroundColor: act.dotColor }]} />
+                  {!act.isLast && <View style={[styles.timelineLine, { backgroundColor: colors.borderLight }]} />}
+                </View>
+                <View style={styles.timelineRightColumn}>
+                  <Text style={[styles.timelineTitle, { color: colors.textPrimary }]}>{act.title}</Text>
+                  <Text style={[styles.timelineDesc, { color: colors.textSecond }]}>{act.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </ScrollView>
+      )}
+
+      {/* ── TEAM TAB CONTENT ── */}
+      {currentTab === 'team' && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        >
+          {renderTeamOverviewContent()}
+        </ScrollView>
+      )}
+
+      {/* ── TIME TAB CONTENT ── */}
+      {currentTab === 'time' && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        >
+          {renderPlaceholderTab('time')}
+        </ScrollView>
+      )}
+
+      {/* ── APPROVALS TAB CONTENT ── */}
+      {currentTab === 'approvals' && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        >
+          {renderApprovalsTab()}
+        </ScrollView>
+      )}
+
+      {/* ── ASSETS TAB CONTENT ── */}
+      {currentTab === 'assets' && (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+        >
+          {renderPlaceholderTab('assets')}
+        </ScrollView>
+      )}
 
       {/* ── BOTTOM NAV TAB BAR ── */}
       <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="home" size={20} color={colors.tabActive} />
-          <Text style={[styles.tabTextActive, { color: colors.tabActive }]}>Home</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('home')}>
+          <Feather name="home" size={20} color={currentTab === 'home' ? colors.tabActive : colors.tabInactive} />
+          <Text style={[currentTab === 'home' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'home' ? colors.tabActive : colors.tabInactive }]}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('team')}>
+          <Feather name="users" size={20} color={currentTab === 'team' ? colors.tabActive : colors.tabInactive} />
+          <Text style={[currentTab === 'team' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'team' ? colors.tabActive : colors.tabInactive }]}>Team</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('time')}>
+          <Feather name="clock" size={20} color={currentTab === 'time' ? colors.tabActive : colors.tabInactive} />
+          <Text style={[currentTab === 'time' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'time' ? colors.tabActive : colors.tabInactive }]}>Time</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('approvals')}>
+          <Feather name="check-square" size={20} color={currentTab === 'approvals' ? colors.tabActive : colors.tabInactive} />
+          <Text style={[currentTab === 'approvals' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'approvals' ? colors.tabActive : colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('assets')}>
+          <Feather name="package" size={20} color={currentTab === 'assets' ? colors.tabActive : colors.tabInactive} />
+          <Text style={[currentTab === 'assets' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'assets' ? colors.tabActive : colors.tabInactive }]}>Assets</Text>
         </TouchableOpacity>
       </View>
 
@@ -923,7 +1596,9 @@ export default function ManagerDashboardScreen({
         onClose={() => setMenuOpen(false)}
         onNavigate={(screen, params) => {
           setMenuOpen(false);
-          if (onNavigate) {
+          if (screen === 'admin_staff') {
+            setCurrentTab('team');
+          } else if (onNavigate) {
             onNavigate(screen, params);
           }
         }}
@@ -1593,5 +2268,221 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
     marginTop: 4,
+  },
+  subTabWrapper: {
+    flexDirection: 'row',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+  },
+  subTabBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  subTabActiveBtn: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  subTabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  searchBarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 48,
+    marginBottom: 16,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 8,
+  },
+  filterPillsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  filterPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filterPillText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  attendanceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  attendanceTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  attendanceSubtitle: {
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: '500',
+  },
+  exportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+  },
+  exportBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  statsScrollContainer: {
+    gap: 12,
+    paddingRight: 16,
+  },
+  statCardTeam: {
+    width: 140,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  statCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  statCardDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 6,
+  },
+  statCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statCardNumber: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 8,
+  },
+  statCardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  statCardBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  cardDecoratorCircle: {
+    position: 'absolute',
+    right: -15,
+    top: -15,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    opacity: 0.15,
+  },
+  teamLogsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  teamLogsList: {
+    marginBottom: 20,
+  },
+  teamLogCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 14,
+    marginBottom: 10,
+  },
+  teamLogAvatarWrap: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  teamLogInitialsAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teamLogInitialsText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  teamLogActiveDot: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  teamLogDetails: {
+    flex: 1,
+  },
+  teamLogName: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  teamLogCheckInWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+  },
+  teamLogCheckInText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  placeholderContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  placeholderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 8,
+  },
+  placeholderDesc: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
