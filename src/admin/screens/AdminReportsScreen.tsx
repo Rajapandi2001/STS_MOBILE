@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   Platform,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -82,19 +83,23 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   // Calendar Modal State
   const [dateModalOpen, setDateModalOpen] = useState(false);
 
+  // Hover states for export buttons
+  const [excelHovered, setExcelHovered] = useState(false);
+  const [pdfHovered, setPdfHovered] = useState(false);
+
   // Parameter Values
   const [startDate, setStartDate] = useState('YYYY-MM-DD');
   const [endDate, setEndDate] = useState('YYYY-MM-DD');
   const [tempStartDate, setTempStartDate] = useState<string | null>(null);
   const [tempEndDate, setTempEndDate] = useState<string | null>(null);
 
-  const [selectedDept, setSelectedDept] = useState('admin/hr/employee/manager/director');
-  const [selectedStaff, setSelectedStaff] = useState('Select Employee Full Name');
+  const [selectedDept, setSelectedDept] = useState('Team / Departments');
+  const [selectedStaff, setSelectedStaff] = useState('Select All');
   const [selectedClient, setSelectedClient] = useState('Select Corporate Client');
   const [selectedProject, setSelectedProject] = useState('Select Active Project ID');
   const [selectedHoliday, setSelectedHoliday] = useState('Select Calendar Holiday Event');
 
-  const departments = ['admin/hr/employee/manager/director', 'Admin', 'HR', 'Employee', 'Manager', 'Director'];
+  const departments = ['Team / Departments', 'Engineering', 'Product', 'Finance', 'Design', 'Quality Assurance'];
 
   const recentReports = [
     {
@@ -131,6 +136,10 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
     setClientDropdownOpen(false);
     setProjectDropdownOpen(false);
     setHolidayDropdownOpen(false);
+    if (card === 'staff') {
+      setSelectedDept('Team / Departments');
+      setSelectedStaff('Select All');
+    }
   };
 
   // Calendar Day Click Handler
@@ -180,7 +189,18 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             <th>Role</th>
             <th>Status</th>
           `;
-          rowsHTML = STAFF_LIST.map(staff => `
+
+          let filteredStaff = STAFF_LIST;
+          if (selectedDept !== 'Team / Departments') {
+            filteredStaff = filteredStaff.filter(staff =>
+              staff.department.toLowerCase() === selectedDept.toLowerCase()
+            );
+          }
+          if (selectedStaff !== 'Select All') {
+            filteredStaff = filteredStaff.filter(staff => staff.name === selectedStaff);
+          }
+
+          rowsHTML = filteredStaff.map(staff => `
             <tr>
               <td><strong>${staff.name}</strong></td>
               <td>${staff.department}</td>
@@ -406,8 +426,18 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
       } else {
         let csvContent = '';
         if (selectedCard === 'staff') {
+          let filteredStaff = STAFF_LIST;
+          if (selectedDept !== 'Team / Departments') {
+            filteredStaff = filteredStaff.filter(staff =>
+              staff.department.toLowerCase() === selectedDept.toLowerCase()
+            );
+          }
+          if (selectedStaff !== 'Select All') {
+            filteredStaff = filteredStaff.filter(staff => staff.name === selectedStaff);
+          }
+
           csvContent = `Name,Department,Role,Status\n` +
-            STAFF_LIST.map(staff => `"${staff.name}","${staff.department}","${staff.role}","${staff.status}"`).join('\n') + '\n';
+            filteredStaff.map(staff => `"${staff.name}","${staff.department}","${staff.role}","${staff.status}"`).join('\n') + '\n';
         } else if (selectedCard === 'client') {
           csvContent = `Client Name,Client ID,Email,Country,Status\n` +
             CLIENT_LIST.map(c => `"${c.name}","${c.clientId}","${c.email}","${c.country}","${c.status}"`).join('\n') + '\n';
@@ -443,9 +473,10 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
         if (directoryUri) {
           try {
             const mimeType = format === 'excel' ? 'text/csv' : 'application/pdf';
+            const extension = format === 'excel' ? '.csv' : '.pdf';
             const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
               directoryUri,
-              fileBaseName,
+              fileBaseName + extension,
               mimeType
             );
 
@@ -458,8 +489,14 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
             Alert.alert('Success', `Report downloaded successfully as ${format.toUpperCase()}!`);
           } catch (err) {
-            await AsyncStorage.removeItem('savedDownloadFolder');
-            Alert.alert('Error', 'Could not save to the previous folder. Please try again to select a new folder.');
+            console.error('SAF save failed, falling back to Sharing:', err);
+            // Fallback to Sharing
+            if (await Sharing.isAvailableAsync()) {
+              await Sharing.shareAsync(tempFileUri);
+            } else {
+              await AsyncStorage.removeItem('savedDownloadFolder');
+              Alert.alert('Error', 'Could not save the report. Please try again.');
+            }
           }
         }
       } else {
@@ -586,7 +623,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="users" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedDept === 'admin/hr/employee/manager/director' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedDept === 'Team / Departments' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedDept}
                   </Text>
                 </View>
@@ -640,7 +677,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="user" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedStaff === 'Select Employee Full Name' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedStaff === 'Select All' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedStaff}
                   </Text>
                 </View>
@@ -650,26 +687,26 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               {/* Inline Dropdown Options */}
               {staffDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  {/* Select Staff Option */}
+                  {/* Select All Option */}
                   <TouchableOpacity
                     style={[
                       styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedStaff === 'Select Employee Full Name' && { backgroundColor: colors.brandBg }
+                      selectedStaff === 'Select All' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedStaff('Select Employee Full Name');
+                      setSelectedStaff('Select All');
                       setStaffDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
                       styles.dropdownOptionText,
-                      { color: selectedStaff === 'Select Employee Full Name' ? colors.brand : colors.textPrimary }
+                      { color: selectedStaff === 'Select All' ? colors.brand : colors.textPrimary }
                     ]}>
-                      Select Employee Full Name
+                      Select All
                     </Text>
-                    {selectedStaff === 'Select Employee Full Name' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedStaff === 'Select All' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Staff List Options */}
@@ -1144,24 +1181,67 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
           <View style={{ height: 16 }} />
 
-          {/* Export Buttons (EXPORT EXCEL First (Filled), EXPORT PDF Second (Dashed)) */}
-          <TouchableOpacity
-            style={[styles.exportBtnFilled, { backgroundColor: colors.textPrimary }]}
-            activeOpacity={0.7}
-            onPress={() => handleExport('excel')}
-          >
-            <MaterialCommunityIcons name="file-excel" size={18} color={colors.card} style={{ marginRight: 8 }} />
-            <Text style={[styles.exportBtnFilledText, { color: colors.card }]}>EXPORT EXCEL</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.exportBtnDashed, { borderColor: colors.textPrimary, backgroundColor: 'transparent' }]}
-            activeOpacity={0.7}
+          {/* Export Buttons */}
+          <Pressable
+            onHoverIn={() => setPdfHovered(true)}
+            onHoverOut={() => setPdfHovered(false)}
             onPress={() => handleExport('pdf')}
+            style={({ pressed }) => [
+              styles.exportBtnDashed,
+              {
+                backgroundColor: (pressed || pdfHovered) ? colors.brand : colors.card,
+                borderColor: colors.brand,
+                marginBottom: 12,
+              }
+            ]}
           >
-            <MaterialCommunityIcons name="file-pdf-box" size={18} color={colors.textPrimary} style={{ marginRight: 8 }} />
-            <Text style={[styles.exportBtnDashedText, { color: colors.textPrimary }]}>EXPORT PDF</Text>
-          </TouchableOpacity>
+            {({ pressed }) => {
+              const isBlueActive = pressed || pdfHovered;
+              return (
+                <>
+                  <MaterialCommunityIcons
+                    name="file-pdf-box"
+                    size={18}
+                    color={isBlueActive ? colors.card : colors.brand}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={[styles.exportBtnDashedText, { color: isBlueActive ? colors.card : colors.brand }]}>
+                    EXPORT PDF
+                  </Text>
+                </>
+              );
+            }}
+          </Pressable>
+
+          <Pressable
+            onHoverIn={() => setExcelHovered(true)}
+            onHoverOut={() => setExcelHovered(false)}
+            onPress={() => handleExport('excel')}
+            style={({ pressed }) => [
+              styles.exportBtnDashed,
+              {
+                backgroundColor: (pressed || excelHovered) ? colors.brand : colors.card,
+                borderColor: colors.brand,
+              }
+            ]}
+          >
+            {({ pressed }) => {
+              const isBlueActive = pressed || excelHovered;
+              return (
+                <>
+                  <MaterialCommunityIcons
+                    name="file-excel"
+                    size={18}
+                    color={isBlueActive ? colors.card : colors.brand}
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={[styles.exportBtnDashedText, { color: isBlueActive ? colors.card : colors.brand }]}>
+                    EXPORT EXCEL
+                  </Text>
+                </>
+              );
+            }}
+          </Pressable>
         </View>
 
         {/* Recent Reports Section */}

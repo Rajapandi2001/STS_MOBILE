@@ -147,6 +147,10 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
       >
+        <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
+          Manage leave policies and employee leave configurations.
+        </Text>
+
         {/* Search Bar */}
         <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
@@ -271,6 +275,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 20,
     paddingTop: 10,
+  },
+  pageDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
+    marginBottom: 12,
   },
   searchContainer: {
     flexDirection: 'row',

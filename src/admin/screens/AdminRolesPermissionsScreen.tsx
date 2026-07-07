@@ -135,6 +135,10 @@ export default function AdminRolesPermissionsScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
       >
+        <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
+          Search roles and configure user permissions.
+        </Text>
+
         {/* Search */}
         <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
@@ -223,6 +227,12 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '700' },
   avatarCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 10 },
+  pageDescription: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
+    marginBottom: 12,
+  },
   searchContainer: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: 16, height: 48, marginTop: 8, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 1 },
   searchIcon: { marginRight: 10 },
   searchInput: { flex: 1, fontSize: 14 },
