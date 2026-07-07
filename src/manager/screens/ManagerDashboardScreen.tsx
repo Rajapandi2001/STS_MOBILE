@@ -1446,10 +1446,8 @@ export default function ManagerDashboardScreen({
           {/* Pending Approvals List */}
           <View style={styles.pendingSectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Pending Approvals</Text>
-            <TouchableOpacity onPress={() => setViewAllPending(!viewAllPending)}>
-              <Text style={[styles.viewAllText, { color: colors.brand }]}>
-                {viewAllPending ? 'Show Less' : 'View All'}
-              </Text>
+            <TouchableOpacity onPress={() => setCurrentTab('approvals')}>
+              <Text style={[styles.viewAllText, { color: colors.brand }]}>View All</Text>
             </TouchableOpacity>
           </View>
 
@@ -1457,7 +1455,7 @@ export default function ManagerDashboardScreen({
             {pendingRequests.length === 0 ? (
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
             ) : (
-              (viewAllPending ? pendingRequests : pendingRequests.slice(0, 2)).map((req) => (
+              pendingRequests.slice(0, 2).map((req) => (
                 <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
                   <View style={styles.approvalDetails}>
