@@ -13,6 +13,7 @@ import CheckInSuccessScreen from '@/employee/screens/CheckInSuccessScreen';
 import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
+import ManagerDashboardScreen from '@/manager/screens/ManagerDashboardScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -43,6 +44,7 @@ type ScreenName =
   | 'new_password'
   | 'dashboard'
   | 'admin_dashboard'
+  | 'manager_dashboard'
   | 'checkin_location'
   | 'checkin_success'
   | 'location_failed'
@@ -130,6 +132,7 @@ function AppContent() {
       case 'login':
       case 'dashboard':
       case 'admin_dashboard':
+      case 'manager_dashboard':
         return false; // let the system handle it (exit app)
 
       case 'forgot_password':
@@ -274,7 +277,9 @@ function AppContent() {
           <SplashScreen
             onFinish={() => {
               if (isAuthenticated && user) {
-                if (user.displayName?.toUpperCase() === 'ADMIN' || user.groupID === 5) {
+                if (user.userName?.toLowerCase() === 'manager' || user.groupID === 3) {
+                  transitionTo('manager_dashboard');
+                } else if (user.displayName?.toUpperCase() === 'ADMIN' || user.groupID === 5) {
                   transitionTo('admin_dashboard');
                 } else {
                   transitionTo('dashboard');
@@ -292,6 +297,7 @@ function AppContent() {
             onForgotPassword={() => transitionTo('forgot_password')}
             onSignInSuccess={() => transitionTo('dashboard')}
             onAdminSignIn={() => transitionTo('admin_dashboard')}
+            onManagerSignIn={() => transitionTo('manager_dashboard')}
           />
         );
 
@@ -330,6 +336,14 @@ function AppContent() {
       case 'admin_dashboard':
         return (
           <AdminDashboardScreen
+            onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
+            routeParams={p}
+          />
+        );
+
+      case 'manager_dashboard':
+        return (
+          <ManagerDashboardScreen
             onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
             routeParams={p}
           />

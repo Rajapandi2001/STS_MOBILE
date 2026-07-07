@@ -27,9 +27,10 @@ interface LoginScreenProps {
   onForgotPassword: () => void;
   onSignInSuccess: () => void;
   onAdminSignIn?: () => void;
+  onManagerSignIn?: () => void;
 }
 
-export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdminSignIn }: LoginScreenProps) {
+export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdminSignIn, onManagerSignIn }: LoginScreenProps) {
   const { height } = useWindowDimensions();
   
   // Slide-in and fade-in animations for the sign-in card on mount
@@ -113,7 +114,13 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
       const result = await login(userVal, 'offline_bypass', true);
       if (result.success && result.user) {
         const loggedInUser = result.user;
-        if (loggedInUser.displayName.toUpperCase() === 'ADMIN' || loggedInUser.groupID === 5) {
+        if (loggedInUser.userName.toLowerCase() === 'manager' || loggedInUser.groupID === 3) {
+          if (onManagerSignIn) {
+            onManagerSignIn();
+          } else {
+            onSignInSuccess();
+          }
+        } else if (loggedInUser.displayName.toUpperCase() === 'ADMIN' || loggedInUser.groupID === 5) {
           if (onAdminSignIn) {
             onAdminSignIn();
           } else {
@@ -180,7 +187,13 @@ export default function LoginScreen({ onForgotPassword, onSignInSuccess, onAdmin
       const result = await login(trimmedUsername, password);
       if (result.success && result.user) {
         const loggedInUser = result.user;
-        if (loggedInUser.displayName.toUpperCase() === 'ADMIN' || loggedInUser.groupID === 5) {
+        if (loggedInUser.userName.toLowerCase() === 'manager' || loggedInUser.groupID === 3) {
+          if (onManagerSignIn) {
+            onManagerSignIn();
+          } else {
+            onSignInSuccess();
+          }
+        } else if (loggedInUser.displayName.toUpperCase() === 'ADMIN' || loggedInUser.groupID === 5) {
           if (onAdminSignIn) {
             onAdminSignIn();
           } else {

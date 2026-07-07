@@ -38,6 +38,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (username: string, password: string, forceOffline: boolean = false) => {
+    const is_manager = username.trim().toLowerCase() === 'manager';
+    if (is_manager) {
+      const mockUser: UserProfile = {
+        userID: 3,
+        userName: 'manager',
+        displayName: 'Lingesvaran',
+        empID: 102,
+        groupID: 3,
+      };
+      await storageService.setToken('mock_jwt_token_for_manager');
+      await storageService.setUser(mockUser);
+      setToken('mock_jwt_token_for_manager');
+      setUser(mockUser);
+      return { success: true, message: 'Logged in as Manager (Demo)', user: mockUser };
+    }
+
     if (forceOffline) {
       const is_admin = username.trim().toLowerCase() === 'admin';
       const mockUser: UserProfile = {
