@@ -93,11 +93,70 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   const [tempStartDate, setTempStartDate] = useState<string | null>(null);
   const [tempEndDate, setTempEndDate] = useState<string | null>(null);
 
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth()); // 0-indexed
+  const [showMonthSelector, setShowMonthSelector] = useState(false);
+  const [showYearSelector, setShowYearSelector] = useState(false);
+  const [yearPageOffset, setYearPageOffset] = useState(0);
+
+  const handleOpenDateModal = () => {
+    let dateToUse = new Date();
+    if (tempStartDate && tempStartDate !== 'YYYY-MM-DD') {
+      dateToUse = new Date(tempStartDate);
+    } else if (startDate && startDate !== 'YYYY-MM-DD') {
+      dateToUse = new Date(startDate);
+    }
+    if (!isNaN(dateToUse.getTime())) {
+      setCurrentYear(dateToUse.getFullYear());
+      setCurrentMonth(dateToUse.getMonth());
+    } else {
+      setCurrentYear(new Date().getFullYear());
+      setCurrentMonth(new Date().getMonth());
+    }
+    setShowMonthSelector(false);
+    setShowYearSelector(false);
+    setYearPageOffset(0);
+    setDateModalOpen(true);
+  };
+
+  const handleCloseDateModal = () => {
+    setShowMonthSelector(false);
+    setShowYearSelector(false);
+    setYearPageOffset(0);
+    setDateModalOpen(false);
+  };
+
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
+    }
+  };
+
+  const handlePrevYear = () => {
+    setCurrentYear(currentYear - 1);
+  };
+
+  const handleNextYear = () => {
+    setCurrentYear(currentYear + 1);
+  };
+
   const [selectedDept, setSelectedDept] = useState('Team / Departments');
   const [selectedStaff, setSelectedStaff] = useState('Select All');
-  const [selectedClient, setSelectedClient] = useState('Select Corporate Client');
-  const [selectedProject, setSelectedProject] = useState('Select Active Project ID');
-  const [selectedHoliday, setSelectedHoliday] = useState('Select Calendar Holiday Event');
+  const [selectedClient, setSelectedClient] = useState('Select All');
+  const [selectedProject, setSelectedProject] = useState('Select All');
+  const [selectedHoliday, setSelectedHoliday] = useState('Select All');
 
   const departments = ['Team / Departments', 'Engineering', 'Product', 'Finance', 'Design', 'Quality Assurance'];
 
@@ -139,6 +198,12 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
     if (card === 'staff') {
       setSelectedDept('Team / Departments');
       setSelectedStaff('Select All');
+    } else if (card === 'client') {
+      setSelectedClient('Select All');
+    } else if (card === 'project') {
+      setSelectedProject('Select All');
+    } else if (card === 'holiday') {
+      setSelectedHoliday('Select All');
     }
   };
 
@@ -227,7 +292,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             <th>Country</th>
             <th>Status</th>
           `;
-          rowsHTML = CLIENT_LIST.map(client => `
+          let filteredClients = CLIENT_LIST;
+          if (selectedClient !== 'Select All') {
+            filteredClients = CLIENT_LIST.filter(c => c.name === selectedClient);
+          }
+          rowsHTML = filteredClients.map(client => `
             <tr>
               <td><strong>${client.name}</strong></td>
               <td>${client.clientId}</td>
@@ -251,7 +320,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             <th>End Date</th>
             <th>Status</th>
           `;
-          rowsHTML = PROJECT_LIST.map(proj => `
+          let filteredProjects = PROJECT_LIST;
+          if (selectedProject !== 'Select All') {
+            filteredProjects = PROJECT_LIST.filter(p => p.name === selectedProject);
+          }
+          rowsHTML = filteredProjects.map(proj => `
             <tr>
               <td><strong>${proj.name}</strong></td>
               <td>${proj.projectId}</td>
@@ -274,7 +347,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             <th>Emoji</th>
             <th>Status</th>
           `;
-          rowsHTML = HOLIDAY_LIST.map(hol => `
+          let filteredHolidays = HOLIDAY_LIST;
+          if (selectedHoliday !== 'Select All') {
+            filteredHolidays = HOLIDAY_LIST.filter(h => h.name === selectedHoliday);
+          }
+          rowsHTML = filteredHolidays.map(hol => `
             <tr>
               <td><strong>${hol.name}</strong></td>
               <td>${hol.date}</td>
@@ -439,14 +516,26 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           csvContent = `Name,Department,Role,Status\n` +
             filteredStaff.map(staff => `"${staff.name}","${staff.department}","${staff.role}","${staff.status}"`).join('\n') + '\n';
         } else if (selectedCard === 'client') {
+          let filteredClients = CLIENT_LIST;
+          if (selectedClient !== 'Select All') {
+            filteredClients = CLIENT_LIST.filter(c => c.name === selectedClient);
+          }
           csvContent = `Client Name,Client ID,Email,Country,Status\n` +
-            CLIENT_LIST.map(c => `"${c.name}","${c.clientId}","${c.email}","${c.country}","${c.status}"`).join('\n') + '\n';
+            filteredClients.map(c => `"${c.name}","${c.clientId}","${c.email}","${c.country}","${c.status}"`).join('\n') + '\n';
         } else if (selectedCard === 'project') {
+          let filteredProjects = PROJECT_LIST;
+          if (selectedProject !== 'Select All') {
+            filteredProjects = PROJECT_LIST.filter(p => p.name === selectedProject);
+          }
           csvContent = `Project Name,Project ID,Start Date,End Date,Status\n` +
-            PROJECT_LIST.map(p => `"${p.name}","${p.projectId}","${p.startDate}","${p.endDate}","${p.status}"`).join('\n') + '\n';
+            filteredProjects.map(p => `"${p.name}","${p.projectId}","${p.startDate}","${p.endDate}","${p.status}"`).join('\n') + '\n';
         } else if (selectedCard === 'holiday') {
+          let filteredHolidays = HOLIDAY_LIST;
+          if (selectedHoliday !== 'Select All') {
+            filteredHolidays = HOLIDAY_LIST.filter(h => h.name === selectedHoliday);
+          }
           csvContent = `Holiday Name,Date,Emoji,Status\n` +
-            HOLIDAY_LIST.map(h => `"${h.name}","${h.date}","${h.emoji}","${h.status}"`).join('\n') + '\n';
+            filteredHolidays.map(h => `"${h.name}","${h.date}","${h.emoji}","${h.status}"`).join('\n') + '\n';
         }
 
         const fileName = `${fileBaseName}.csv`;
@@ -514,60 +603,204 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
   // Calendar Modal Renderer
   const renderCalendarModal = () => {
-    const totalDays = 31;
-    const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+
+    const getDaysInMonth = (year: number, month: number) => {
+      return new Date(year, month + 1, 0).getDate();
+    };
+
+    const getFirstDayOfMonth = (year: number, month: number) => {
+      return new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday, etc.
+    };
+
+    const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+    const firstDayIndex = getFirstDayOfMonth(currentYear, currentMonth);
+
+    const daysArray: { type: 'empty' | 'day'; day?: number; id: string }[] = [];
+    // Add empty padding slots for alignment
+    for (let i = 0; i < firstDayIndex; i++) {
+      daysArray.push({ type: 'empty', id: `empty-${i}` });
+    }
+    // Add days of month
+    for (let d = 1; d <= daysInMonth; d++) {
+      daysArray.push({ type: 'day', day: d, id: `day-${d}` });
+    }
 
     return (
       <Modal visible={dateModalOpen} transparent animationType="fade">
         <TouchableOpacity
           style={[styles.modalBackdrop, { backgroundColor: colors.modalBackdrop }]}
           activeOpacity={1}
-          onPress={() => setDateModalOpen(false)}
+          onPress={handleCloseDateModal}
         >
           <TouchableOpacity activeOpacity={1} style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <Text style={[styles.modalHeaderTitle, { color: colors.textPrimary }]}>Select Date Range</Text>
-            <Text style={[styles.calendarMonthHeader, { color: colors.textPrimary }]}>October 2023</Text>
 
-            {/* Weekdays */}
-            <View style={styles.weekdayRow}>
-              {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                <Text key={day} style={[styles.weekdayText, { color: colors.textSecond }]}>{day}</Text>
-              ))}
-            </View>
-
-            {/* Days Grid */}
-            <View style={styles.daysGrid}>
-              {daysArray.map(day => {
-                const dateStr = `2023-10-${day.toString().padStart(2, '0')}`;
-                const isSelectedStart = tempStartDate === dateStr;
-                const isSelectedEnd = tempEndDate === dateStr;
-                const isSelected = isSelectedStart || isSelectedEnd;
-                const inRange = tempStartDate && tempEndDate && dateStr > tempStartDate && dateStr < tempEndDate;
-
-                return (
-                  <TouchableOpacity
-                    key={day}
-                    style={[
-                      styles.dayCell,
-                      isSelectedStart && [styles.dayCellSelectedStart, { backgroundColor: colors.brand }],
-                      isSelectedEnd && [styles.dayCellSelectedEnd, { backgroundColor: colors.brand }],
-                      inRange && [styles.dayCellInRange, { backgroundColor: colors.brandBorder }],
-                    ]}
-                    onPress={() => handleDayPress(dateStr)}
-                  >
-                    <Text style={[
-                      styles.dayText,
-                      { color: isSelected ? '#FFFFFF' : inRange ? colors.brand : colors.textPrimary }
-                    ]}>
-                      {day}
+            {/* Navigation Header */}
+            {showMonthSelector ? (
+              <View style={styles.calendarSelectorHeader}>
+                <Text style={[styles.calendarSelectorTitle, { color: colors.textPrimary }]}>Select Month</Text>
+                <TouchableOpacity onPress={() => setShowMonthSelector(false)} style={styles.selectorCloseBtn}>
+                  <Feather name="x" size={18} color={colors.textSecond} />
+                </TouchableOpacity>
+              </View>
+            ) : showYearSelector ? (
+              <View style={styles.calendarSelectorHeader}>
+                <TouchableOpacity onPress={() => setYearPageOffset(yearPageOffset - 1)} style={styles.navArrow}>
+                  <Feather name="chevron-left" size={18} color={colors.brand} />
+                </TouchableOpacity>
+                <Text style={[styles.calendarSelectorTitle, { color: colors.textPrimary }]}>Select Year</Text>
+                <TouchableOpacity onPress={() => setYearPageOffset(yearPageOffset + 1)} style={styles.navArrow}>
+                  <Feather name="chevron-right" size={18} color={colors.brand} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowYearSelector(false)} style={styles.selectorCloseBtn}>
+                  <Feather name="x" size={18} color={colors.textSecond} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.calendarNavHeader}>
+                <View style={styles.calendarNavButtons}>
+                  <TouchableOpacity onPress={handlePrevYear} style={styles.navArrow}>
+                    <Feather name="chevrons-left" size={18} color={colors.brand} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handlePrevMonth} style={styles.navArrow}>
+                    <Feather name="chevron-left" size={18} color={colors.brand} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.calendarHeaderTitleRow}>
+                  <TouchableOpacity onPress={() => { setShowMonthSelector(true); setShowYearSelector(false); }}>
+                    <Text style={[styles.calendarHeaderInteractiveText, { color: colors.brand }]}>
+                      {monthNames[currentMonth]}
                     </Text>
                   </TouchableOpacity>
-                );
-              })}
-            </View>
+                  <Text style={[styles.calendarMonthHeaderSeparator, { color: colors.textPrimary }]}> </Text>
+                  <TouchableOpacity onPress={() => { setShowYearSelector(true); setShowMonthSelector(false); }}>
+                    <Text style={[styles.calendarHeaderInteractiveText, { color: colors.brand }]}>
+                      {currentYear}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.calendarNavButtons}>
+                  <TouchableOpacity onPress={handleNextMonth} style={styles.navArrow}>
+                    <Feather name="chevron-right" size={18} color={colors.brand} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={handleNextYear} style={styles.navArrow}>
+                    <Feather name="chevrons-right" size={18} color={colors.brand} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {showMonthSelector ? (
+              <View style={styles.selectionGrid}>
+                {monthNames.map((monthName, index) => {
+                  const isCurrent = currentMonth === index;
+                  return (
+                    <TouchableOpacity
+                      key={monthName}
+                      style={[
+                        styles.selectionGridCell,
+                        { borderColor: colors.borderLight },
+                        isCurrent && { backgroundColor: colors.brandBg, borderColor: colors.brand }
+                      ]}
+                      onPress={() => {
+                        setCurrentMonth(index);
+                        setShowMonthSelector(false);
+                      }}
+                    >
+                      <Text style={[
+                        styles.selectionGridCellText,
+                        { color: isCurrent ? colors.brand : colors.textPrimary }
+                      ]}>
+                        {monthName.substring(0, 3)}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ) : showYearSelector ? (
+              <View style={styles.selectionGrid}>
+                {(() => {
+                  const startYear = currentYear - 5 + yearPageOffset * 12;
+                  const years = Array.from({ length: 12 }, (_, i) => startYear + i);
+                  return years.map((yr) => {
+                    const isCurrent = currentYear === yr;
+                    return (
+                      <TouchableOpacity
+                        key={yr}
+                        style={[
+                          styles.selectionGridCell,
+                          { borderColor: colors.borderLight },
+                          isCurrent && { backgroundColor: colors.brandBg, borderColor: colors.brand }
+                        ]}
+                        onPress={() => {
+                          setCurrentYear(yr);
+                          setShowYearSelector(false);
+                        }}
+                      >
+                        <Text style={[
+                          styles.selectionGridCellText,
+                          { color: isCurrent ? colors.brand : colors.textPrimary }
+                        ]}>
+                          {yr}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  });
+                })()}
+              </View>
+            ) : (
+              <>
+                {/* Weekdays */}
+                <View style={styles.weekdayRow}>
+                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
+                    <Text key={day} style={[styles.weekdayText, { color: colors.textSecond }]}>{day}</Text>
+                  ))}
+                </View>
+
+                {/* Days Grid */}
+                <View style={styles.daysGrid}>
+                  {daysArray.map((cell) => {
+                    if (cell.type === 'empty') {
+                      return <View key={cell.id} style={styles.dayCell} />;
+                    }
+
+                    const day = cell.day!;
+                    const dateStr = `${currentYear}-${(currentMonth + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+                    const isSelectedStart = tempStartDate === dateStr;
+                    const isSelectedEnd = tempEndDate === dateStr;
+                    const isSelected = isSelectedStart || isSelectedEnd;
+                    const inRange = tempStartDate && tempEndDate && dateStr > tempStartDate && dateStr < tempEndDate;
+
+                    return (
+                      <TouchableOpacity
+                        key={cell.id}
+                        style={[
+                          styles.dayCell,
+                          isSelectedStart && [styles.dayCellSelectedStart, { backgroundColor: colors.brand }],
+                          isSelectedEnd && [styles.dayCellSelectedEnd, { backgroundColor: colors.brand }],
+                          inRange && [styles.dayCellInRange, { backgroundColor: colors.brandBorder }],
+                        ]}
+                        onPress={() => handleDayPress(dateStr)}
+                      >
+                        <Text style={[
+                          styles.dayText,
+                          { color: isSelected ? '#FFFFFF' : inRange ? colors.brand : colors.textPrimary }
+                        ]}>
+                          {day}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </>
+            )}
 
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setDateModalOpen(false)}>
+              <TouchableOpacity style={styles.modalCancelBtn} onPress={handleCloseDateModal}>
                 <Text style={[styles.modalCancelBtnText, { color: colors.textSecond }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -594,7 +827,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               <TouchableOpacity
                 style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
-                onPress={() => setDateModalOpen(true)}
+                onPress={handleOpenDateModal}
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
@@ -747,7 +980,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               <TouchableOpacity
                 style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
-                onPress={() => setDateModalOpen(true)}
+                onPress={handleOpenDateModal}
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
@@ -778,7 +1011,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="briefcase" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedClient === 'Select Corporate Client' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedClient === 'Select All' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedClient}
                   </Text>
                 </View>
@@ -793,21 +1026,21 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                     style={[
                       styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedClient === 'Select Corporate Client' && { backgroundColor: colors.brandBg }
+                      selectedClient === 'Select All' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedClient('Select Corporate Client');
+                      setSelectedClient('Select All');
                       setClientDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
                       styles.dropdownOptionText,
-                      { color: selectedClient === 'Select Corporate Client' ? colors.brand : colors.textPrimary }
+                      { color: selectedClient === 'Select All' ? colors.brand : colors.textPrimary }
                     ]}>
-                      Select Corporate Client
+                      Select All
                     </Text>
-                    {selectedClient === 'Select Corporate Client' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedClient === 'Select All' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Client List Options */}
@@ -848,7 +1081,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               <TouchableOpacity
                 style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
-                onPress={() => setDateModalOpen(true)}
+                onPress={handleOpenDateModal}
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
@@ -879,7 +1112,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="folder" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedProject === 'Select Active Project ID' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedProject === 'Select All' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedProject}
                   </Text>
                 </View>
@@ -894,21 +1127,21 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                     style={[
                       styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedProject === 'Select Active Project ID' && { backgroundColor: colors.brandBg }
+                      selectedProject === 'Select All' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedProject('Select Active Project ID');
+                      setSelectedProject('Select All');
                       setProjectDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
                       styles.dropdownOptionText,
-                      { color: selectedProject === 'Select Active Project ID' ? colors.brand : colors.textPrimary }
+                      { color: selectedProject === 'Select All' ? colors.brand : colors.textPrimary }
                     ]}>
-                      Select Active Project ID
+                      Select All
                     </Text>
-                    {selectedProject === 'Select Active Project ID' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedProject === 'Select All' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Project List Options */}
@@ -949,7 +1182,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               <TouchableOpacity
                 style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
                 activeOpacity={0.7}
-                onPress={() => setDateModalOpen(true)}
+                onPress={handleOpenDateModal}
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
@@ -980,7 +1213,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               >
                 <View style={styles.dropdownLeftCol}>
                   <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedHoliday === 'Select Calendar Holiday Event' ? colors.textSecond : colors.textPrimary }]}>
+                  <Text style={[styles.dropdownText, { color: selectedHoliday === 'Select All' ? colors.textSecond : colors.textPrimary }]}>
                     {selectedHoliday}
                   </Text>
                 </View>
@@ -995,21 +1228,21 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                     style={[
                       styles.dropdownOption,
                       { borderBottomColor: colors.borderLight },
-                      selectedHoliday === 'Select Calendar Holiday Event' && { backgroundColor: colors.brandBg }
+                      selectedHoliday === 'Select All' && { backgroundColor: colors.brandBg }
                     ]}
                     onPress={() => {
-                      setSelectedHoliday('Select Calendar Holiday Event');
+                      setSelectedHoliday('Select All');
                       setHolidayDropdownOpen(false);
                     }}
                     activeOpacity={0.7}
                   >
                     <Text style={[
                       styles.dropdownOptionText,
-                      { color: selectedHoliday === 'Select Calendar Holiday Event' ? colors.brand : colors.textPrimary }
+                      { color: selectedHoliday === 'Select All' ? colors.brand : colors.textPrimary }
                     ]}>
-                      Select Calendar Holiday Event
+                      Select All
                     </Text>
-                    {selectedHoliday === 'Select Calendar Holiday Event' && <Feather name="check" size={14} color={colors.brand} />}
+                    {selectedHoliday === 'Select All' && <Feather name="check" size={14} color={colors.brand} />}
                   </TouchableOpacity>
 
                   {/* Holiday List Options */}
@@ -1569,11 +1802,73 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 16,
   },
+  calendarNavHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  calendarNavButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  navArrow: {
+    padding: 8,
+  },
   calendarMonthHeader: {
     fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 12,
+  },
+  calendarSelectorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    height: 36,
+  },
+  calendarSelectorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+  },
+  selectorCloseBtn: {
+    padding: 8,
+  },
+  calendarHeaderTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  calendarHeaderInteractiveText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  calendarMonthHeaderSeparator: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  selectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  selectionGridCell: {
+    width: '30%',
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 6,
+  },
+  selectionGridCellText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   weekdayRow: {
     flexDirection: 'row',
