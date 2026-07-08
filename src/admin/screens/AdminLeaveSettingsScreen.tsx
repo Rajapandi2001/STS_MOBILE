@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,77 +7,75 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { storageService } from '@/services/storageService';
 
 interface AdminLeaveSettingsScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
   onBack?: () => void;
 }
 
-const LEAVE_DATA = [
-  {
-    id: '1',
-    name: 'ANNUAL LEAVE',
-    policyId: 'AL-2026',
-    type: 'Paid',
-    description: 'Vacation Block',
-    days: '18 Days',
-    icon: 'island',
-    iconType: 'MaterialCommunityIcons',
-    color: '#FEF3C7',
-    iconColor: '#D97706',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    name: 'MEDICAL LEAVE',
-    policyId: 'ML-2026',
-    type: 'Sick',
-    description: 'Allocation Block',
-    days: '12 Days',
-    icon: 'hospital-building',
-    iconType: 'MaterialCommunityIcons',
-    color: '#FEE2E2',
-    iconColor: '#DC2626',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    name: 'MATERNITY LEAVE',
-    policyId: 'MAT-2026',
-    type: 'Parental',
-    description: 'Care Block',
-    days: '24 Days',
-    icon: 'baby-bottle-outline',
-    iconType: 'MaterialCommunityIcons',
-    color: '#E0F2FE',
-    iconColor: '#0284C7',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    name: 'CASUAL LEAVE',
-    policyId: 'CL-2026',
-    type: 'Contingency',
-    description: 'Contingency Allocation',
-    days: '08 Days',
-    icon: 'email-outline',
-    iconType: 'MaterialCommunityIcons',
-    color: '#F1F5F9',
-    iconColor: '#475569',
-    status: 'Pending',
-  },
-];
-
 export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLeaveSettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [leaves, setLeaves] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
+
+  const fetchLeaves = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/LeaveSetting');
+      
+      if (response.data && response.data.status) {
+        const fetchedLeaves = (response.data.data || []).map((item: any) => ({
+          id: item.leaveId ? item.leaveId.toString() : Math.random().toString(),
+          name: item.leaveName ? item.leaveName.trim() : '',
+          policyId: item.leaveCode ? item.leaveCode.trim() : '',
+          type: 'Standard',
+          description: 'Leave Policy',
+          days: item.days ? `${item.days} Days` : '0 Days',
+          icon: 'calendar-blank-outline',
+          iconType: 'MaterialCommunityIcons',
+          color: '#E0F2FE',
+          iconColor: '#0284C7',
+          status: 'Active',
+        }));
+        setLeaves(fetchedLeaves);
+      } else {
+        Alert.alert('Error', response.data?.message || 'Failed to fetch leave settings');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        await storageService.clearAuthData();
+        onNavigate?.('login');
+      } else if (error.response?.status === 404) {
+        Alert.alert('Error', 'Leave settings not found (404).');
+      } else if (error.response?.status === 500) {
+        Alert.alert('Error', 'Internal server error (500). Please try again later.');
+      } else if (error.code === 'ECONNABORTED') {
+        Alert.alert('Error', 'Request timeout. Please check your connection.');
+      } else if (error.message === 'Network Error' || !error.response) {
+        Alert.alert('Error', 'No internet connection or network error.');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderStatusBadge = (status: string) => {
     let bgColor = colors.successBg;
@@ -97,15 +95,15 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
     );
   };
 
-  const filteredLeaves = LEAVE_DATA.filter((leave) => {
+  const filteredLeaves = leaves.filter((leave) => {
     const query = search.toLowerCase().trim();
     if (!query) return true;
 
     return (
-      leave.name.toLowerCase().includes(query) ||
-      leave.policyId.toLowerCase().includes(query) ||
-      leave.description.toLowerCase().includes(query) ||
-      leave.type.toLowerCase().includes(query)
+      (leave.name || '').toLowerCase().includes(query) ||
+      (leave.policyId || '').toLowerCase().includes(query) ||
+      (leave.description || '').toLowerCase().includes(query) ||
+      (leave.type || '').toLowerCase().includes(query)
     );
   });
 
@@ -172,45 +170,51 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
         <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>STAFF LEAVE SETTINGS LEDGER</Text>
 
         {/* Leave List */}
-        {filteredLeaves.map((leave) => {
-          return (
-            <TouchableOpacity
-              key={leave.id}
-              activeOpacity={0.8}
-              onPress={() => onNavigate?.('admin_leave_setting_detail', { leaveId: leave.id })}
-              style={[styles.leaveCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.cardInfoRow}>
-                  <View style={[styles.iconContainer, { backgroundColor: leave.color }]}>
-                    {renderIcon(leave)}
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: 20 }} />
+        ) : filteredLeaves.length === 0 ? (
+          <Text style={{ textAlign: 'center', color: colors.textSecond, marginTop: 20 }}>No leave settings found.</Text>
+        ) : (
+          filteredLeaves.map((leave) => {
+            return (
+              <TouchableOpacity
+                key={leave.id}
+                activeOpacity={0.8}
+                onPress={() => onNavigate?.('admin_leave_setting_detail', { leaveId: leave.id })}
+                style={[styles.leaveCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+              >
+                <View style={styles.cardHeaderRow}>
+                  <View style={styles.cardInfoRow}>
+                    <View style={[styles.iconContainer, { backgroundColor: leave.color }]}>
+                      {renderIcon(leave)}
+                    </View>
+                    <View>
+                      <Text style={[styles.leaveName, { color: colors.textPrimary }]}>{leave.name}</Text>
+                      <Text style={[styles.policyText, { color: colors.textSecond }]}>Policy ID: {leave.policyId}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={[styles.leaveName, { color: colors.textPrimary }]}>{leave.name}</Text>
-                    <Text style={[styles.policyText, { color: colors.textSecond }]}>Policy ID: {leave.policyId}</Text>
+                </View>
+
+                <View style={[styles.leaveDivider, { backgroundColor: colors.borderLight }]} />
+
+                <View style={styles.leaveDetailsRow}>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Type</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{leave.type}</Text>
+                  </View>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Days/Year</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{leave.days}</Text>
                   </View>
                 </View>
-              </View>
 
-              <View style={[styles.leaveDivider, { backgroundColor: colors.borderLight }]} />
-
-              <View style={styles.leaveDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Type</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{leave.type}</Text>
+                <View style={styles.statusContainer}>
+                  {renderStatusBadge(leave.status)}
                 </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Days/Year</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{leave.days}</Text>
-                </View>
-              </View>
-
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(leave.status)}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
