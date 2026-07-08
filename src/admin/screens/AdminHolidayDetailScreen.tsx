@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { useAuth } from '@/context/AuthContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -29,66 +32,57 @@ export interface HolidayDetail {
   status: string;
 }
 
-// ── Dummy Data ────────────────────────────────────────────────────────────────
+interface HolidayAPIItem {
+  holidayId: number;
+  holidayName: string;
+  holidayCode: string;
+  date: string;
+}
 
-export const HOLIDAY_DETAILS: Record<string, HolidayDetail> = {
-  'HOL-2026-001': {
-    id: 'HOL-2026-001',
-    name: "NEW YEAR'S DAY",
-    emoji: '🎉',
-    date: '01 January 2026',
-    dayOfWeek: 'Thursday',
-    month: 'January',
-    year: '2026',
-    type: 'Public Holiday',
-    region: 'Nationwide',
-    applicableTo: 'All Employees',
-    description: 'The first day of the Gregorian calendar year. A public holiday observed across the country.',
-    status: 'Passed',
-  },
-  'HOL-2026-002': {
-    id: 'HOL-2026-002',
-    name: 'GOOD FRIDAY',
-    emoji: '🕊️',
-    date: '03 April 2026',
-    dayOfWeek: 'Friday',
-    month: 'April',
-    year: '2026',
-    type: 'Religious Holiday',
-    region: 'Nationwide',
-    applicableTo: 'All Employees',
-    description: 'Good Friday commemorates the crucifixion of Jesus Christ. Observed as a national public holiday.',
-    status: 'Passed',
-  },
-  'HOL-2026-003': {
-    id: 'HOL-2026-003',
-    name: 'LABOR DAY',
-    emoji: '🛠️',
-    date: '01 May 2026',
-    dayOfWeek: 'Friday',
-    month: 'May',
-    year: '2026',
-    type: 'Public Holiday',
-    region: 'Nationwide',
-    applicableTo: 'All Employees',
-    description: 'International Workers\' Day (Labour Day) celebrates the achievements of workers and the labor movement.',
-    status: 'Passed',
-  },
-  'HOL-2026-004': {
-    id: 'HOL-2026-004',
-    name: 'CHRISTMAS DAY',
-    emoji: '🎄',
-    date: '25 December 2026',
-    dayOfWeek: 'Friday',
-    month: 'December',
-    year: '2026',
-    type: 'Public Holiday',
-    region: 'Nationwide',
-    applicableTo: 'All Employees',
-    description: 'Christmas Day is an annual festival commemorating the birth of Jesus Christ, observed as a public holiday.',
-    status: 'Active',
-  },
-};
+function getHolidayStatus(dateStr: string): 'Passed' | 'Active' {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const holidayDate = new Date(dateStr);
+    holidayDate.setHours(0, 0, 0, 0);
+    return holidayDate.getTime() < today.getTime() ? 'Passed' : 'Active';
+  } catch {
+    return 'Active';
+  }
+}
+
+function getHolidayEmoji(name: string): string {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('new year') || lowerName.includes('newyear')) return '🎉';
+  if (lowerName.includes('pongal') || lowerName.includes('sankranti')) return '🌾';
+  if (lowerName.includes('diwali') || lowerName.includes('deepavali')) return '🪔';
+  if (lowerName.includes('eid') || lowerName.includes('ramadan') || lowerName.includes('milad')) return '🌙';
+  if (lowerName.includes('republic') || lowerName.includes('independence') || lowerName.includes('national')) return '🇮🇳';
+  if (lowerName.includes('christmas') || lowerName.includes('xmas')) return '🎄';
+  if (lowerName.includes('good friday') || lowerName.includes('easter') || lowerName.includes('friday')) return '🕊️';
+  if (lowerName.includes('labor') || lowerName.includes('labour') || lowerName.includes('worker') || lowerName.includes('may day')) return '🛠️';
+  if (lowerName.includes('gandhi')) return '👓';
+  if (lowerName.includes('shivratri') || lowerName.includes('shiva')) return '🔱';
+  if (lowerName.includes('ganesh') || lowerName.includes('vinayaka')) return '🐘';
+  if (lowerName.includes('dussehra') || lowerName.includes('ayudha') || lowerName.includes('pooja') || lowerName.includes('puja')) return '🌸';
+  if (lowerName.includes('holi')) return '🎨';
+  if (lowerName.includes('thanksgiving')) return '🦃';
+  return '📅';
+}
+
+function formatDateStringDetail(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = d.getDate().toString().padStart(2, '0');
+    const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -133,19 +127,132 @@ export default function AdminHolidayDetailScreen({
 }: AdminHolidayDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const holiday = holidayId ? HOLIDAY_DETAILS[holidayId] : HOLIDAY_DETAILS['HOL-2026-001'];
+  const [holidayData, setHolidayData] = useState<HolidayDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!holiday) {
+  const fetchDetails = async () => {
+    if (!holidayId) {
+      setError('No holiday selected.');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await apiClient.get<{ status: boolean; data: HolidayAPIItem }>('/Holiday/' + holidayId);
+      
+      if (response.data && response.data.status && response.data.data) {
+        const item = response.data.data;
+        const d = new Date(item.date);
+        
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayOfWeek = isNaN(d.getTime()) ? '---' : days[d.getDay()];
+        
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        const month = isNaN(d.getTime()) ? '---' : months[d.getMonth()];
+        const year = isNaN(d.getTime()) ? '---' : String(d.getFullYear());
+        
+        const status = getHolidayStatus(item.date);
+        const emoji = getHolidayEmoji(item.holidayName);
+        const formattedDate = formatDateStringDetail(item.date);
+        
+        const mappedHoliday: HolidayDetail = {
+          id: String(item.holidayId),
+          name: item.holidayName,
+          emoji,
+          date: formattedDate,
+          dayOfWeek,
+          month,
+          year,
+          type: 'Public Holiday',
+          region: 'Nationwide',
+          applicableTo: 'All Employees',
+          description: `Observed public holiday for ${item.holidayName}.`,
+          status,
+        };
+        
+        setHolidayData(mappedHoliday);
+      } else {
+        setError('Holiday not found.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching holiday details:', err);
+      let msg = 'An unexpected error occurred. Please try again later.';
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        msg = 'Request timed out. Please try again later.';
+      } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+        msg = 'No internet connection. Please check your network and try again.';
+      } else if (err.response) {
+        const status = err.response.status;
+        if (status === 401) {
+          msg = 'Session expired. Redirecting to login...';
+          await logout();
+          onNavigate?.('login');
+        } else if (status === 404) {
+          msg = 'Holiday not found.';
+        } else if (status === 500) {
+          msg = 'An internal server error occurred. Please try again later.';
+        } else if (status === 502 || status === 503 || status === 504) {
+          msg = 'Server is currently unavailable. Please try again later.';
+        }
+      }
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDetails();
+  }, [holidayId]);
+
+  if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
-        <Text style={{ color: colors.textPrimary, textAlign: 'center', marginTop: 40 }}>
-          Holiday not found.
-        </Text>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.brand} />
+        <Text style={{ color: colors.textSecond, marginTop: 12, fontSize: 14 }}>Loading holiday details...</Text>
       </View>
     );
   }
+
+  if (error || !holidayData) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Holiday Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.danger} />
+          <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '600', marginTop: 16, textAlign: 'center' }}>
+            {error || 'Holiday not found.'}
+          </Text>
+          <TouchableOpacity
+            onPress={fetchDetails}
+            style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.brand, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '600' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const holiday = holidayData;
 
   const statusColors: Record<string, { bg: string; text: string }> = {
     Active:  { bg: colors.successBg, text: colors.success },
@@ -187,7 +294,7 @@ export default function AdminHolidayDetailScreen({
         <View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <View style={styles.heroTop}>
             <View style={[styles.heroIcon, { backgroundColor: colors.brandBorder }]}>
-              <Text style={styles.heroEmoji}>{holiday.emoji}</Text>
+              <Feather name="calendar" size={30} color={colors.brand} />
             </View>
             <View style={styles.heroInfo}>
               <Text style={[styles.heroName, { color: colors.textPrimary }]}>{holiday.name}</Text>

@@ -83,6 +83,7 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [filterMode, setFilterMode] = useState<'all' | 'active' | 'passed'>('all');
 
   const handleCardPress = (id: string) => {
     onNavigate?.('admin_holiday_detail', { holidayId: id });
@@ -154,13 +155,19 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
 
   const filteredHolidays = mappedHolidays.filter((holiday) => {
     const query = search.toLowerCase().trim();
-    if (!query) return true;
-
-    return (
+    const matchesSearch = !query || (
       holiday.name.toLowerCase().includes(query) ||
       holiday.date.toLowerCase().includes(query) ||
       holiday.code.toLowerCase().includes(query)
     );
+
+    if (filterMode === 'active') {
+      return matchesSearch && holiday.status === 'Active';
+    }
+    if (filterMode === 'passed') {
+      return matchesSearch && holiday.status === 'Passed';
+    }
+    return matchesSearch;
   });
 
   const renderStatusBadge = (status: string) => {
@@ -220,6 +227,69 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
             value={search}
             onChangeText={setSearch}
           />
+        </View>
+
+        {/* Filter Tabs */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filterMode === 'all'
+                ? { backgroundColor: colors.brand }
+                : { backgroundColor: colors.card, borderColor: colors.borderLight, borderWidth: 1 }
+            ]}
+            onPress={() => setFilterMode('all')}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                filterMode === 'all' ? { color: '#FFF' } : { color: colors.textSecond }
+              ]}
+            >
+              All
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filterMode === 'active'
+                ? { backgroundColor: colors.brand }
+                : { backgroundColor: colors.card, borderColor: colors.borderLight, borderWidth: 1 }
+            ]}
+            onPress={() => setFilterMode('active')}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                filterMode === 'active' ? { color: '#FFF' } : { color: colors.textSecond }
+              ]}
+            >
+              Active
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              filterMode === 'passed'
+                ? { backgroundColor: colors.brand }
+                : { backgroundColor: colors.card, borderColor: colors.borderLight, borderWidth: 1 }
+            ]}
+            onPress={() => setFilterMode('passed')}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.filterButtonText,
+                filterMode === 'passed' ? { color: '#FFF' } : { color: colors.textSecond }
+              ]}
+            >
+              Passed
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -536,5 +606,23 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 14,
+    gap: 8,
+  },
+  filterButton: {
+    flex: 1,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
