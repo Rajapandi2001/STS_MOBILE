@@ -293,6 +293,15 @@ function AppContent() {
     });
   };
 
+  // Redirect to login if user is not authenticated and on a protected screen
+  useEffect(() => {
+    const isPublicScreen = ['splash', 'login', 'forgot_password', 'otp_verification', 'new_password'].includes(screen);
+    if (!isAuthenticated && !isPublicScreen) {
+      transitionTo('login', undefined, 'backward');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, screen]);
+
   const handleCheckInConfirmed = () => {
     const now = new Date();
     setCheckInTime(now);

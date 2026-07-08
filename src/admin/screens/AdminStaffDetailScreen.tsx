@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   StatusBar,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -50,199 +52,46 @@ export interface StaffDetail {
   loginType: string;
 }
 
-// ── Dummy Data ────────────────────────────────────────────────────────────────
-
-export const STAFF_DETAILS: Record<string, StaffDetail> = {
-  '1': {
-    id: '1',
-    firstName: 'Sarah',
-    lastName: 'Jenkins',
-    employeeId: 'EMP-8492',
-    nationality: 'American',
-    dateOfBirth: '15 Mar 1990',
-    gender: 'Female',
-    designation: 'Senior Analyst',
-    dateOfJoin: '01 Jun 2018',
-    jobGroup: 'Engineering',
-    clientName: 'ACME Corporation',
-    reportManager: 'James Wilson',
-    email: 'sarah.jenkins@company.com',
-    mobile: '+1 (555) 012-3456',
-    salary: '$8,500 / month',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-    status: 'Active',
-    relationName: 'Mark Jenkins',
-    relationship: 'Spouse',
-    emergencyPhone: '+1 (555) 098-7654',
-    bankName: 'Bank of America',
-    bankAccountNo: '****  ****  4872',
-    ifscCode: 'BOA0001234',
-    userName: 'sarah.jenkins',
-    loginType: 'Employee',
-  },
-  '2': {
-    id: '2',
-    firstName: 'Michael',
-    lastName: 'Chen',
-    employeeId: 'EMP-8211',
-    nationality: 'Canadian',
-    dateOfBirth: '22 Jul 1988',
-    gender: 'Male',
-    designation: 'Product Manager',
-    dateOfJoin: '15 Feb 2019',
-    jobGroup: 'Product',
-    clientName: 'Nexus Global Tech',
-    reportManager: 'Linda Park',
-    email: 'michael.chen@company.com',
-    mobile: '+1 (555) 234-5678',
-    salary: '$9,200 / month',
-    initials: 'MC',
-    status: 'Active',
-    relationName: 'Wei Chen',
-    relationship: 'Parent',
-    emergencyPhone: '+1 (555) 876-5432',
-    bankName: 'TD Canada Trust',
-    bankAccountNo: '****  ****  3301',
-    ifscCode: 'TDCT0005678',
-    userName: 'michael.chen',
-    loginType: 'Employee',
-  },
-  '3': {
-    id: '3',
-    firstName: 'David',
-    lastName: 'Rossi',
-    employeeId: 'EMP-7944',
-    nationality: 'Italian',
-    dateOfBirth: '08 Nov 1985',
-    gender: 'Male',
-    designation: 'Finance Director',
-    dateOfJoin: '03 Jan 2016',
-    jobGroup: 'Finance',
-    clientName: 'Starlight Ventures',
-    reportManager: 'CEO — Board',
-    email: 'david.rossi@company.com',
-    mobile: '+39 06 1234 5678',
-    salary: '$12,000 / month',
-    avatar: 'https://i.pravatar.cc/150?img=11',
-    status: 'Inactive',
-    relationName: 'Giulia Rossi',
-    relationship: 'Spouse',
-    emergencyPhone: '+39 06 8765 4321',
-    bankName: 'UniCredit',
-    bankAccountNo: '****  ****  9910',
-    ifscCode: 'UNCR0009910',
-    userName: 'david.rossi',
-    loginType: 'Manager',
-  },
-  '4': {
-    id: '4',
-    firstName: 'Amanda',
-    lastName: 'Patel',
-    employeeId: 'EMP-8633',
-    nationality: 'Indian',
-    dateOfBirth: '30 Apr 1995',
-    gender: 'Female',
-    designation: 'UX Designer',
-    dateOfJoin: '10 Aug 2021',
-    jobGroup: 'Design',
-    clientName: 'Apex Innovations',
-    reportManager: 'Riya Sharma',
-    email: 'amanda.patel@company.com',
-    mobile: '+91 98765 43210',
-    salary: '$4,500 / month',
-    initials: 'AP',
-    status: 'Pending',
-    relationName: 'Raj Patel',
-    relationship: 'Father',
-    emergencyPhone: '+91 99887 76655',
-    bankName: 'HDFC Bank',
-    bankAccountNo: '****  ****  7723',
-    ifscCode: 'HDFC0007723',
-    userName: 'amanda.patel',
-    loginType: 'Employee',
-  },
-  '5': {
-    id: '5',
-    firstName: 'Manikandan',
-    lastName: 'Rajan',
-    employeeId: 'EMP-8812',
-    nationality: 'Indian',
-    dateOfBirth: '12 Jan 1993',
-    gender: 'Male',
-    designation: 'Developer',
-    dateOfJoin: '20 Mar 2022',
-    jobGroup: 'Engineering',
-    clientName: 'ACME Corporation',
-    reportManager: 'Sarah Jenkins',
-    email: 'manikandan.rajan@company.com',
-    mobile: '+91 93456 78901',
-    salary: '₹55,000 / month',
-    initials: 'MR',
-    status: 'Active',
-    relationName: 'Kavitha Rajan',
-    relationship: 'Mother',
-    emergencyPhone: '+91 94567 89012',
-    bankName: 'State Bank of India',
-    bankAccountNo: '****  ****  5521',
-    ifscCode: 'SBIN0005521',
-    userName: 'manikandan.rajan',
-    loginType: 'Employee',
-  },
-  '6': {
-    id: '6',
-    firstName: 'Manish',
-    lastName: 'Sharma',
-    employeeId: 'EMP-8813',
-    nationality: 'Indian',
-    dateOfBirth: '05 Sep 1991',
-    gender: 'Male',
-    designation: 'QA Engineer',
-    dateOfJoin: '01 Nov 2021',
-    jobGroup: 'Quality Assurance',
-    clientName: 'Nexus Global Tech',
-    reportManager: 'Michael Chen',
-    email: 'manish.sharma@company.com',
-    mobile: '+91 87654 32109',
-    salary: '₹60,000 / month',
-    initials: 'MS',
-    status: 'Active',
-    relationName: 'Priya Sharma',
-    relationship: 'Spouse',
-    emergencyPhone: '+91 76543 21098',
-    bankName: 'ICICI Bank',
-    bankAccountNo: '****  ****  8834',
-    ifscCode: 'ICIC0008834',
-    userName: 'manish.sharma',
-    loginType: 'Employee',
-  },
-  '7': {
-    id: '7',
-    firstName: 'Manoj',
-    lastName: 'Kumar',
-    employeeId: 'EMP-8814',
-    nationality: 'Indian',
-    dateOfBirth: '18 Feb 1987',
-    gender: 'Male',
-    designation: 'Lead Engineer',
-    dateOfJoin: '15 Jul 2017',
-    jobGroup: 'Engineering',
-    clientName: 'ACME Corporation',
-    reportManager: 'James Wilson',
-    email: 'manoj.kumar@company.com',
-    mobile: '+91 81234 56789',
-    salary: '₹90,000 / month',
-    initials: 'MK',
-    status: 'Pending',
-    relationName: 'Sunita Kumar',
-    relationship: 'Spouse',
-    emergencyPhone: '+91 82345 67890',
-    bankName: 'Axis Bank',
-    bankAccountNo: '****  ****  6645',
-    ifscCode: 'UTIB0006645',
-    userName: 'manoj.kumar',
-    loginType: 'Manager',
-  },
-};
+interface ApiResponseStaffDetail {
+  userID?: number;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  empID?: string;
+  employeeId?: string;
+  dateOfBirth?: string;
+  dob?: string;
+  gender?: string;
+  designation?: string;
+  dateOfJoining?: string;
+  dateOfJoin?: string;
+  joiningDate?: string;
+  jobGroup?: string;
+  group?: string;
+  jobGroupName?: string;
+  clientName?: string;
+  client?: string;
+  reportManager?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  phoneNumber?: string;
+  salary?: string | number;
+  contactName?: string;
+  relationName?: string;
+  emergencyContactName?: string;
+  relationship?: string;
+  emergencyPhone?: string;
+  bankName?: string;
+  accountNumber?: string;
+  bankAccountNo?: string;
+  accountNo?: string;
+  ifscCode?: string;
+  username?: string;
+  userName?: string;
+  loginType?: string;
+  isActive?: boolean;
+}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -284,20 +133,145 @@ export default function AdminStaffDetailScreen({
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [staffData, setStaffData] = useState<StaffDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [pickedFiles, setPickedFiles] = useState<{ name: string; uri: string; size?: number }[]>([]);
 
-  const staff = staffId ? STAFF_DETAILS[staffId] : STAFF_DETAILS['1'];
+  const getInitials = (name: string) => {
+    if (!name || name === '---') return 'ST';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return parts[0].substring(0, 2).toUpperCase();
+  };
 
-  if (!staff) {
+  const fetchDetails = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const targetId = staffId || '2152';
+      const response = await apiClient.get<{ status: boolean; data: ApiResponseStaffDetail }>('/Staff/' + targetId);
+      
+      if (response.data && response.data.status && response.data.data) {
+        const d = response.data.data;
+        
+        const fullName = d.name || (d.firstName && d.lastName ? `${d.firstName} ${d.lastName}` : '') || '';
+        const nameParts = fullName.trim().split(/\s+/);
+        const fName = d.firstName || nameParts[0] || '---';
+        const lName = d.lastName || nameParts.slice(1).join(' ') || '---';
+        
+        const mappedStaff: StaffDetail = {
+          id: String(d.userID || targetId),
+          firstName: fName,
+          lastName: lName,
+          employeeId: d.empID || d.employeeId || '---',
+          nationality: '---',
+          dateOfBirth: d.dateOfBirth || d.dob || '---',
+          gender: d.gender || '---',
+          designation: d.designation || '---',
+          dateOfJoin: d.dateOfJoining || d.dateOfJoin || d.joiningDate || '---',
+          jobGroup: d.jobGroup || d.group || d.jobGroupName || '---',
+          clientName: d.clientName || d.client || '---',
+          reportManager: d.reportManager || '---',
+          email: d.email || '---',
+          mobile: d.phone || d.mobile || d.phoneNumber || '---',
+          salary: d.salary !== undefined && d.salary !== null ? String(d.salary) : '---',
+          status: d.isActive === true ? 'Active' : d.isActive === false ? 'Inactive' : '---',
+          relationName: d.contactName || d.relationName || d.emergencyContactName || '---',
+          relationship: d.relationship || '---',
+          emergencyPhone: d.emergencyPhone || d.phone || d.mobile || '---',
+          bankName: d.bankName || '---',
+          bankAccountNo: d.accountNumber || d.bankAccountNo || d.accountNo || '---',
+          ifscCode: d.ifscCode || '---',
+          userName: d.username || d.userName || '---',
+          loginType: d.loginType || '---',
+          initials: getInitials(fullName || `${fName} ${lName}`),
+        };
+        
+        setStaffData(mappedStaff);
+      } else {
+        setError('Staff not found.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching staff details:', err);
+      let msg = 'An unexpected error occurred. Please try again later.';
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        msg = 'Request timed out. Please try again later.';
+      } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+        msg = 'No internet connection. Please check your network and try again.';
+      } else if (err.response) {
+        const status = err.response.status;
+        if (status === 401) {
+          msg = 'Session expired. Redirecting to login...';
+        } else if (status === 404) {
+          msg = 'Staff not found.';
+        } else if (status === 500) {
+          msg = 'An internal server error occurred. Please try again later.';
+        } else if (status === 502 || status === 503 || status === 504) {
+          msg = 'Server is currently unavailable. Please try again later.';
+        }
+      }
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staffId]);
+
+  const staff = staffData;
+
+  if (isLoading) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
-        <Text style={{ color: colors.textPrimary, textAlign: 'center', marginTop: 40 }}>
-          Staff not found.
-        </Text>
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.brand} />
+        <Text style={{ color: colors.textSecond, marginTop: 12, fontSize: 14 }}>Loading staff details...</Text>
       </View>
     );
   }
 
-  const [pickedFiles, setPickedFiles] = useState<{ name: string; uri: string; size?: number }[]>([]);
+  if (error || !staff) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Staff Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 }}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.danger} />
+          <Text style={{ color: colors.textPrimary, textAlign: 'center', marginTop: 16, fontSize: 16, fontWeight: '600' }}>
+            {error || 'Staff not found.'}
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: colors.brand,
+              marginTop: 20,
+              paddingHorizontal: 20,
+              paddingVertical: 10,
+              borderRadius: 20
+            }}
+            onPress={fetchDetails}
+          >
+            <Text style={{ color: '#ffffff', fontWeight: '600' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   const pickFile = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,104 +7,105 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+
+interface StaffMember {
+  userID: number;
+  name: string;
+  empID: string;
+  designation: string;
+  reportManager: string;
+  isActive: boolean;
+}
 
 interface AdminStaffScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
   onBack?: () => void;
 }
 
-const STAFF_DATA = [
-  {
-    id: '1',
-    name: 'Sarah Jenkins',
-    empId: 'EMP-8492',
-    role: 'Senior Analyst',
-    department: 'Engineering',
-    status: 'Active',
-    avatar: 'https://i.pravatar.cc/150?img=1',
-  },
-  {
-    id: '2',
-    name: 'Michael Chen',
-    empId: 'EMP-8211',
-    role: 'Product Manager',
-    department: 'Product',
-    status: 'Active',
-    initials: 'MC',
-    color: '#DBEAFE',
-    textColor: '#1D4ED8',
-  },
-  {
-    id: '3',
-    name: 'David Rossi',
-    empId: 'EMP-7944',
-    role: 'Finance Director',
-    department: 'Finance',
-    status: 'Inactive',
-    avatar: 'https://i.pravatar.cc/150?img=11',
-  },
-  {
-    id: '4',
-    name: 'Amanda Patel',
-    empId: 'EMP-8633',
-    role: 'UX Designer',
-    department: 'Design',
-    status: 'Pending',
-    initials: 'AP',
-    color: '#FFEDD5',
-    textColor: '#C2410C',
-  },
-  {
-    id: '5',
-    name: 'Manikandan Rajan',
-    empId: 'EMP-8812',
-    role: 'Developer',
-    department: 'Engineering',
-    status: 'Active',
-    initials: 'MR',
-    color: '#E0F2FE',
-    textColor: '#0369A1',
-  },
-  {
-    id: '6',
-    name: 'Manish Sharma',
-    empId: 'EMP-8813',
-    role: 'QA Engineer',
-    department: 'Quality Assurance',
-    status: 'Active',
-    initials: 'MS',
-    color: '#F0FDF4',
-    textColor: '#15803D',
-  },
-  {
-    id: '7',
-    name: 'Manoj Kumar',
-    empId: 'EMP-8814',
-    role: 'Lead Engineer',
-    department: 'Engineering',
-    status: 'Pending',
-    initials: 'MK',
-    color: '#FEF3C7',
-    textColor: '#B45309',
-  },
-];
+const getInitials = (name: string) => {
+  if (!name) return 'ST';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  }
+  return parts[0].substring(0, 2).toUpperCase();
+};
 
 export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchStaff() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await apiClient.get<{ status: boolean; data: StaffMember[] }>('/Staff');
+        if (active) {
+          if (response.data && response.data.status && Array.isArray(response.data.data)) {
+            setStaffList(response.data.data);
+          } else {
+            setError('Failed to load staff records.');
+          }
+        }
+      } catch (err: any) {
+        console.error('Error fetching staff in screen:', err);
+        if (active) {
+          let msg = 'An unexpected error occurred. Please try again later.';
+          if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+            msg = 'Request timed out. Please try again later.';
+          } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+            msg = 'No internet connection. Please check your network and try again.';
+          } else if (err.response) {
+            const status = err.response.status;
+            if (status === 401) {
+              msg = 'Session expired. Redirecting to login...';
+            } else if (status === 500) {
+              msg = 'An internal server error occurred. Please try again later.';
+            } else if (status === 502 || status === 503 || status === 504) {
+              msg = 'Server is currently unavailable. Please try again later.';
+            }
+          }
+          setError(msg);
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchStaff();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const renderStatusBadge = (status: string) => {
+    if (status === '---') {
+      return (
+        <View style={[styles.statusBadge, { backgroundColor: colors.iconBg }]}>
+          <Text style={[styles.statusText, { color: colors.textSecond }]}>---</Text>
+        </View>
+      );
+    }
     let bgColor = colors.successBg;
     let textColor = colors.success;
-    if (status === 'Inactive') {
+    if (status === 'Inactive' || status === 'Deactive') {
       bgColor = colors.iconBg;
       textColor = colors.textSecond;
     } else if (status === 'Pending') {
@@ -117,6 +118,12 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
         <Text style={[styles.statusText, { color: textColor }]}>{status}</Text>
       </View>
     );
+  };
+
+  const getStatusText = (isActive: boolean | null | undefined) => {
+    if (isActive === true) return 'Active';
+    if (isActive === false) return 'Deactive';
+    return '---';
   };
 
   return (
@@ -166,63 +173,91 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Staff List */}
-        {STAFF_DATA.filter((staff) => {
-          const query = search.toLowerCase().trim();
-          if (!query) return true;
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.brand} />
+            <Text style={[styles.loadingText, { color: colors.textSecond }]}>Loading staff records...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.danger} />
+            <Text style={[styles.errorText, { color: colors.textPrimary }]}>{error}</Text>
+          </View>
+        ) : staffList.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="account-off-outline" size={48} color={colors.textSecond} />
+            <Text style={[styles.emptyText, { color: colors.textPrimary }]}>No staff records found.</Text>
+          </View>
+        ) : (
+          staffList.filter((staff) => {
+            const query = search.toLowerCase().trim();
+            if (!query) return true;
 
-          // Check if any word in the name starts with the query, or if the name includes the query
-          const nameWords = staff.name.toLowerCase().split(' ');
-          const nameMatch = nameWords.some(word => word.startsWith(query)) || staff.name.toLowerCase().includes(query);
-          const empIdMatch = staff.empId.toLowerCase().includes(query);
-          const roleMatch = staff.role.toLowerCase().includes(query);
-          const deptMatch = staff.department.toLowerCase().includes(query);
+            const nameWords = staff.name.toLowerCase().split(' ');
+            const nameMatch = nameWords.some(word => word.startsWith(query)) || staff.name.toLowerCase().includes(query);
+            const empIdMatch = (staff.empID || '').toLowerCase().includes(query);
+            const roleMatch = (staff.designation || '').toLowerCase().includes(query);
+            const deptMatch = (staff.reportManager || '').toLowerCase().includes(query);
 
-          return nameMatch || empIdMatch || roleMatch || deptMatch;
-        }).map((staff) => {
-          return (
-            <TouchableOpacity
-              key={staff.id}
-              activeOpacity={0.85}
-              onPress={() => onNavigate?.('admin_staff_detail', { staffId: staff.id })}
-              style={[styles.staffCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-            >
-              <View style={styles.staffHeaderRow}>
-                <View style={styles.staffInfoRow}>
-                  {staff.avatar ? (
-                    <Image source={{ uri: staff.avatar }} style={styles.staffAvatar} />
-                  ) : (
+            return nameMatch || empIdMatch || roleMatch || deptMatch;
+          }).map((staff) => {
+            return (
+              <TouchableOpacity
+                key={staff.userID}
+                activeOpacity={0.85}
+                onPress={() => onNavigate?.('admin_staff_detail', { staffId: staff.userID })}
+                style={[styles.staffCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+              >
+                <View style={styles.staffHeaderRow}>
+                  <View style={styles.staffInfoRow}>
                     <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
                       <Text style={[styles.staffInitialsText, { color: colors.brand }]}>
-                        {staff.initials}
+                        {getInitials(staff.name || '---')}
                       </Text>
                     </View>
-                  )}
-                  <View>
-                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{staff.name}</Text>
-                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{staff.empId}</Text>
+                    <View>
+                      <Text style={[styles.staffName, { color: colors.textPrimary }]}>{!staff.name || !staff.name.trim() ? '---' : staff.name}</Text>
+                      <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{!staff.empID || !staff.empID.trim() ? '---' : staff.empID}</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
+                <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
 
-              <View style={styles.staffDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Role</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{staff.role}</Text>
+                <View style={styles.staffDetailsRow}>
+                  {(() => {
+                    const isDesignationFallback = !staff.designation || !staff.designation.trim();
+                    const designationVal = isDesignationFallback ? '---' : staff.designation;
+                    return (
+                      <View style={styles.detailCol}>
+                        <View style={{ alignSelf: 'flex-start', alignItems: isDesignationFallback ? 'center' : 'flex-start' }}>
+                          <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Designation</Text>
+                          <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{designationVal}</Text>
+                        </View>
+                      </View>
+                    );
+                  })()}
+                  {(() => {
+                    const isReportManagerFallback = !staff.reportManager || !staff.reportManager.trim();
+                    const reportManagerVal = isReportManagerFallback ? '---' : staff.reportManager;
+                    return (
+                      <View style={styles.detailCol}>
+                        <View style={{ alignSelf: 'flex-start', alignItems: isReportManagerFallback ? 'center' : 'flex-start' }}>
+                          <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Report Manager</Text>
+                          <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{reportManagerVal}</Text>
+                        </View>
+                      </View>
+                    );
+                  })()}
                 </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Department</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{staff.department}</Text>
-                </View>
-              </View>
 
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(staff.status)}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+                <View style={styles.statusContainer}>
+                  {renderStatusBadge(getStatusText(staff.isActive))}
+                </View>
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -507,6 +542,37 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     color: '#64748B',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
     fontWeight: '500',
   },
 });

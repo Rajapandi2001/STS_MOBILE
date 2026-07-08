@@ -10,10 +10,13 @@ export interface UserProfile {
 
 export interface LoginResponse {
   status: boolean;
+  statusCode: number;
   message: string;
-  token?: string;
-  expires?: string;
-  user?: UserProfile;
+  data?: {
+    token: string;
+    expireDate: string;
+    user: UserProfile;
+  };
 }
 
 export const authApi = {
