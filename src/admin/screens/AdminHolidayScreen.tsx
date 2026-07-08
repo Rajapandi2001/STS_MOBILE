@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,65 +7,159 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { useAuth } from '@/context/AuthContext';
 
 interface AdminHolidayScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
   onBack?: () => void;
 }
 
-const HOLIDAY_DATA = [
-  {
-    id: 'HOL-2026-001',
-    name: "NEW YEAR'S DAY",
-    date: '2026-01-01',
-    emoji: '🎉',
-    status: 'Passed',
-  },
-  {
-    id: 'HOL-2026-002',
-    name: 'GOOD FRIDAY',
-    date: '2026-04-03',
-    emoji: '🕊️',
-    status: 'Passed',
-  },
-  {
-    id: 'HOL-2026-003',
-    name: 'LABOR DAY',
-    date: '2026-05-01',
-    emoji: '🛠️',
-    status: 'Passed',
-  },
-  {
-    id: 'HOL-2026-004',
-    name: 'CHRISTMAS DAY',
-    date: '2026-12-25',
-    emoji: '🎄',
-    status: 'Active',
-  },
-];
+interface HolidayAPIItem {
+  holidayId: number;
+  holidayName: string;
+  holidayCode: string;
+  date: string;
+}
+
+function getHolidayStatus(dateStr: string): 'Passed' | 'Active' {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const holidayDate = new Date(dateStr);
+    holidayDate.setHours(0, 0, 0, 0);
+    return holidayDate.getTime() < today.getTime() ? 'Passed' : 'Active';
+  } catch {
+    return 'Active';
+  }
+}
+
+function getHolidayEmoji(name: string): string {
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('new year') || lowerName.includes('newyear')) return '🎉';
+  if (lowerName.includes('pongal') || lowerName.includes('sankranti')) return '🌾';
+  if (lowerName.includes('diwali') || lowerName.includes('deepavali')) return '🪔';
+  if (lowerName.includes('eid') || lowerName.includes('ramadan') || lowerName.includes('milad')) return '🌙';
+  if (lowerName.includes('republic') || lowerName.includes('independence') || lowerName.includes('national')) return '🇮🇳';
+  if (lowerName.includes('christmas') || lowerName.includes('xmas')) return '🎄';
+  if (lowerName.includes('good friday') || lowerName.includes('easter') || lowerName.includes('friday')) return '🕊️';
+  if (lowerName.includes('labor') || lowerName.includes('labour') || lowerName.includes('worker') || lowerName.includes('may day')) return '🛠️';
+  if (lowerName.includes('gandhi')) return '👓';
+  if (lowerName.includes('shivratri') || lowerName.includes('shiva')) return '🔱';
+  if (lowerName.includes('ganesh') || lowerName.includes('vinayaka')) return '🐘';
+  if (lowerName.includes('dussehra') || lowerName.includes('ayudha') || lowerName.includes('pooja') || lowerName.includes('puja')) return '🌸';
+  if (lowerName.includes('holi')) return '🎨';
+  if (lowerName.includes('thanksgiving')) return '🦃';
+  return '📅';
+}
+
+function formatDateString(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const day = d.getDate().toString().padStart(2, '0');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[d.getMonth()];
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { logout } = useAuth();
+
+  const [holidays, setHolidays] = useState<HolidayAPIItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+
   const handleCardPress = (id: string) => {
     onNavigate?.('admin_holiday_detail', { holidayId: id });
   };
 
-  const filteredHolidays = HOLIDAY_DATA.filter((holiday) => {
+  useEffect(() => {
+    let active = true;
+    async function fetchHolidays() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await apiClient.get<{ status: boolean; data: HolidayAPIItem[] }>('/Holiday');
+        if (active) {
+          if (response.data && response.data.status && Array.isArray(response.data.data)) {
+            setHolidays(response.data.data);
+          } else {
+            setError('Failed to load holiday records.');
+          }
+        }
+      } catch (err: any) {
+        console.error('Error fetching holidays in screen:', err);
+        if (active) {
+          let msg = 'An unexpected error occurred. Please try again later.';
+          if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+            msg = 'Request timed out. Please try again later.';
+          } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+            msg = 'No internet connection. Please check your network and try again.';
+          } else if (err.response) {
+            const status = err.response.status;
+            if (status === 401) {
+              msg = 'Session expired. Redirecting to login...';
+              await logout();
+              onNavigate?.('login');
+            } else if (status === 500) {
+              msg = 'An internal server error occurred. Please try again later.';
+            } else if (status === 502 || status === 503 || status === 504) {
+              msg = 'Server is currently unavailable. Please try again later.';
+            }
+          }
+          setError(msg);
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchHolidays();
+
+    return () => {
+      active = false;
+    };
+  }, [logout, onNavigate]);
+
+  const mappedHolidays = holidays.map((item) => {
+    const status = getHolidayStatus(item.date);
+    const emoji = getHolidayEmoji(item.holidayName);
+    const formattedDate = formatDateString(item.date);
+    return {
+      id: item.holidayId.toString(),
+      name: item.holidayName,
+      code: item.holidayCode,
+      date: formattedDate,
+      emoji,
+      status,
+    };
+  });
+
+  const filteredHolidays = mappedHolidays.filter((holiday) => {
     const query = search.toLowerCase().trim();
     if (!query) return true;
 
     return (
       holiday.name.toLowerCase().includes(query) ||
-      holiday.date.includes(query) ||
-      holiday.id.toLowerCase().includes(query)
+      holiday.date.toLowerCase().includes(query) ||
+      holiday.code.toLowerCase().includes(query)
     );
   });
 
@@ -131,50 +225,65 @@ export default function AdminHolidayScreen({ onNavigate, onBack }: AdminHolidayS
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Holiday List */}
-        {filteredHolidays.map((holiday) => {
-          return (
-            <TouchableOpacity
-              key={holiday.id}
-              activeOpacity={0.8}
-              onPress={() => handleCardPress(holiday.id)}
-              style={[
-                styles.staffCard,
-                { backgroundColor: colors.card, borderColor: colors.borderLight }
-              ]}
-            >
-              <View style={styles.staffHeaderRow}>
-                <View style={styles.staffInfoRow}>
-                  <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
-                    <Text style={styles.emojiText}>
-                      {holiday.emoji}
-                    </Text>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.brand} />
+            <Text style={[styles.loadingText, { color: colors.textSecond }]}>Loading holidays...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.danger} />
+            <Text style={[styles.errorText, { color: colors.textPrimary }]}>{error}</Text>
+          </View>
+        ) : filteredHolidays.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="calendar-blank-outline" size={48} color={colors.textSecond} />
+            <Text style={[styles.emptyText, { color: colors.textPrimary }]}>No holidays found.</Text>
+          </View>
+        ) : (
+          filteredHolidays.map((holiday) => {
+            return (
+              <TouchableOpacity
+                key={holiday.id}
+                activeOpacity={0.8}
+                onPress={() => handleCardPress(holiday.id)}
+                style={[
+                  styles.staffCard,
+                  { backgroundColor: colors.card, borderColor: colors.borderLight }
+                ]}
+              >
+                <View style={styles.staffHeaderRow}>
+                  <View style={styles.staffInfoRow}>
+                    <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
+                      <Feather name="calendar" size={20} color={colors.brand} />
+                    </View>
+                    <View>
+                      <Text style={[styles.staffName, { color: colors.textPrimary }]}>{holiday.name}</Text>
+                      <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{holiday.code}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{holiday.name}</Text>
-                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{holiday.id}</Text>
+                </View>
+
+                <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
+
+                <View style={styles.staffDetailsRow}>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Date</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{holiday.date}</Text>
+                  </View>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Type</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>Public Holiday</Text>
                   </View>
                 </View>
-              </View>
 
-              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
-
-              <View style={styles.staffDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Date</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{holiday.date}</Text>
+                <View style={styles.statusContainer}>
+                  {renderStatusBadge(holiday.status)}
                 </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Type</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>Public Holiday</Text>
-                </View>
-              </View>
-
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(holiday.status)}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -395,6 +504,37 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     color: '#64748B',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
     fontWeight: '500',
   },
 });
