@@ -18,6 +18,7 @@ interface AdminLeaveSettingsScreenProps {
   onBack?: () => void;
 }
 
+<<<<<<< Updated upstream
 const LEAVE_DATA = [
   {
     id: '1',
@@ -72,12 +73,79 @@ const LEAVE_DATA = [
     status: 'Pending',
   },
 ];
+=======
+interface LeaveSetting {
+  id: string;
+  name: string;
+  policyId: string;
+  type: string;
+  description: string;
+  days: string;
+  icon: string;
+  iconType: string;
+  color: string;
+  iconColor: string;
+  status: string;
+}
+>>>>>>> Stashed changes
 
 export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLeaveSettingsScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+<<<<<<< Updated upstream
+=======
+  const [leaves, setLeaves] = useState<LeaveSetting[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
+
+  const fetchLeaves = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/LeaveSetting');
+      
+      if (response.data && response.data.status) {
+        const fetchedLeaves = (response.data.data || []).map((item: any) => ({
+          id: item.leaveId ? item.leaveId.toString() : Math.random().toString(),
+          name: item.leaveName ? item.leaveName.trim() : '',
+          policyId: item.leaveCode ? item.leaveCode.trim() : '',
+          type: 'Standard',
+          description: 'Leave Policy',
+          days: item.days ? `${item.days} Days` : '0 Days',
+          icon: 'calendar-blank-outline',
+          iconType: 'MaterialCommunityIcons',
+          color: '#E0F2FE',
+          iconColor: '#0284C7',
+          status: 'Active',
+        }));
+        setLeaves(fetchedLeaves);
+      } else {
+        Alert.alert('Error', response.data?.message || 'Failed to fetch leave settings');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        await storageService.clearAuthData();
+        onNavigate?.('login');
+      } else if (error.response?.status === 404) {
+        Alert.alert('Error', 'Leave settings not found (404).');
+      } else if (error.response?.status === 500) {
+        Alert.alert('Error', 'Internal server error (500). Please try again later.');
+      } else if (error.code === 'ECONNABORTED') {
+        Alert.alert('Error', 'Request timeout. Please check your connection.');
+      } else if (error.message === 'Network Error' || !error.response) {
+        Alert.alert('Error', 'No internet connection or network error.');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+>>>>>>> Stashed changes
 
   const renderStatusBadge = (status: string) => {
     let bgColor = colors.successBg;
@@ -109,7 +177,11 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
     );
   });
 
+<<<<<<< Updated upstream
   const renderIcon = (leave: any) => {
+=======
+  const renderIcon = (leave: LeaveSetting) => {
+>>>>>>> Stashed changes
     if (leave.iconType === 'MaterialCommunityIcons') {
       return (
         <MaterialCommunityIcons

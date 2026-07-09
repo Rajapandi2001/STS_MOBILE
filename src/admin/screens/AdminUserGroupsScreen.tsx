@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,15 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { storageService } from '@/services/storageService';
 
 interface AdminUserGroupsScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
@@ -66,6 +70,52 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [groups, setGroups] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchGroups();
+  }, []);
+
+  const fetchGroups = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/UserGroup');
+      if (response.data && response.data.status) {
+        const fetchedGroups = (response.data.data || []).map((item: any, index: number) => {
+          const colorsList = [
+            { bg: '#EFF6FF', icon: '#0A52D6' }, // blue
+            { bg: '#F0FDF4', icon: '#16A34A' }, // green
+            { bg: '#FAF5FF', icon: '#9333EA' }, // purple
+            { bg: '#FFF7ED', icon: '#EA580C' }, // orange
+          ];
+          const colorPair = colorsList[index % colorsList.length];
+          return {
+            id: item.groupID ? item.groupID.toString() : Math.random().toString(),
+            name: item.groupName ? item.groupName.trim() : 'N/A',
+            groupId: item.groupCode ? item.groupCode.trim() : 'N/A',
+            color: colorPair.bg,
+            iconColor: colorPair.icon,
+            status: 'Active',
+            members: item.totalStaff !== undefined ? `${item.totalStaff} Members` : '0 Members',
+            accessType: `${item.groupName ? item.groupName.trim() : 'Standard'} Access`,
+          };
+        });
+        setGroups(fetchedGroups);
+      } else {
+        Alert.alert('Error', response.data?.message || 'Failed to fetch user groups.');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        await storageService.clearAuthData();
+        onNavigate?.('login');
+      } else {
+        Alert.alert('Error', 'An unexpected error occurred while fetching user groups.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const renderStatusBadge = (status: string) => {
     let bgColor = colors.successBg;
@@ -85,7 +135,7 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
     );
   };
 
-  const filteredGroups = USER_GROUPS_DATA.filter((group) => {
+  const filteredGroups = groups.filter((group) => {
     const query = search.toLowerCase().trim();
     if (!query) return true;
 
@@ -145,40 +195,53 @@ export default function AdminUserGroupsScreen({ onNavigate, onBack }: AdminUserG
         <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>USER GROUPS INDEX</Text>
 
         {/* User Groups List */}
-        {filteredGroups.map((group) => {
-          return (
-            <View key={group.id} style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.cardInfoRow}>
-                  <View style={[styles.iconContainer, { backgroundColor: group.color }]}>
-                    <MaterialCommunityIcons name="account-group" size={24} color={group.iconColor} />
+        {loading ? (
+          <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: 20 }} />
+        ) : filteredGroups.length === 0 ? (
+          <Text style={{ textAlign: 'center', color: colors.textSecond, marginTop: 20 }}>No user groups found.</Text>
+        ) : (
+          filteredGroups.map((group) => {
+            return (
+              <TouchableOpacity
+                key={group.id}
+                activeOpacity={0.8}
+                onPress={() => {
+                  onNavigate?.('admin_user_group_detail', { groupID: parseInt(group.id) || group.id });
+                }}
+                style={[styles.groupCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+              >
+                <View style={styles.cardHeaderRow}>
+                  <View style={styles.cardInfoRow}>
+                    <View style={[styles.iconContainer, { backgroundColor: group.color }]}>
+                      <MaterialCommunityIcons name="account-group" size={24} color={group.iconColor} />
+                    </View>
+                    <View>
+                      <Text style={[styles.groupName, { color: colors.textPrimary }]}>{group.name}</Text>
+                      <Text style={[styles.groupIdText, { color: colors.textSecond }]}>Group ID: {group.groupId}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={[styles.groupName, { color: colors.textPrimary }]}>{group.name}</Text>
-                    <Text style={[styles.groupIdText, { color: colors.textSecond }]}>Group ID: {group.groupId}</Text>
+                </View>
+
+                <View style={[styles.groupDivider, { backgroundColor: colors.borderLight }]} />
+
+                <View style={styles.groupDetailsRow}>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Access Level</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{group.accessType}</Text>
+                  </View>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Total Members</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{group.members}</Text>
                   </View>
                 </View>
-              </View>
 
-              <View style={[styles.groupDivider, { backgroundColor: colors.borderLight }]} />
-
-              <View style={styles.groupDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Access Level</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{group.accessType}</Text>
+                <View style={styles.statusContainer}>
+                  {renderStatusBadge(group.status)}
                 </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Total Members</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{group.members}</Text>
-                </View>
-              </View>
-
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(group.status)}
-              </View>
-            </View>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}

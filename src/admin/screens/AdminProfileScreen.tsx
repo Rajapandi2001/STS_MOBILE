@@ -35,7 +35,13 @@ export default function AdminProfileScreen({ onNavigate, onBack }: AdminProfileS
           <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
           <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary, marginRight: 36 }]}>Profile</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Profile</Text>
+        <TouchableOpacity
+          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
+          activeOpacity={0.8}
+        >
+          <Feather name="user" size={20} color={colors.brand} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -122,6 +128,13 @@ const styles = StyleSheet.create({
   hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
   hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#0F172A', marginHorizontal: 8 },
+  avatarCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 
   /* Scroll */
   scrollContent: { paddingHorizontal: 16, paddingTop: 20, gap: 14 },

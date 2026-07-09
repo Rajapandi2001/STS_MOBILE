@@ -27,6 +27,7 @@ import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
 import AdminUserGroupsScreen from '@/admin/screens/AdminUserGroupsScreen';
+import AdminUserGroupDetailScreen from '@/admin/screens/AdminUserGroupDetailScreen';
 import AdminProjectsScreen from '@/admin/screens/AdminProjectsScreen';
 import AdminProfileScreen from '@/admin/screens/AdminProfileScreen';
 import AdminHelpScreen from '@/admin/screens/AdminHelpScreen';
@@ -62,6 +63,7 @@ type ScreenName =
   | 'admin_client'
   | 'admin_leave_settings'
   | 'admin_user_groups'
+  | 'admin_user_group_detail'
   | 'admin_projects'
   | 'admin_profile'
   | 'admin_help'
@@ -202,6 +204,10 @@ function AppContent() {
 
       case 'admin_leave_setting_detail':
         transitionTo('admin_leave_settings', undefined, 'backward');
+        return true;
+
+      case 'admin_user_group_detail':
+        transitionTo('admin_user_groups', undefined, 'backward');
         return true;
 
       case 'admin_holiday_detail':
@@ -578,6 +584,15 @@ function AppContent() {
             leaveId={p?.leaveId}
             onBack={() => transitionTo('admin_leave_settings', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+          />
+        );
+
+      case 'admin_user_group_detail':
+        return (
+          <AdminUserGroupDetailScreen
+            groupID={p?.groupID}
+            onBack={() => transitionTo('admin_user_groups', undefined, 'backward')}
+            onNavigate={(s: string, navP?: any) => transitionTo(s as ScreenName, navP)}
           />
         );
 
