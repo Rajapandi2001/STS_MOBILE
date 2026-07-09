@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
-import apiClient from '@/api/apiClient';
-import { storageService } from '@/services/storageService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -38,6 +34,91 @@ export interface LeaveSettingDetail {
   iconColor: string;
   iconBg: string;
 }
+
+// ── Dummy Data ────────────────────────────────────────────────────────────────
+
+export const LEAVE_SETTING_DETAILS: Record<string, LeaveSettingDetail> = {
+  '1': {
+    id: '1',
+    policyId: 'AL-2026',
+    name: 'ANNUAL LEAVE',
+    type: 'Paid',
+    description: 'Vacation Block — Standard annual paid leave for all permanent employees.',
+    days: '18 Days',
+    carryForward: 'Yes',
+    maxCarryForward: '06 Days',
+    minNoticeDays: '3 Days',
+    applicableTo: 'All Permanent Staff',
+    payType: 'Full Pay',
+    documentRequired: 'No',
+    effectiveFrom: '01 Jan 2026',
+    effectiveTo: '31 Dec 2026',
+    status: 'Active',
+    icon: 'island',
+    iconColor: '#D97706',
+    iconBg: '#FEF3C7',
+  },
+  '2': {
+    id: '2',
+    policyId: 'ML-2026',
+    name: 'MEDICAL LEAVE',
+    type: 'Sick',
+    description: 'Allocation Block — Paid sick leave for medically certified illness or injury.',
+    days: '12 Days',
+    carryForward: 'No',
+    maxCarryForward: '—',
+    minNoticeDays: '1 Day',
+    applicableTo: 'All Employees',
+    payType: 'Full Pay',
+    documentRequired: 'Yes (MC Required)',
+    effectiveFrom: '01 Jan 2026',
+    effectiveTo: '31 Dec 2026',
+    status: 'Active',
+    icon: 'hospital-building',
+    iconColor: '#DC2626',
+    iconBg: '#FEE2E2',
+  },
+  '3': {
+    id: '3',
+    policyId: 'MAT-2026',
+    name: 'MATERNITY LEAVE',
+    type: 'Parental',
+    description: 'Care Block — Extended leave for female employees following childbirth.',
+    days: '24 Days',
+    carryForward: 'No',
+    maxCarryForward: '—',
+    minNoticeDays: '14 Days',
+    applicableTo: 'Female Employees',
+    payType: 'Full Pay',
+    documentRequired: 'Yes (Birth Certificate)',
+    effectiveFrom: '01 Jan 2026',
+    effectiveTo: '31 Dec 2026',
+    status: 'Active',
+    icon: 'baby-bottle-outline',
+    iconColor: '#0284C7',
+    iconBg: '#E0F2FE',
+  },
+  '4': {
+    id: '4',
+    policyId: 'CL-2026',
+    name: 'CASUAL LEAVE',
+    type: 'Contingency',
+    description: 'Contingency Allocation — Short-notice leave for personal or urgent matters.',
+    days: '08 Days',
+    carryForward: 'No',
+    maxCarryForward: '—',
+    minNoticeDays: '1 Day',
+    applicableTo: 'All Employees',
+    payType: 'Full Pay',
+    documentRequired: 'No',
+    effectiveFrom: '01 Jan 2026',
+    effectiveTo: '31 Dec 2026',
+    status: 'Pending',
+    icon: 'email-outline',
+    iconColor: '#475569',
+    iconBg: '#F1F5F9',
+  },
+};
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -84,76 +165,7 @@ export default function AdminLeaveSettingDetailScreen({
   const { colors } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const [leave, setLeave] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (leaveId) {
-      fetchLeaveDetail();
-    } else {
-      setLoading(false);
-    }
-  }, [leaveId]);
-
-  const fetchLeaveDetail = async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.get(`/LeaveSetting/${leaveId}`);
-      
-      if (response.data && response.data.status) {
-        const item = response.data.data;
-        const fetchedLeave = {
-          id: item.leaveId ? item.leaveId.toString() : leaveId,
-          policyId: item.leaveCode ? item.leaveCode.trim() : '',
-          name: item.leaveName ? item.leaveName.trim() : '',
-          type: 'Standard',
-          description: item.leaveDescription || '',
-          remarks: (item.remarks === 'NULL' || !item.remarks) ? '-' : item.remarks,
-          days: item.days ? `${item.days} Days` : '0 Days',
-          carryForward: 'No',
-          maxCarryForward: '—',
-          minNoticeDays: '—',
-          applicableTo: 'All Employees',
-          payType: 'Full Pay',
-          documentRequired: 'No',
-          effectiveFrom: '01 Jan 2026',
-          effectiveTo: '31 Dec 2026',
-          status: 'Active',
-          icon: 'calendar-blank-outline',
-          iconColor: '#0284C7',
-          iconBg: '#E0F2FE',
-        };
-        setLeave(fetchedLeave);
-      } else {
-        Alert.alert('Error', response.data?.message || 'Failed to fetch leave details');
-      }
-    } catch (error: any) {
-      if (error.response?.status === 401) {
-        await storageService.clearAuthData();
-        onNavigate?.('login');
-      } else if (error.response?.status === 404) {
-        Alert.alert('Error', 'Leave details not found (404).');
-      } else if (error.response?.status === 500) {
-        Alert.alert('Error', 'Internal server error (500). Please try again later.');
-      } else if (error.code === 'ECONNABORTED') {
-        Alert.alert('Error', 'Request timeout. Please check your connection.');
-      } else if (error.message === 'Network Error' || !error.response) {
-        Alert.alert('Error', 'No internet connection or network error.');
-      } else {
-        Alert.alert('Error', 'An unexpected error occurred.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color={colors.brand} />
-      </View>
-    );
-  }
+  const leave = leaveId ? LEAVE_SETTING_DETAILS[leaveId] : LEAVE_SETTING_DETAILS['1'];
 
   if (!leave) {
     return (
@@ -244,8 +256,6 @@ export default function AdminLeaveSettingDetailScreen({
           <InfoRow label="Policy Name" value={leave.name} />
           <Divider />
           <InfoRow label="Policy ID" value={leave.policyId} />
-          <Divider />
-          <InfoRow label="Remarks" value={leave.remarks} />
           <Divider />
           <InfoRow label="Leave Type" value={leave.type} />
           <Divider />

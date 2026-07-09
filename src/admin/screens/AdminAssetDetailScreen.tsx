@@ -7,114 +7,46 @@ import {
   ScrollView,
   StatusBar,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '@/api/apiClient';
 import AdminMenu from '@/admin/components/AdminMenu';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-export interface AssetDetail {
-  id: string;
-  name: string;
-  category: string;
-  brand: string;
-  model: string;
-  serialNumber: string;
-  purchaseDate: string;
-  warrantyExpiry: string;
-  cost: string;
-  assignedTo: string;
-  department: string;
-  location: string;
-  condition: string;
-  status: string;
-  notes: string;
-  image: any;
+export interface ApiAssetDetail {
+  assetID: number;
+  assetCode: string;
+  dateOfPurchase: string | null;
+  currency: string | null;
+  costOfPurchase: string | null;
+  assetType: string | null;
+  assetDetails: string | null;
+  serialNumber: string | null;
+  empName: string | null;
+  description: string | null;
+  note: string | null;
+  country: string | null;
+  currencyType: number | null;
+  warrenty: string | null;
+  supplier_Name: string | null;
+  sup_mobilenumber: string | null;
+  sup_Address: string | null;
+  stock: boolean;
+  fromDate: string | null;
+  toDate: string | null;
+  createdDate: string | null;
 }
-
-// ── Dummy Data ────────────────────────────────────────────────────────────────
-
-export const ASSET_DETAILS: Record<string, AssetDetail> = {
-  'AST-001': {
-    id: 'AST-001',
-    name: 'MacBook Pro 16"',
-    category: 'Computing',
-    brand: 'Apple',
-    model: 'MacBook Pro 16" M3',
-    serialNumber: 'C02F9823MD6R',
-    purchaseDate: '10 Jan 2025',
-    warrantyExpiry: '10 Jan 2028',
-    cost: '$1,200',
-    assignedTo: 'John D.',
-    department: 'Engineering',
-    location: 'HQ – Desk 12B',
-    condition: 'Good',
-    status: 'In Use',
-    notes: 'Primary work machine. SSD upgraded to 1TB.',
-    image: require('../../../assets/images/asset_macbook.png'),
-  },
-  'AST-002': {
-    id: 'AST-002',
-    name: 'iPhone 14 Pro',
-    category: 'Mobile',
-    brand: 'Apple',
-    model: 'iPhone 14 Pro',
-    serialNumber: 'F4G987HKL2',
-    purchaseDate: '05 Mar 2024',
-    warrantyExpiry: '05 Mar 2026',
-    cost: '$999',
-    assignedTo: 'Sarah J.',
-    department: 'Design',
-    location: 'HQ – Desk 07A',
-    condition: 'Minor Wear',
-    status: 'In Use',
-    notes: 'Minor screen scratch on bottom-left corner.',
-    image: require('../../../assets/images/asset_iphone.png'),
-  },
-  'AST-003': {
-    id: 'AST-003',
-    name: 'Dell UltraSharp 27"',
-    category: 'Peripherals',
-    brand: 'Dell',
-    model: 'UltraSharp U2723QE',
-    serialNumber: 'CN-0YVW33-74261',
-    purchaseDate: '20 Jun 2024',
-    warrantyExpiry: '20 Jun 2027',
-    cost: '$620',
-    assignedTo: 'Emily W.',
-    department: 'Operations',
-    location: 'HQ – Desk 03C',
-    condition: 'Good',
-    status: 'Available',
-    notes: 'No damage. USB-C and HDMI ports functional.',
-    image: require('../../../assets/images/asset_monitor.png'),
-  },
-  'AST-004': {
-    id: 'AST-004',
-    name: 'Mechanical Keyboard',
-    category: 'Peripherals',
-    brand: 'Keychron',
-    model: 'K8 Pro',
-    serialNumber: 'KB-20234-MX87',
-    purchaseDate: '15 Sep 2023',
-    warrantyExpiry: '15 Sep 2025',
-    cost: '$150',
-    assignedTo: 'Robert K.',
-    department: 'Engineering',
-    location: 'IT Workshop',
-    condition: 'Good',
-    status: 'In Use',
-    notes: 'RGB backlit. Switches recently lubed.',
-    image: require('../../../assets/images/asset_keyboard.png'),
-  },
-};
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface AdminAssetDetailScreenProps {
-  assetId?: string;
+  assetID?: string | number;
   onBack?: () => void;
   onNavigate?: (screen: string, params?: any) => void;
 }
@@ -148,15 +80,72 @@ function RowDivider() {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminAssetDetailScreen({
-  assetId,
+  assetID,
   onBack,
   onNavigate,
 }: AdminAssetDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [asset, setAsset] = useState<ApiAssetDetail | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const asset = assetId ? ASSET_DETAILS[assetId] : ASSET_DETAILS['AST-001'];
+  const fetchAssetDetail = async () => {
+    if (!assetID) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const response = await apiClient.get(`http://smartdigitalbuild360.com:91/STSMobileAPI/api/Asset/${assetID}`);
+      if (response.data && response.data.status && response.data.statusCode === 200) {
+        setAsset(response.data.data);
+      } else {
+        Alert.alert('Error', response.data?.message || 'Failed to fetch asset details.');
+      }
+    } catch (error: any) {
+      if (error.response) {
+        if (error.response.status === 401) {
+          await AsyncStorage.clear();
+          onNavigate?.('login');
+        } else if (error.response.status === 404) {
+          Alert.alert('Not Found', 'The requested resource was not found.');
+        } else if (error.response.status === 500) {
+          Alert.alert('Server Error', 'Internal server error occurred.');
+        } else {
+          Alert.alert('Error', error.response.data?.message || 'An unexpected error occurred.');
+        }
+      } else if (error.request) {
+        Alert.alert('Network Error', 'No response received from the server. Please check your internet connection or timeout.');
+      } else {
+        Alert.alert('Error', error.message || 'An unexpected error occurred.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAssetDetail();
+  }, [assetID]);
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const MM = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${MM}/${yyyy}`;
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.brand} />
+      </View>
+    );
+  }
 
   if (!asset) {
     return (
@@ -168,21 +157,20 @@ export default function AdminAssetDetailScreen({
     );
   }
 
-  const statusColors: Record<string, { bg: string; text: string }> = {
-    'In Use':    { bg: colors.successBg, text: colors.success },
-    Available:   { bg: colors.amberBg,   text: colors.amber },
-    Maintenance: { bg: colors.iconBg,    text: colors.textSecond },
-    Retired:     { bg: '#FEE2E2',         text: '#DC2626' },
-  };
-  const sc = statusColors[asset.status] ?? { bg: colors.iconBg, text: colors.textSecond };
+  const statusText = asset.stock ? 'In Stock' : 'Assigned';
+  const sc = asset.stock 
+    ? { bg: colors.successBg, text: colors.success } 
+    : { bg: colors.amberBg, text: colors.amber };
 
-  const conditionColors: Record<string, { bg: string; text: string; icon: 'check-circle' | 'alert-triangle' | 'info' }> = {
-    Good:        { bg: colors.successBg, text: colors.success, icon: 'check-circle' },
-    'Minor Wear':{ bg: colors.amberBg,   text: colors.amber,   icon: 'alert-triangle' },
-    Excellent:   { bg: colors.successBg, text: colors.success, icon: 'check-circle' },
-    Fair:        { bg: colors.iconBg,    text: colors.textSecond, icon: 'info' },
-  };
-  const cc = conditionColors[asset.condition] ?? conditionColors['Fair'];
+  const typeLower = (asset.assetType || '').toLowerCase();
+  let imageSource = require('../../../assets/images/asset_macbook.png');
+  if (typeLower.includes('phone') || typeLower.includes('mobile')) {
+    imageSource = require('../../../assets/images/asset_iphone.png');
+  } else if (typeLower.includes('monitor') || typeLower.includes('display')) {
+    imageSource = require('../../../assets/images/asset_monitor.png');
+  } else if (typeLower.includes('keyboard')) {
+    imageSource = require('../../../assets/images/asset_keyboard.png');
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
@@ -218,15 +206,15 @@ export default function AdminAssetDetailScreen({
           <View style={styles.heroTop}>
             {/* Product Image */}
             <View style={[styles.heroImageBox, { backgroundColor: colors.iconBg }]}>
-              <Image source={asset.image} style={styles.heroImage} resizeMode="contain" />
+              <Image source={imageSource} style={styles.heroImage} resizeMode="contain" />
             </View>
             <View style={styles.heroInfo}>
-              <Text style={[styles.heroName, { color: colors.textPrimary }]}>{asset.name}</Text>
-              <Text style={[styles.heroId, { color: colors.textSecond }]}>ID: {asset.id}</Text>
+              <Text style={[styles.heroName, { color: colors.textPrimary }]}>{asset.assetCode || '-'}</Text>
+              <Text style={[styles.heroId, { color: colors.textSecond }]}>ID: {asset.assetID}</Text>
               {/* Status Badge */}
               <View style={[styles.statusBadge, { backgroundColor: sc.bg }]}>
                 <View style={[styles.statusDot, { backgroundColor: sc.text }]} />
-                <Text style={[styles.statusText, { color: sc.text }]}>{asset.status}</Text>
+                <Text style={[styles.statusText, { color: sc.text }]}>{statusText}</Text>
               </View>
             </View>
           </View>
@@ -238,7 +226,7 @@ export default function AdminAssetDetailScreen({
               <MaterialCommunityIcons name="tag-outline" size={14} color={colors.textSecond} />
               <View style={styles.pillText}>
                 <Text style={[styles.pillLabel, { color: colors.textSecond }]}>Category</Text>
-                <Text style={[styles.pillValue, { color: colors.textPrimary }]}>{asset.category}</Text>
+                <Text style={[styles.pillValue, { color: colors.textPrimary }]}>{asset.assetType || '-'}</Text>
               </View>
             </View>
             <View style={[styles.pillDivider, { backgroundColor: colors.borderLight }]} />
@@ -246,7 +234,7 @@ export default function AdminAssetDetailScreen({
               <MaterialCommunityIcons name="currency-usd" size={14} color={colors.textSecond} />
               <View style={styles.pillText}>
                 <Text style={[styles.pillLabel, { color: colors.textSecond }]}>Cost</Text>
-                <Text style={[styles.pillValue, { color: colors.textPrimary }]}>{asset.cost}</Text>
+                <Text style={[styles.pillValue, { color: colors.textPrimary }]}>{asset.costOfPurchase || '-'}</Text>
               </View>
             </View>
           </View>
@@ -256,63 +244,64 @@ export default function AdminAssetDetailScreen({
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <SectionHeader icon="package-variant-closed" title="Asset Information" color="#2563EB" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
-          <InfoRow label="Asset Name" value={asset.name} />
+          <InfoRow label="Asset Code" value={asset.assetCode} />
           <RowDivider />
-          <InfoRow label="Asset ID" value={asset.id} />
+          <InfoRow label="Asset Type" value={asset.assetType || ''} />
           <RowDivider />
-          <InfoRow label="Category" value={asset.category} />
+          <InfoRow label="Asset Details" value={asset.assetDetails || ''} />
           <RowDivider />
-          <InfoRow label="Brand" value={asset.brand} />
+          <InfoRow label="Serial Number" value={asset.serialNumber || ''} />
           <RowDivider />
-          <InfoRow label="Model" value={asset.model} />
-          <RowDivider />
-          <InfoRow label="Serial Number" value={asset.serialNumber} />
-        </View>
-
-        {/* ── Condition & Status ── */}
-        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <SectionHeader icon="shield-check-outline" title="Condition & Status" color="#059669" />
-          <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
-          {/* Condition with badge */}
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Condition</Text>
-            <View style={[styles.condBadge, { backgroundColor: cc.bg }]}>
-              <Feather name={cc.icon} size={12} color={cc.text} />
-              <Text style={[styles.condBadgeText, { color: cc.text }]}>{asset.condition}</Text>
-            </View>
-          </View>
-          <RowDivider />
-          <InfoRow label="Status" value={asset.status} />
+          <InfoRow label="Description" value={asset.description || ''} />
         </View>
 
         {/* ── Assignment ── */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
           <SectionHeader icon="account-arrow-right-outline" title="Assignment" color="#7C3AED" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
-          <InfoRow label="Assigned To" value={asset.assignedTo} />
+          <InfoRow label="Assigned To" value={asset.empName || ''} />
           <RowDivider />
-          <InfoRow label="Department" value={asset.department} />
+          <InfoRow label="Country" value={asset.country || ''} />
           <RowDivider />
-          <InfoRow label="Location" value={asset.location} />
+          <InfoRow label="From Date" value={formatDate(asset.fromDate)} />
+          <RowDivider />
+          <InfoRow label="To Date" value={asset.toDate || ''} />
         </View>
 
-        {/* ── Lifecycle ── */}
+        {/* ── Lifecycle & Cost ── */}
         <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <SectionHeader icon="calendar-clock-outline" title="Lifecycle" color="#D97706" />
+          <SectionHeader icon="calendar-clock-outline" title="Lifecycle & Cost" color="#D97706" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
-          <InfoRow label="Purchase Date" value={asset.purchaseDate} />
+          <InfoRow label="Purchase Date" value={formatDate(asset.dateOfPurchase)} />
           <RowDivider />
-          <InfoRow label="Warranty Expiry" value={asset.warrantyExpiry} />
+          <InfoRow label="Cost of Purchase" value={asset.costOfPurchase || ''} />
           <RowDivider />
-          <InfoRow label="Cost" value={asset.cost} />
+          <InfoRow label="Currency" value={asset.currency || ''} />
+          <RowDivider />
+          <InfoRow label="Currency Type" value={asset.currencyType != null ? String(asset.currencyType) : ''} />
+          <RowDivider />
+          <InfoRow label="Warranty" value={asset.warrenty || ''} />
+          <RowDivider />
+          <InfoRow label="Created Date" value={formatDate(asset.createdDate)} />
+        </View>
+
+        {/* ── Supplier Information ── */}
+        <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+          <SectionHeader icon="truck-outline" title="Supplier Information" color="#059669" />
+          <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
+          <InfoRow label="Supplier Name" value={asset.supplier_Name || ''} />
+          <RowDivider />
+          <InfoRow label="Mobile Number" value={asset.sup_mobilenumber || ''} />
+          <RowDivider />
+          <InfoRow label="Address" value={asset.sup_Address || ''} />
         </View>
 
         {/* ── Notes ── */}
-        {asset.notes ? (
+        {asset.note ? (
           <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
             <SectionHeader icon="note-text-outline" title="Notes" color="#64748B" />
             <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
-            <Text style={[styles.notesText, { color: colors.textSecond }]}>{asset.notes}</Text>
+            <Text style={[styles.notesText, { color: colors.textSecond }]}>{asset.note}</Text>
           </View>
         ) : null}
       </ScrollView>

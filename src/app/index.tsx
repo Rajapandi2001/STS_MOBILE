@@ -566,7 +566,7 @@ function AppContent() {
       case 'admin_asset_detail':
         return (
           <AdminAssetDetailScreen
-            assetId={p?.assetId}
+            assetID={p?.assetID}
             onBack={() => transitionTo('admin_assets', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />

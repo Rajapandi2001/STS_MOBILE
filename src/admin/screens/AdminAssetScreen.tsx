@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,14 @@ import {
   ScrollView,
   StatusBar,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '@/api/apiClient';
 import AdminMenu from '@/admin/components/AdminMenu';
 
 interface AdminAssetScreenProps {
@@ -19,81 +23,86 @@ interface AdminAssetScreenProps {
   onBack?: () => void;
 }
 
-const ASSET_DATA = [
-  {
-    id: 'AST-001',
-    name: 'MacBook Pro 16"',
-    serial: 'C02F9823MD6R',
-    image: require('../../../assets/images/asset_macbook.png'),
-    condition: 'Good',
-    status: 'In Use',
-  },
-  {
-    id: 'AST-002',
-    name: 'iPhone 14 Pro',
-    serial: 'F4G987HKL2',
-    image: require('../../../assets/images/asset_iphone.png'),
-    condition: 'Minor Wear',
-    status: 'In Use',
-  },
-  {
-    id: 'AST-003',
-    name: 'Dell UltraSharp 27"',
-    serial: 'CN-0YVW33-74261',
-    image: require('../../../assets/images/asset_monitor.png'),
-    condition: 'Good',
-    status: 'Available',
-  },
-  {
-    id: 'AST-004',
-    name: 'Mechanical Keyboard',
-    serial: 'KB-20234-MX87',
-    image: require('../../../assets/images/asset_keyboard.png'),
-    condition: 'Good',
-    status: 'In Use',
-  },
-];
+interface AssetData {
+  assetID: number;
+  assetCode: string;
+  assetType: string;
+  dateOfPurchase: string;
+  costOfPurchase: string;
+  serialNumber: string | null;
+  empName: string | null;
+}
 
 export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const [assets, setAssets] = useState<AssetData[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const handleCardPress = (id: string) => {
-    onNavigate?.('admin_asset_detail', { assetId: id });
+  const fetchAssets = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('http://smartdigitalbuild360.com:91/STSMobileAPI/api/Asset');
+      
+      if (response.data && response.data.status && response.data.statusCode === 200) {
+        setAssets(response.data.data || []);
+      } else {
+        setAssets([]);
+        Alert.alert('Error', response.data?.message || 'Failed to fetch assets.');
+      }
+    } catch (error: any) {
+      if (error.response) {
+        if (error.response.status === 401) {
+          await AsyncStorage.clear();
+          onNavigate?.('login');
+        } else if (error.response.status === 404) {
+          Alert.alert('Not Found', 'The requested resource was not found.');
+        } else if (error.response.status === 500) {
+          Alert.alert('Server Error', 'Internal server error occurred.');
+        } else {
+          Alert.alert('Error', error.response.data?.message || 'An unexpected error occurred.');
+        }
+      } else if (error.request) {
+        Alert.alert('Network Error', 'No response received from the server. Please check your internet connection or timeout.');
+      } else {
+        Alert.alert('Error', error.message || 'An unexpected error occurred.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const filteredAssets = ASSET_DATA.filter((asset) => {
+  useEffect(() => {
+    fetchAssets();
+  }, []);
+
+  const handleCardPress = (id: string) => {
+    onNavigate?.('admin_asset_detail', { assetID: id });
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const MM = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${MM}/${yyyy}`;
+  };
+
+  const filteredAssets = assets.filter((asset) => {
     const query = search.toLowerCase().trim();
     if (!query) return true;
     return (
-      asset.name.toLowerCase().includes(query) ||
-      asset.serial.toLowerCase().includes(query) ||
-      asset.id.toLowerCase().includes(query)
+      (asset.assetCode?.toLowerCase() || '').includes(query) ||
+      (asset.serialNumber?.toLowerCase() || '').includes(query) ||
+      (asset.assetType?.toLowerCase() || '').includes(query) ||
+      (asset.empName?.toLowerCase() || '').includes(query)
     );
   });
 
-  const getConditionStyle = (condition: string) => {
-    if (condition === 'Good') {
-      return {
-        bg: colors.successBg,
-        text: colors.success,
-        icon: 'check-circle' as const,
-      };
-    } else if (condition === 'Minor Wear') {
-      return {
-        bg: colors.amberBg,
-        text: colors.amber,
-        icon: 'alert-triangle' as const,
-      };
-    }
-    return {
-      bg: colors.iconBg,
-      text: colors.textSecond,
-      icon: 'info' as const,
-    };
-  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
@@ -139,49 +148,78 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Asset List */}
-        {filteredAssets.map((asset) => {
-          const condStyle = getConditionStyle(asset.condition);
-          return (
-            <TouchableOpacity
-              key={asset.id}
-              activeOpacity={0.8}
-              onPress={() => handleCardPress(asset.id)}
-              style={[styles.assetCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-            >
-              {/* Top section: image thumbnail + info + type icon */}
-              <View style={styles.cardTopRow}>
-                {/* Product Image Thumbnail */}
-                <View style={[styles.thumbnailBox, { backgroundColor: colors.iconBg }]}>
-                  <Image
-                    source={asset.image}
-                    style={styles.thumbnailImage}
-                    resizeMode="contain"
-                  />
-                </View>
+        {loading ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color={colors.brand} />
+          </View>
+        ) : filteredAssets.length === 0 ? (
+          <View style={{ padding: 40, alignItems: 'center' }}>
+            <Text style={{ color: colors.textSecond }}>No assets found.</Text>
+          </View>
+        ) : (
+          filteredAssets.map((asset) => {
+            const typeLower = (asset.assetType || '').toLowerCase();
+            let imageSource = require('../../../assets/images/asset_macbook.png');
+            if (typeLower.includes('phone') || typeLower.includes('mobile')) {
+              imageSource = require('../../../assets/images/asset_iphone.png');
+            } else if (typeLower.includes('monitor') || typeLower.includes('display')) {
+              imageSource = require('../../../assets/images/asset_monitor.png');
+            } else if (typeLower.includes('keyboard')) {
+              imageSource = require('../../../assets/images/asset_keyboard.png');
+            }
 
-                {/* Info */}
-                <View style={styles.assetInfo}>
-                  <View style={styles.assetNameRow}>
-                    <Text style={[styles.assetName, { color: colors.textPrimary }]} numberOfLines={2}>
-                      {asset.name}
-                    </Text>
+            return (
+              <TouchableOpacity
+                key={asset.assetID}
+                activeOpacity={0.8}
+                onPress={() => handleCardPress(asset.assetID.toString())}
+                style={[styles.assetCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+              >
+                {/* Top section: image thumbnail + info + type icon */}
+                <View style={styles.cardTopRow}>
+                  {/* Product Image Thumbnail */}
+                  <View style={[styles.thumbnailBox, { backgroundColor: colors.iconBg }]}>
+                    <Image
+                      source={imageSource}
+                      style={styles.thumbnailImage}
+                      resizeMode="contain"
+                    />
                   </View>
-                  <Text style={[styles.serialText, { color: colors.textSecond }]}>SN: {asset.serial}</Text>
 
-                  {/* Condition Badge */}
-                  <View style={[styles.conditionBadge, { backgroundColor: condStyle.bg }]}>
-                    <Feather name={condStyle.icon} size={12} color={condStyle.text} />
-                    <Text style={[styles.conditionText, { color: condStyle.text }]}>
-                      {asset.condition === 'Good' ? 'Condition: Good' : asset.condition}
+                  {/* Info */}
+                  <View style={styles.assetInfo}>
+                    <View style={styles.assetNameRow}>
+                      <Text style={[styles.assetName, { color: colors.textPrimary }]} numberOfLines={2}>
+                        {asset.assetCode ? asset.assetCode.trim() : '-'}
+                      </Text>
+                    </View>
+                    
+                    <Text style={[styles.serialText, { color: colors.textSecond, marginBottom: 2 }]}>
+                      Type: {asset.assetType ? asset.assetType.trim() : '-'}
                     </Text>
+                    <Text style={[styles.serialText, { color: colors.textSecond, marginBottom: 2 }]}>
+                      SN: {asset.serialNumber ? asset.serialNumber.trim() : '-'}
+                    </Text>
+                    <Text style={[styles.serialText, { color: colors.textSecond, marginBottom: 2 }]}>
+                      Assigned: {asset.empName ? asset.empName.trim() : 'Not Assigned'}
+                    </Text>
+                    <Text style={[styles.serialText, { color: colors.textSecond, marginBottom: 10 }]}>
+                      Cost: {asset.costOfPurchase ? asset.costOfPurchase.trim() : '-'}
+                    </Text>
+
+                    {/* Condition Badge (Reused for Date) */}
+                    <View style={[styles.conditionBadge, { backgroundColor: colors.iconBg }]}>
+                      <Feather name="calendar" size={12} color={colors.textSecond} />
+                      <Text style={[styles.conditionText, { color: colors.textSecond }]}>
+                        Date: {formatDate(asset.dateOfPurchase)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-
-
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
