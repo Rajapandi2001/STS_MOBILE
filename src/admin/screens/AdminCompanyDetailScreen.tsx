@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,16 @@ import {
   StatusBar,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { useAuth } from '@/context/AuthContext';
+import { storageService, DEFAULT_BASE_URL } from '@/services/storageService';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -32,67 +36,43 @@ export interface CompanyDetail {
   type: string;
 }
 
-// ── Dummy Data ────────────────────────────────────────────────────────────────
+interface CompanyAPIItem {
+  companyDetailsID: number;
+  logoPath: string | null;
+  companyCode: string;
+  companyName: string;
+  city: string;
+  country: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  pincode?: string;
+  email?: string;
+  phone?: string;
+}
 
-export const COMPANY_DETAILS: Record<string, CompanyDetail> = {
-  'CMP-2026-01': {
-    id: 'CMP-2026-01',
-    name: 'GLOBAL TECH SOLUTIONS',
-    addressLine1: '100 Innovation Way',
-    addressLine2: 'Suite 500',
-    city: 'San Francisco',
-    country: 'United States',
-    pincode: '94105',
-    email: 'contact@globaltech.com',
-    phone: '+1 (555) 019-2834',
-    status: 'Active',
-    type: 'HQ - Global Tech',
-  },
-  'CMP-2026-02': {
-    id: 'CMP-2026-02',
-    name: 'EURO SYSTEMS LTD',
-    addressLine1: 'Kaiserstraße 12',
-    addressLine2: 'Gebäude B',
-    city: 'Frankfurt',
-    country: 'Germany',
-    pincode: '60311',
-    email: 'info@eurosystems.de',
-    phone: '+49 69 1234 5678',
-    status: 'Active',
-    type: 'Branch Office',
-  },
-  'CMP-2026-03': {
-    id: 'CMP-2026-03',
-    name: 'PACIFIC TECH CORP',
-    addressLine1: '400 George Street',
-    addressLine2: 'Level 22',
-    city: 'Sydney',
-    country: 'Australia',
-    pincode: '2000',
-    email: 'support@pacifictech.com.au',
-    phone: '+61 2 9876 5432',
-    status: 'Pending',
-    type: 'Subsidiary',
-  },
-  'CMP-2026-04': {
-    id: 'CMP-2026-04',
-    name: 'ORIENT INNOVATIONS',
-    addressLine1: '1-2-1 Otemachi',
-    addressLine2: 'Otemachi Building 7F',
-    city: 'Chiyoda-ku, Tokyo',
-    country: 'Japan',
-    pincode: '100-0004',
-    email: 'tokyo@orientinnov.jp',
-    phone: '+81 3 5555 1234',
-    status: 'Inactive',
-    type: 'Branch Office',
-  },
-};
+async function constructLogoUrl(logoPath: string | null): Promise<string | null> {
+  if (!logoPath) return null;
+  let path = logoPath;
+  if (path.startsWith('~')) {
+    path = path.slice(1);
+  }
+  if (!path.startsWith('/')) {
+    path = '/' + path;
+  }
+  let baseUrl = await storageService.getBaseUrl() || DEFAULT_BASE_URL;
+  if (baseUrl.endsWith('/')) {
+    baseUrl = baseUrl.slice(0, -1);
+  }
+  if (baseUrl.endsWith('/api')) {
+    baseUrl = baseUrl.slice(0, -4);
+  }
+  return `${baseUrl}${path}`;
+}
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface AdminCompanyDetailScreenProps {
-  companyId?: string;
+  companyDetailsID?: number;
   onBack?: () => void;
   onNavigate?: (screen: string, params?: any) => void;
 }
@@ -129,26 +109,94 @@ function Divider() {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AdminCompanyDetailScreen({
-  companyId,
+  companyDetailsID,
   onBack,
   onNavigate,
 }: AdminCompanyDetailScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [pickedLogo, setPickedLogo] = useState<{ name: string; uri: string; size?: number } | null>(null);
 
-  const company = companyId ? COMPANY_DETAILS[companyId] : COMPANY_DETAILS['CMP-2026-01'];
+  const [companyData, setCompanyData] = useState<CompanyDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!company) {
-    return (
-      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
-        <Text style={{ color: colors.textPrimary, textAlign: 'center', marginTop: 40 }}>
-          Company not found.
-        </Text>
-      </View>
-    );
-  }
+  const fetchDetails = async () => {
+    if (!companyDetailsID) {
+      setError('No company selected.');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const response = await apiClient.get<{ status: boolean; data: CompanyAPIItem }>('/Company/' + companyDetailsID);
+      
+      if (response.data && response.data.status && response.data.data) {
+        const item = response.data.data;
+        
+        const logoUrl = await constructLogoUrl(item.logoPath);
+        if (logoUrl) {
+          setPickedLogo({
+            name: 'company_logo.jpg',
+            uri: logoUrl,
+          });
+        } else {
+          setPickedLogo(null);
+        }
+        
+        const mappedCompany: CompanyDetail = {
+          id: item.companyCode || String(item.companyDetailsID),
+          name: item.companyName,
+          addressLine1: item.addressLine1 || '---',
+          addressLine2: item.addressLine2 || '---',
+          city: item.city || '---',
+          country: item.country || '---',
+          pincode: item.pincode || '---',
+          email: item.email || '---',
+          phone: item.phone || '---',
+          status: 'Active',
+          type: item.city || 'Private Limited',
+        };
+        
+        setCompanyData(mappedCompany);
+      } else {
+        setError('Company not found.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching company details:', err);
+      let msg = 'An unexpected error occurred. Please try again later.';
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        msg = 'Request timed out. Please try again later.';
+      } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+        msg = 'No internet connection. Please check your network and try again.';
+      } else if (err.response) {
+        const status = err.response.status;
+        if (status === 401) {
+          msg = 'Session expired. Redirecting to login...';
+          await logout();
+          onNavigate?.('login');
+        } else if (status === 404) {
+          msg = 'Company not found.';
+        } else if (status === 500) {
+          msg = 'An internal server error occurred. Please try again later.';
+        } else if (status === 502 || status === 503 || status === 504) {
+          msg = 'Server is currently unavailable. Please try again later.';
+        }
+      }
+      setError(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDetails();
+  }, [companyDetailsID]);
 
   const pickLogo = async () => {
     try {
@@ -180,6 +228,48 @@ export default function AdminCompanyDetailScreen({
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.brand} />
+        <Text style={{ color: colors.textSecond, marginTop: 12, fontSize: 14 }}>Loading company details...</Text>
+      </View>
+    );
+  }
+
+  if (error || !companyData) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+            onPress={onBack}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Company Details</Text>
+          <View style={{ width: 36 }} />
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.danger} />
+          <Text style={{ color: colors.textPrimary, fontSize: 16, fontWeight: '600', marginTop: 16, textAlign: 'center' }}>
+            {error || 'Company not found.'}
+          </Text>
+          <TouchableOpacity
+            onPress={fetchDetails}
+            style={{ marginTop: 20, paddingHorizontal: 20, paddingVertical: 10, backgroundColor: colors.brand, borderRadius: 8 }}
+          >
+            <Text style={{ color: '#FFF', fontWeight: '600' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  const company = companyData;
 
   const statusColors = {
     Active:   { bg: colors.successBg, text: colors.success },
@@ -234,7 +324,7 @@ export default function AdminCompanyDetailScreen({
               </View>
             )}
             <View style={styles.heroInfo}>
-              <Text style={[styles.heroName, { color: colors.textPrimary }]} numberOfLines={1}>{company.name}</Text>
+              <Text style={[styles.heroName, { color: colors.textPrimary }]}>{company.name}</Text>
               <Text style={[styles.heroId, { color: colors.textSecond }]}>ID: {company.id}</Text>
               <View style={[styles.statusBadge, { backgroundColor: statusColors.bg }]}>
                 <View style={[styles.statusDot, { backgroundColor: statusColors.text }]} />

@@ -107,7 +107,7 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
     );
   });
 
-  const renderIcon = (leave: typeof LEAVE_DATA[0]) => {
+  const renderIcon = (leave: any) => {
     if (leave.iconType === 'MaterialCommunityIcons') {
       return (
         <MaterialCommunityIcons

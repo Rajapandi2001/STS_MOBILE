@@ -557,7 +557,7 @@ function AppContent() {
       case 'admin_company_detail':
         return (
           <AdminCompanyDetailScreen
-            companyId={p?.companyId}
+            companyDetailsID={p?.companyDetailsID}
             onBack={() => transitionTo('admin_companies', undefined, 'backward')}
             onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
           />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,65 +7,113 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { useAuth } from '@/context/AuthContext';
 
 interface AdminCompanyScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
   onBack?: () => void;
 }
 
-const COMPANY_DATA = [
-  {
-    id: 'CMP-2026-01',
-    name: 'GLOBAL TECH SOLUTIONS',
-    country: 'United States',
-    type: 'HQ - Global Tech',
-    status: 'Active',
-  },
-  {
-    id: 'CMP-2026-02',
-    name: 'EURO SYSTEMS LTD',
-    country: 'Germany',
-    type: 'Branch Office',
-    status: 'Active',
-  },
-  {
-    id: 'CMP-2026-03',
-    name: 'PACIFIC TECH CORP',
-    country: 'Australia',
-    type: 'Subsidiary',
-    status: 'Pending',
-  },
-  {
-    id: 'CMP-2026-04',
-    name: 'ORIENT INNOVATIONS',
-    country: 'Japan',
-    type: 'Branch Office',
-    status: 'Inactive',
-  },
-];
+interface CompanyAPIItem {
+  companyDetailsID: number;
+  logoPath: string | null;
+  companyCode: string;
+  companyName: string;
+  city: string;
+  country: string;
+}
 
 export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
+  const { logout } = useAuth();
+
+  const [companies, setCompanies] = useState<CompanyAPIItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const handleCardPress = (id: string) => {
-    onNavigate?.('admin_company_detail', { companyId: id });
+
+  const handleCardPress = (id: number) => {
+    onNavigate?.('admin_company_detail', { companyDetailsID: id });
   };
 
-  const filteredCompanies = COMPANY_DATA.filter((company) => {
+  useEffect(() => {
+    let active = true;
+    async function fetchCompanies() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await apiClient.get<{ status: boolean; data: CompanyAPIItem[] }>('/Company');
+        if (active) {
+          if (response.data && response.data.status && Array.isArray(response.data.data)) {
+            setCompanies(response.data.data);
+          } else {
+            setError('Failed to load company records.');
+          }
+        }
+      } catch (err: any) {
+        console.error('Error fetching companies in screen:', err);
+        if (active) {
+          let msg = 'An unexpected error occurred. Please try again later.';
+          if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+            msg = 'Request timed out. Please try again later.';
+          } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
+            msg = 'No internet connection. Please check your network and try again.';
+          } else if (err.response) {
+            const status = err.response.status;
+            if (status === 401) {
+              msg = 'Session expired. Redirecting to login...';
+              await logout();
+              onNavigate?.('login');
+            } else if (status === 500) {
+              msg = 'An internal server error occurred. Please try again later.';
+            } else if (status === 502 || status === 503 || status === 504) {
+              msg = 'Server is currently unavailable. Please try again later.';
+            }
+          }
+          setError(msg);
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchCompanies();
+
+    return () => {
+      active = false;
+    };
+  }, [logout, onNavigate]);
+
+  const mappedCompanies = companies.map((item) => {
+    return {
+      companyDetailsID: item.companyDetailsID,
+      code: item.companyCode,
+      name: item.companyName,
+      country: item.country,
+      type: item.city || 'Private Limited',
+      status: 'Active',
+    };
+  });
+
+  const filteredCompanies = mappedCompanies.filter((company) => {
     const query = search.toLowerCase().trim();
     if (!query) return true;
 
     return (
       company.name.toLowerCase().includes(query) ||
       company.country.toLowerCase().includes(query) ||
-      company.id.toLowerCase().includes(query)
+      company.code.toLowerCase().includes(query)
     );
   });
 
@@ -136,55 +184,72 @@ export default function AdminCompanyScreen({ onNavigate, onBack }: AdminCompanyS
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
         {/* Company List */}
-        {filteredCompanies.map((company) => {
-          return (
-            <TouchableOpacity
-              key={company.id}
-              activeOpacity={0.8}
-              onPress={() => handleCardPress(company.id)}
-              style={[
-                styles.staffCard,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.borderLight
-                }
-              ]}
-            >
-              <View style={styles.staffHeaderRow}>
-                <View style={styles.staffInfoRow}>
-                  <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
-                    <MaterialCommunityIcons
-                      name="office-building"
-                      size={22}
-                      color={colors.brand}
-                    />
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.brand} />
+            <Text style={[styles.loadingText, { color: colors.textSecond }]}>Loading companies...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.danger} />
+            <Text style={[styles.errorText, { color: colors.textPrimary }]}>{error}</Text>
+          </View>
+        ) : filteredCompanies.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="office-building" size={48} color={colors.textSecond} />
+            <Text style={[styles.emptyText, { color: colors.textPrimary }]}>No companies found.</Text>
+          </View>
+        ) : (
+          filteredCompanies.map((company) => {
+            return (
+              <TouchableOpacity
+                key={company.companyDetailsID}
+                activeOpacity={0.8}
+                onPress={() => handleCardPress(company.companyDetailsID)}
+                style={[
+                  styles.staffCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.borderLight
+                  }
+                ]}
+              >
+                <View style={styles.staffHeaderRow}>
+                  <View style={[styles.staffInfoRow, { flex: 1 }]}>
+                    <View style={[styles.staffAvatarInitials, { backgroundColor: colors.brandBorder }]}>
+                      <MaterialCommunityIcons
+                        name="office-building"
+                        size={22}
+                        color={colors.brand}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.staffName, { color: colors.textPrimary }]}>{company.name}</Text>
+                      <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{company.code}</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={[styles.staffName, { color: colors.textPrimary }]}>{company.name}</Text>
-                    <Text style={[styles.staffEmpId, { color: colors.textSecond }]}>{company.id}</Text>
+                </View>
+
+                <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
+
+                <View style={styles.staffDetailsRow}>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Country</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{company.country}</Text>
+                  </View>
+                  <View style={styles.detailCol}>
+                    <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Entity Type</Text>
+                    <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{company.type}</Text>
                   </View>
                 </View>
-              </View>
 
-              <View style={[styles.staffDivider, { backgroundColor: colors.borderLight }]} />
-
-              <View style={styles.staffDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Country</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{company.country}</Text>
+                <View style={styles.statusContainer}>
+                  {renderStatusBadge(company.status)}
                 </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Entity Type</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{company.type}</Text>
-                </View>
-              </View>
-
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(company.status)}
-              </View>
-            </TouchableOpacity>
-          );
-        })}
+              </TouchableOpacity>
+            );
+          })
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -402,6 +467,37 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     color: '#64748B',
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  errorContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  errorText: {
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
     fontWeight: '500',
   },
 });
