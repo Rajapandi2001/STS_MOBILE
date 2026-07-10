@@ -7,15 +7,24 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+<<<<<<< Updated upstream
   Alert,
   ActivityIndicator,
+=======
+  ActivityIndicator,
+  Alert,
+>>>>>>> Stashed changes
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
 import apiClient from '@/api/apiClient';
+<<<<<<< Updated upstream
 import AsyncStorage from '@react-native-async-storage/async-storage';
+=======
+import { storageService } from '@/services/storageService';
+>>>>>>> Stashed changes
 
 interface AdminLeaveSettingsScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
@@ -185,6 +194,7 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
 
         {/* Leave List */}
         {loading ? (
+<<<<<<< Updated upstream
           <View style={{ padding: 40, alignItems: 'center' }}>
             <ActivityIndicator size="large" color={colors.brand} />
           </View>
@@ -192,6 +202,11 @@ export default function AdminLeaveSettingsScreen({ onNavigate, onBack }: AdminLe
           <View style={{ padding: 40, alignItems: 'center' }}>
             <Text style={{ color: colors.textSecond }}>No leave settings found.</Text>
           </View>
+=======
+          <ActivityIndicator size="large" color={colors.brand} style={{ marginTop: 20 }} />
+        ) : filteredLeaves.length === 0 ? (
+          <Text style={{ textAlign: 'center', color: colors.textSecond, marginTop: 20 }}>No leave settings found.</Text>
+>>>>>>> Stashed changes
         ) : (
           filteredLeaves.map((leave) => {
             return (

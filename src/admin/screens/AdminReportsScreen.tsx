@@ -821,24 +821,6 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
       case 'staff':
         return (
           <>
-            {/* Date Range Selector */}
-            <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
-                activeOpacity={0.7}
-                onPress={handleOpenDateModal}
-              >
-                <View style={styles.dropdownLeftCol}>
-                  <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: startDate === 'YYYY-MM-DD' ? colors.textSecond : colors.textPrimary }]}>
-                    {startDate === 'YYYY-MM-DD' ? 'YYYY-MM-DD to YYYY-MM-DD' : `${startDate} to ${endDate}`}
-                  </Text>
-                </View>
-                <MaterialCommunityIcons name="calendar-month-outline" size={18} color={colors.textSecond} />
-              </TouchableOpacity>
-            </View>
-
             {/* Team / Department Selector */}
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>TEAM / DEPARTMENT</Text>
@@ -976,23 +958,6 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
         return (
           <>
             <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
-                activeOpacity={0.7}
-                onPress={handleOpenDateModal}
-              >
-                <View style={styles.dropdownLeftCol}>
-                  <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: startDate === 'YYYY-MM-DD' ? colors.textSecond : colors.textPrimary }]}>
-                    {startDate === 'YYYY-MM-DD' ? 'YYYY-MM-DD to YYYY-MM-DD' : `${startDate} to ${endDate}`}
-                  </Text>
-                </View>
-                <Feather name="chevron-down" size={16} color={colors.textSecond} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>CLIENT NAME</Text>
               <TouchableOpacity
                 style={[
@@ -1076,23 +1041,6 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
       case 'project':
         return (
           <>
-            <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>DATE RANGE</Text>
-              <TouchableOpacity
-                style={[styles.dropdownSelector, { backgroundColor: colors.cardAlt, borderColor: colors.border }]}
-                activeOpacity={0.7}
-                onPress={handleOpenDateModal}
-              >
-                <View style={styles.dropdownLeftCol}>
-                  <Feather name="calendar" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: startDate === 'YYYY-MM-DD' ? colors.textSecond : colors.textPrimary }]}>
-                    {startDate === 'YYYY-MM-DD' ? 'YYYY-MM-DD to YYYY-MM-DD' : `${startDate} to ${endDate}`}
-                  </Text>
-                </View>
-                <Feather name="chevron-down" size={16} color={colors.textSecond} />
-              </TouchableOpacity>
-            </View>
-
             <View style={styles.selectorContainer}>
               <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>PROJECT NAME</Text>
               <TouchableOpacity
