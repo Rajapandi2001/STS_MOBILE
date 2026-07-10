@@ -39,6 +39,7 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
   const [assets, setAssets] = useState<AssetData[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState<'All' | 'Assigned' | 'Unassigned'>('All');
   const [menuOpen, setMenuOpen] = useState(false);
 
   const fetchAssets = async () => {
@@ -94,13 +95,29 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
 
   const filteredAssets = assets.filter((asset) => {
     const query = search.toLowerCase().trim();
-    if (!query) return true;
-    return (
-      (asset.assetCode?.toLowerCase() || '').includes(query) ||
-      (asset.serialNumber?.toLowerCase() || '').includes(query) ||
-      (asset.assetType?.toLowerCase() || '').includes(query) ||
-      (asset.empName?.toLowerCase() || '').includes(query)
-    );
+    
+    // Check search query
+    let matchesSearch = true;
+    if (query) {
+      matchesSearch = (
+        (asset.assetCode?.toLowerCase() || '').includes(query) ||
+        (asset.serialNumber?.toLowerCase() || '').includes(query) ||
+        (asset.assetType?.toLowerCase() || '').includes(query) ||
+        (asset.empName?.toLowerCase() || '').includes(query)
+      );
+    }
+
+    // Check assignment filter
+    let matchesFilter = true;
+    const isAssigned = (asset.empName || '').trim().length > 0;
+    
+    if (filterType === 'Assigned') {
+      matchesFilter = isAssigned;
+    } else if (filterType === 'Unassigned') {
+      matchesFilter = !isAssigned;
+    }
+
+    return matchesSearch && matchesFilter;
   });
 
 
@@ -143,6 +160,31 @@ export default function AdminAssetScreen({ onNavigate, onBack }: AdminAssetScree
             value={search}
             onChangeText={setSearch}
           />
+        </View>
+
+        {/* Filter Buttons */}
+        <View style={styles.filterContainer}>
+          {['All', 'Assigned', 'Unassigned'].map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.filterButton,
+                { borderColor: colors.brandBorder },
+                filterType === type ? { backgroundColor: colors.brand } : { backgroundColor: 'transparent' }
+              ]}
+              onPress={() => setFilterType(type as any)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  filterType === type ? { color: '#FFFFFF' } : { color: colors.brand }
+                ]}
+              >
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -309,6 +351,23 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     color: '#0F172A',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 8,
+  },
+  filterButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  filterText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   divider: {
     height: 1,
