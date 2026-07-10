@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Alert,
   Platform,
   Pressable,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -19,6 +20,8 @@ import * as Sharing from 'expo-sharing';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Print from 'expo-print';
 import AdminMenu from '@/admin/components/AdminMenu';
+import apiClient from '@/api/apiClient';
+import { storageService } from '@/services/storageService';
 
 export interface AlertItem {
   id: string;
@@ -153,12 +156,131 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   };
 
   const [selectedDept, setSelectedDept] = useState('Team / Departments');
-  const [selectedStaff, setSelectedStaff] = useState('Select All');
+  const [selectedStaff, setSelectedStaff] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState('Select All');
   const [selectedProject, setSelectedProject] = useState('Select All');
   const [selectedHoliday, setSelectedHoliday] = useState('Select All');
 
-  const departments = ['Team / Departments', 'Engineering', 'Product', 'Finance', 'Design', 'Quality Assurance'];
+  const [departments, setDepartments] = useState<{ label: string; value: number }[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  const [staffs, setStaffs] = useState<{ label: string; value: number }[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
+  const [loadingStaff, setLoadingStaff] = useState(false);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.get('/UserGroup/dropdown');
+        let dataList: any[] = [];
+        if (response.data) {
+          if (response.data.status === false) {
+            Alert.alert('Error', response.data.message || 'Failed to fetch dropdown data.');
+            return;
+          }
+          if (Array.isArray(response.data)) {
+            dataList = response.data;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            dataList = response.data.data;
+          }
+        }
+
+        if (dataList && dataList.length > 0) {
+          const formatted = dataList.map((item: any) => ({
+            label: (item.groupName || '').trim(),
+            value: item.groupID,
+          }));
+          setDepartments(formatted);
+        } else {
+          Alert.alert('Error', 'Empty dropdown data received.');
+        }
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          await storageService.clearAuthData();
+          onNavigate?.('login');
+        } else {
+          let message = 'An unexpected error occurred while fetching Team / Departments dropdown data.';
+          if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+            message = 'Request timed out. Please check your internet connection and try again.';
+          } else if (!error.response || error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+            message = 'No internet connection. Please check your network connection and try again.';
+          } else if (error.response?.status === 500) {
+            message = 'Internal server error (500). Please try again later.';
+          }
+          Alert.alert('Error', message);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDepartments();
+  }, [onNavigate]);
+
+  useEffect(() => {
+    if (!selectedDepartmentId) {
+      setStaffs([]);
+      setSelectedStaff(null);
+      setSelectedStaffId(null);
+      return;
+    }
+
+    const fetchStaffs = async () => {
+      setLoadingStaff(true);
+      try {
+        const response = await apiClient.get(`/Report/staff-filter?groupId=${selectedDepartmentId}`);
+        let dataList: any[] = [];
+        if (response.data) {
+          if (response.data.status === false) {
+            Alert.alert('Error', response.data.message || 'Failed to fetch staff members.');
+            return;
+          }
+          if (Array.isArray(response.data.staffs)) {
+            dataList = response.data.staffs;
+          } else if (response.data.data && Array.isArray(response.data.data.staffs)) {
+            dataList = response.data.data.staffs;
+          } else if (Array.isArray(response.data)) {
+            dataList = response.data;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            dataList = response.data.data;
+          }
+        }
+
+        if (dataList && dataList.length > 0) {
+          const formatted = dataList.map((item: any) => ({
+            label: (item.fullName || '').trim(),
+            value: item.userID,
+          }));
+          setStaffs(formatted);
+        } else {
+          setStaffs([]);
+          Alert.alert('Error', 'Empty staff list received.');
+        }
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          await storageService.clearAuthData();
+          onNavigate?.('login');
+        } else {
+          let message = 'An unexpected error occurred while fetching staff data.';
+          if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+            message = 'Request timed out. Please check your internet connection and try again.';
+          } else if (!error.response || error.message === 'Network Error' || error.code === 'ERR_NETWORK') {
+            message = 'No internet connection. Please check your network connection and try again.';
+          } else if (error.response?.status === 500) {
+            message = 'Internal server error (500). Please try again later.';
+          }
+          Alert.alert('Error', message);
+        }
+      } finally {
+        setLoadingStaff(false);
+      }
+    };
+
+    fetchStaffs();
+  }, [selectedDepartmentId, onNavigate]);
 
   const recentReports = [
     {
@@ -197,7 +319,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
     setHolidayDropdownOpen(false);
     if (card === 'staff') {
       setSelectedDept('Team / Departments');
-      setSelectedStaff('Select All');
+      setSelectedStaff(null);
+      setSelectedDepartment(null);
+      setSelectedDepartmentId(null);
+      setStaffs([]);
+      setSelectedStaffId(null);
     } else if (card === 'client') {
       setSelectedClient('Select All');
     } else if (card === 'project') {
@@ -832,6 +958,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                 ]}
                 activeOpacity={0.7}
                 onPress={() => {
+                  if (loading) return;
                   setDeptDropdownOpen(!deptDropdownOpen);
                   setStaffDropdownOpen(false);
                 }}
@@ -842,33 +969,64 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                     {selectedDept}
                   </Text>
                 </View>
-                <Feather name={deptDropdownOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textSecond} />
+                {loading ? (
+                  <ActivityIndicator size="small" color={colors.brand} />
+                ) : (
+                  <Feather name={deptDropdownOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textSecond} />
+                )}
               </TouchableOpacity>
 
               {/* Inline Dropdown Options */}
               {deptDropdownOpen && (
                 <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  {/* Default Reset Option */}
+                  <TouchableOpacity
+                    style={[
+                      styles.dropdownOption,
+                      { borderBottomColor: colors.borderLight },
+                      selectedDept === 'Team / Departments' && { backgroundColor: colors.brandBg }
+                    ]}
+                    onPress={() => {
+                      setSelectedDept('Team / Departments');
+                      setSelectedDepartment(null);
+                      setSelectedDepartmentId(null);
+                      setDeptDropdownOpen(false);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[
+                      styles.dropdownOptionText,
+                      { color: selectedDept === 'Team / Departments' ? colors.brand : colors.textPrimary }
+                    ]}>
+                      Team / Departments
+                    </Text>
+                    {selectedDept === 'Team / Departments' && <Feather name="check" size={14} color={colors.brand} />}
+                  </TouchableOpacity>
+
+                  {/* Dynamic Options from API */}
                   {departments.map((dept) => (
                     <TouchableOpacity
-                      key={dept}
+                      key={dept.value.toString()}
                       style={[
                         styles.dropdownOption,
                         { borderBottomColor: colors.borderLight },
-                        selectedDept === dept && { backgroundColor: colors.brandBg }
+                        selectedDepartmentId === dept.value && { backgroundColor: colors.brandBg }
                       ]}
                       onPress={() => {
-                        setSelectedDept(dept);
+                        setSelectedDept(dept.label);
+                        setSelectedDepartment(dept.label);
+                        setSelectedDepartmentId(dept.value);
                         setDeptDropdownOpen(false);
                       }}
                       activeOpacity={0.7}
                     >
                       <Text style={[
                         styles.dropdownOptionText,
-                        { color: selectedDept === dept ? colors.brand : colors.textPrimary }
+                        { color: selectedDepartmentId === dept.value ? colors.brand : colors.textPrimary }
                       ]}>
-                        {dept}
+                        {dept.label}
                       </Text>
-                      {selectedDept === dept && <Feather name="check" size={14} color={colors.brand} />}
+                      {selectedDepartmentId === dept.value && <Feather name="check" size={14} color={colors.brand} />}
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -876,81 +1034,94 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             </View>
 
             {/* Staff Name Selector */}
-            <View style={styles.selectorContainer}>
-              <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>FULL NAME</Text>
-              <TouchableOpacity
-                style={[
-                  styles.dropdownSelector,
-                  { backgroundColor: colors.cardAlt, borderColor: colors.border },
-                  staffDropdownOpen && { borderColor: colors.brand }
-                ]}
-                activeOpacity={0.7}
-                onPress={() => {
-                  setStaffDropdownOpen(!staffDropdownOpen);
-                  setDeptDropdownOpen(false);
-                }}
-              >
-                <View style={styles.dropdownLeftCol}>
-                  <Feather name="user" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                  <Text style={[styles.dropdownText, { color: selectedStaff === 'Select All' ? colors.textSecond : colors.textPrimary }]}>
-                    {selectedStaff}
-                  </Text>
-                </View>
-                <Feather name={staffDropdownOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textSecond} />
-              </TouchableOpacity>
-
-              {/* Inline Dropdown Options */}
-              {staffDropdownOpen && (
-                <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                  {/* Select All Option */}
+            {(() => {
+              const isStaffDropdownDisabled = !selectedDepartmentId || loadingStaff;
+              return (
+                <View style={styles.selectorContainer}>
+                  <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>FULL NAME</Text>
                   <TouchableOpacity
                     style={[
-                      styles.dropdownOption,
-                      { borderBottomColor: colors.borderLight },
-                      selectedStaff === 'Select All' && { backgroundColor: colors.brandBg }
+                      styles.dropdownSelector,
+                      { backgroundColor: colors.cardAlt, borderColor: colors.border },
+                      staffDropdownOpen && { borderColor: colors.brand },
+                      isStaffDropdownDisabled && { opacity: 0.6 }
                     ]}
-                    onPress={() => {
-                      setSelectedStaff('Select All');
-                      setStaffDropdownOpen(false);
-                    }}
                     activeOpacity={0.7}
+                    onPress={() => {
+                      if (isStaffDropdownDisabled) return;
+                      setStaffDropdownOpen(!staffDropdownOpen);
+                      setDeptDropdownOpen(false);
+                    }}
                   >
-                    <Text style={[
-                      styles.dropdownOptionText,
-                      { color: selectedStaff === 'Select All' ? colors.brand : colors.textPrimary }
-                    ]}>
-                      Select All
-                    </Text>
-                    {selectedStaff === 'Select All' && <Feather name="check" size={14} color={colors.brand} />}
+                    <View style={styles.dropdownLeftCol}>
+                      <Feather name="user" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
+                      <Text style={[styles.dropdownText, { color: (selectedStaff === 'Select All' || !selectedStaff) ? colors.textSecond : colors.textPrimary }]}>
+                        {selectedStaff || 'Select All'}
+                      </Text>
+                    </View>
+                    {loadingStaff ? (
+                      <ActivityIndicator size="small" color={colors.brand} />
+                    ) : (
+                      <Feather name={staffDropdownOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textSecond} />
+                    )}
                   </TouchableOpacity>
 
-                  {/* Staff List Options */}
-                  {STAFF_LIST.map((staff) => (
-                    <TouchableOpacity
-                      key={staff.name}
-                      style={[
-                        styles.dropdownOption,
-                        { borderBottomColor: colors.borderLight },
-                        selectedStaff === staff.name && { backgroundColor: colors.brandBg }
-                      ]}
-                      onPress={() => {
-                        setSelectedStaff(staff.name);
-                        setStaffDropdownOpen(false);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[
-                        styles.dropdownOptionText,
-                        { color: selectedStaff === staff.name ? colors.brand : colors.textPrimary }
-                      ]}>
-                        {staff.name}
-                      </Text>
-                      {selectedStaff === staff.name && <Feather name="check" size={14} color={colors.brand} />}
-                    </TouchableOpacity>
-                  ))}
+                  {/* Inline Dropdown Options */}
+                  {staffDropdownOpen && (
+                    <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      {/* Select All Option */}
+                      <TouchableOpacity
+                        style={[
+                          styles.dropdownOption,
+                          { borderBottomColor: colors.borderLight },
+                          (selectedStaff === 'Select All' || !selectedStaff) && { backgroundColor: colors.brandBg }
+                        ]}
+                        onPress={() => {
+                          setSelectedStaff('Select All');
+                          setSelectedStaffId(null);
+                          setStaffDropdownOpen(false);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[
+                          styles.dropdownOptionText,
+                          { color: (selectedStaff === 'Select All' || !selectedStaff) ? colors.brand : colors.textPrimary }
+                        ]}>
+                          Select All
+                        </Text>
+                        {(selectedStaff === 'Select All' || !selectedStaff) && <Feather name="check" size={14} color={colors.brand} />}
+                      </TouchableOpacity>
+
+                      {/* Staff List Options */}
+                      {staffs.map((staff) => (
+                        <TouchableOpacity
+                          key={staff.value.toString()}
+                          style={[
+                            styles.dropdownOption,
+                            { borderBottomColor: colors.borderLight },
+                            selectedStaffId === staff.value && { backgroundColor: colors.brandBg }
+                          ]}
+                          onPress={() => {
+                            setSelectedStaff(staff.label);
+                            setSelectedStaffId(staff.value);
+                            setStaffDropdownOpen(false);
+                          }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[
+                            styles.dropdownOptionText,
+                            { color: selectedStaffId === staff.value ? colors.brand : colors.textPrimary }
+                          ]}>
+                            {staff.label}
+                          </Text>
+                          {selectedStaffId === staff.value && <Feather name="check" size={14} color={colors.brand} />}
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
-              )}
-            </View>
+              );
+            })()}
           </>
         );
 
