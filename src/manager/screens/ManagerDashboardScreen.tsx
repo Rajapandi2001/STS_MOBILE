@@ -1494,6 +1494,8 @@ export default function ManagerDashboardScreen({
                 onPress={() => {
                   if (item.name === 'Claims') {
                     onNavigate?.('manager_create_claim');
+                  } else if (item.name === 'Reports') {
+                    onNavigate?.('manager_reports');
                   }
                 }}
               >
