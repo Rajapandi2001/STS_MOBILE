@@ -1494,8 +1494,13 @@ export default function ManagerDashboardScreen({
                 onPress={() => {
                   if (item.name === 'Claims') {
                     onNavigate?.('manager_create_claim');
+<<<<<<< Updated upstream
                   } else if (item.name === 'Reports') {
                     onNavigate?.('manager_reports');
+=======
+                  } else if (item.name === 'Leaves') {
+                    onNavigate?.('manager_apply_leave');
+>>>>>>> Stashed changes
                   }
                 }}
               >
