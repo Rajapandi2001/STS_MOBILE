@@ -24,11 +24,8 @@ import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import ManagerCreateClaimScreen from '@/manager/screens/ManagerCreateClaimScreen';
 import ManagerAssetScreen from '@/manager/screens/ManagerAssetScreen';
-<<<<<<< Updated upstream
 import ManagerReportsScreen from '@/manager/screens/ManagerReportsScreen';
-=======
 import ManagerApplyLeaveScreen from '@/manager/screens/ManagerApplyLeaveScreen';
->>>>>>> Stashed changes
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -93,11 +90,8 @@ type ScreenName =
   | 'manager_profile'
   | 'manager_create_claim'
   | 'manager_assets'
-<<<<<<< Updated upstream
-  | 'manager_reports';
-=======
+  | 'manager_reports'
   | 'manager_apply_leave';
->>>>>>> Stashed changes
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -701,15 +695,17 @@ function AppContent() {
           />
         );
 
-<<<<<<< Updated upstream
       case 'manager_reports':
         return (
           <ManagerReportsScreen
-=======
+            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
       case 'manager_apply_leave':
         return (
           <ManagerApplyLeaveScreen
->>>>>>> Stashed changes
             onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
