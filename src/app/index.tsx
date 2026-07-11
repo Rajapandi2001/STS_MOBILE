@@ -23,6 +23,7 @@ import ManagerRoleDetailScreen from '@/manager/screens/ManagerRoleDetailScreen';
 import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import ManagerCreateClaimScreen from '@/manager/screens/ManagerCreateClaimScreen';
+import ManagerAssetScreen from '@/manager/screens/ManagerAssetScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -85,7 +86,8 @@ type ScreenName =
   | 'manager_role_detail'
   | 'manager_help'
   | 'manager_profile'
-  | 'manager_create_claim';
+  | 'manager_create_claim'
+  | 'manager_assets';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -241,6 +243,7 @@ function AppContent() {
         return true;
 
       case 'manager_create_claim':
+      case 'manager_assets':
         transitionTo('manager_dashboard', undefined, 'backward');
         return true;
 
@@ -674,6 +677,14 @@ function AppContent() {
       case 'manager_create_claim':
         return (
           <ManagerCreateClaimScreen
+            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'manager_assets':
+        return (
+          <ManagerAssetScreen
             onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />

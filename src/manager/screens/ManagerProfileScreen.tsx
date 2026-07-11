@@ -398,7 +398,11 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
+<<<<<<< Updated upstream
         <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'assets' })}>
+=======
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
+>>>>>>> Stashed changes
           <Feather name="package" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
         </TouchableOpacity>

@@ -1948,9 +1948,9 @@ export default function ManagerDashboardScreen({
           <Text style={[currentTab === 'approvals' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'approvals' ? colors.tabActive : colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('assets')}>
-          <Feather name="package" size={20} color={currentTab === 'assets' ? colors.tabActive : colors.tabInactive} />
-          <Text style={[currentTab === 'assets' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'assets' ? colors.tabActive : colors.tabInactive }]}>Assets</Text>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
+          <Feather name="package" size={20} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
         </TouchableOpacity>
       </View>
 

@@ -160,7 +160,7 @@ export default function ManagerHelpScreen({ onNavigate, onBack }: ManagerHelpScr
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
           <Feather name="package" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
         </TouchableOpacity>
