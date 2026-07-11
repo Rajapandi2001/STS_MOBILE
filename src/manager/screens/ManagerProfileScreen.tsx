@@ -203,7 +203,7 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 30 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
         keyboardShouldPersistTaps="handled"
       >
         {/* ── Avatar Card ── */}
@@ -240,12 +240,7 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Personal Information</Text>
           </View>
 
-          <ScrollView
-            style={styles.cardScroll}
-            contentContainerStyle={styles.cardScrollContent}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.cardScrollContent}>
             <InfoField label="Name" value={profile.name} editable={true} fieldKey="name"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Phone" value={profile.phone} icon={<Feather name="phone" size={14} color={colors.textSecond} />} editable={true} fieldKey="phone" keyboardType="phone-pad"
@@ -267,7 +262,7 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
               fieldKey="gender"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
             />
-          </ScrollView>
+          </View>
         </View>
 
         {/* ══ Contact Information ══ */}
@@ -279,12 +274,7 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Contact Information</Text>
           </View>
 
-          <ScrollView
-            style={styles.cardScroll}
-            contentContainerStyle={styles.cardScrollContent}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.cardScrollContent}>
             <InfoField label="Address" value={profile.address} icon={<Feather name="home" size={14} color={colors.textSecond} />} editable={true} fieldKey="address"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Postal Code" value={profile.postalCode} editable={true} fieldKey="postalCode" keyboardType="numeric"
@@ -302,7 +292,7 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
               fieldKey="maritalStatus"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer}
             />
-          </ScrollView>
+          </View>
         </View>
 
         {/* ══ Emergency Contact ══ */}
@@ -313,19 +303,14 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
             </View>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Emergency Contact</Text>
           </View>
-          <ScrollView
-            style={styles.cardScroll}
-            contentContainerStyle={styles.cardScrollContent}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.cardScrollContent}>
             <InfoField label="Name" value={profile.emergencyName} editable={true} fieldKey="emergencyName"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Relationship" value={profile.relationship} editable={true} fieldKey="relationship"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Phone" value={profile.emergencyPhone} icon={<Feather name="phone" size={14} color={colors.textSecond} />} editable={true} fieldKey="emergencyPhone" keyboardType="phone-pad"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-          </ScrollView>
+          </View>
         </View>
 
         {/* ══ Bank Information ══ */}
@@ -336,19 +321,14 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
             </View>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Bank Information</Text>
           </View>
-          <ScrollView
-            style={styles.cardScroll}
-            contentContainerStyle={styles.cardScrollContent}
-            nestedScrollEnabled={true}
-            showsVerticalScrollIndicator={false}
-          >
+          <View style={styles.cardScrollContent}>
             <InfoField label="Bank Name" value={profile.bankName} icon={<MaterialCommunityIcons name="bank" size={14} color={colors.textSecond} />} editable={true} fieldKey="bankName"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="Account No" value={profile.accountNo} editable={true} fieldKey="accountNo" keyboardType="numeric"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
             <InfoField label="IFSC Code" value={profile.ifscCode} editable={true} fieldKey="ifscCode"
               isEditing={isEditing} editBuffer={editBuffer} onChangeBuffer={handleChangeBuffer} />
-          </ScrollView>
+          </View>
         </View>
 
         {/* ══ Security ══ */}
@@ -368,21 +348,6 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
               <View>
                 <Text style={[styles.securityLabel, { color: colors.textPrimary }]}>Change Password</Text>
                 <Text style={[styles.securitySub, { color: colors.textSecond }]}>Last changed 30 days ago</Text>
-              </View>
-            </View>
-            <Feather name="chevron-right" size={18} color={colors.textMuted} />
-          </TouchableOpacity>
-
-          <View style={[styles.securityDivider, { backgroundColor: colors.borderLight }]} />
-
-          <TouchableOpacity style={styles.securityRow} activeOpacity={0.7}>
-            <View style={styles.securityLeft}>
-              <View style={[styles.securityIconBg, { backgroundColor: colors.successBg }]}>
-                <Feather name="smartphone" size={16} color={colors.success} />
-              </View>
-              <View>
-                <Text style={[styles.securityLabel, { color: colors.textPrimary }]}>Two-Factor Auth</Text>
-                <Text style={[styles.securitySub, { color: colors.success }]}>Enabled</Text>
               </View>
             </View>
             <Feather name="chevron-right" size={18} color={colors.textMuted} />
@@ -413,27 +378,27 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
 
       {/* Bottom Tab Bar */}
       <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard')}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
           <Feather name="home" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'profile' })}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
           <Feather name="users" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('attendance_history')}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
           <Feather name="clock" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
           <Feather name="check-square" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'assets' })}>
           <Feather name="package" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
         </TouchableOpacity>
