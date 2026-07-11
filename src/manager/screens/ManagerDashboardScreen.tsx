@@ -2849,7 +2849,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-<<<<<<< Updated upstream
   tabNotifDot: {
     position: 'absolute',
     top: -1,
@@ -2858,7 +2857,7 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: '#EF4444',
-=======
+  },
   timeScreenTitle: {
     fontSize: 28,
     fontWeight: '800',
@@ -3051,7 +3050,6 @@ const styles = StyleSheet.create({
   viewFullHistoryText: {
     fontSize: 14,
     fontWeight: '700',
->>>>>>> Stashed changes
   },
 });
 
