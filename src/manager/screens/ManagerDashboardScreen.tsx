@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '../components/ManagerMenu';
+import ManagerApprovalScreen from './ManagerApprovalScreen';
 
 interface ManagerDashboardScreenProps {
   onNavigate?: (screen: any, params?: any) => void;
@@ -47,7 +48,6 @@ export default function ManagerDashboardScreen({
 
   useEffect(() => {
     if (routeParams?.menuOpen) {
-      setMenuOpen(true);
     }
     if (routeParams?.tab) {
       setCurrentTab(routeParams.tab as any);
@@ -122,43 +122,85 @@ export default function ManagerDashboardScreen({
   }, [isCheckedInGlobal, checkInTimeGlobal]);
 
   // Pending Approvals state
-  const [pendingCount, setPendingCount] = useState(5);
-  const [viewAllPending, setViewAllPending] = useState(false);
-  const [pendingRequests, setPendingRequests] = useState([
+  const [pendingCount, setPendingCount] = useState(12);
+  const [approvedCount, setApprovedCount] = useState(45);
+  const [pendingRequests, setPendingRequests] = useState<Array<{
+    id: number;
+    name: string;
+    role?: string;
+    type: string;
+    date?: string;
+    duration?: string;
+    reason?: string;
+    avatar: string;
+    category?: 'time' | 'leave' | 'claim';
+    detail?: string;
+  }>>([
     {
       id: 1,
-      name: 'David Chen',
+      name: 'Eleanor Vance',
+      role: 'Product Designer',
       type: 'Annual Leave',
-      date: 'Oct 12 - Oct 14',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?fit=crop&w=100',
+      date: 'Oct 12 - Oct 16',
+      duration: '5 Days',
+      reason: 'Taking some time off to travel with family for a pre-planned vacation to...',
+      avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?fit=crop&w=100',
+      category: 'leave',
     },
     {
       id: 2,
-      name: 'Sarah Jenkins',
-      type: 'Expense Claim',
-      detail: 'Travel $240',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?fit=crop&w=100',
+      name: 'Marcus Thorne',
+      role: 'Senior Engineer',
+      type: 'Sick Leave',
+      date: 'Nov 2',
+      duration: '1 Day',
+      reason: 'No reason provided.',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=100',
+      category: 'leave',
     },
     {
       id: 3,
-      name: 'Michael Brown',
-      type: 'Sick Leave',
-      date: 'Oct 15 - Oct 16',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=100',
+      name: 'David Chen',
+      role: 'Software Developer',
+      type: 'Overtime',
+      date: 'Oct 10',
+      duration: '4 Hours',
+      reason: 'Assisted with production release monitoring and database migration.',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?fit=crop&w=100',
+      category: 'time',
     },
     {
       id: 4,
-      name: 'Emily Davis',
-      type: 'Work From Home',
-      date: 'Oct 18',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?fit=crop&w=100',
+      name: 'Sarah Jenkins',
+      role: 'QA Analyst',
+      type: 'Missed Punch',
+      date: 'Oct 11',
+      duration: '1 Punch',
+      reason: 'Forgot to clock in after a client lunch meeting.',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?fit=crop&w=100',
+      category: 'time',
     },
     {
       id: 5,
       name: 'James Wilson',
+      role: 'IT Support',
       type: 'Device Request',
-      detail: 'MacBook Pro replacement',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?fit=crop&w=100',
+      date: 'Oct 15',
+      duration: '$1,200',
+      reason: 'Replacement monitor and accessories for home office setup.',
+      avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?fit=crop&w=100',
+      category: 'claim',
+    },
+    {
+      id: 6,
+      name: 'Emily Davis',
+      role: 'HR Manager',
+      type: 'Travel Expense',
+      date: 'Oct 12',
+      duration: '$240',
+      reason: 'Client onsite visit transport and meal reimbursement.',
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?fit=crop&w=100',
+      category: 'claim',
     }
   ]);
 
@@ -259,6 +301,7 @@ export default function ManagerDashboardScreen({
     Alert.alert('Request Approved', `Approved request for ${name}.`);
     setPendingRequests(prev => prev.filter(req => req.id !== id));
     setPendingCount(prev => Math.max(0, prev - 1));
+    setApprovedCount(prev => prev + 1);
   };
 
   const handleReject = (id: number, name: string) => {
@@ -1047,43 +1090,7 @@ export default function ManagerDashboardScreen({
     </View>
   );
 
-  const renderApprovalsTab = () => (
-    <View style={{ marginTop: 8 }}>
-      <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 12 }]}>Pending Approvals</Text>
-      {pendingRequests.length === 0 ? (
-        <Text style={[styles.emptyText, { color: colors.textMuted }]}>No pending approvals</Text>
-      ) : (
-        pendingRequests.map((req) => (
-          <View key={req.id} style={[styles.approvalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Image source={{ uri: req.avatar }} style={styles.approvalAvatar} />
-            <View style={styles.approvalDetails}>
-              <Text style={[styles.approvalName, { color: colors.textPrimary }]}>{req.name}</Text>
-              <Text style={[styles.approvalType, { color: colors.textSecond }]}>
-                {req.type} {req.date ? `• ${req.date}` : req.detail ? `• ${req.detail}` : ''}
-              </Text>
-            </View>
-            <View style={styles.approvalActions}>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.approveBtn, { backgroundColor: '#F0FDF4' }]}
-                onPress={() => handleApprove(req.id, req.name)}
-                activeOpacity={0.7}
-              >
-                <Feather name="check" size={16} color="#16A34A" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionBtn, styles.rejectBtn, { backgroundColor: '#FEF2F2' }]}
-                onPress={() => handleReject(req.id, req.name)}
-                activeOpacity={0.7}
-              >
-                <Feather name="x" size={16} color="#EF4444" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        ))
-      )}
-    </View>
-  );
-
+  
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
@@ -1644,12 +1651,13 @@ export default function ManagerDashboardScreen({
 
       {/* ── APPROVALS TAB CONTENT ── */}
       {currentTab === 'approvals' && (
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
-        >
-          {renderApprovalsTab()}
-        </ScrollView>
+        <ManagerApprovalScreen
+          pendingRequests={pendingRequests}
+          pendingCount={pendingCount}
+          approvedCount={approvedCount}
+          handleApprove={handleApprove}
+          handleReject={handleReject}
+        />
       )}
 
       {/* ── ASSETS TAB CONTENT ── */}
@@ -1680,7 +1688,10 @@ export default function ManagerDashboardScreen({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('approvals')}>
-          <Feather name="check-square" size={20} color={currentTab === 'approvals' ? colors.tabActive : colors.tabInactive} />
+          <View style={{ position: 'relative', width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}>
+            <Feather name="check-circle" size={20} color={currentTab === 'approvals' ? colors.tabActive : colors.tabInactive} />
+            <View style={styles.tabNotifDot} />
+          </View>
           <Text style={[currentTab === 'approvals' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'approvals' ? colors.tabActive : colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
@@ -2585,4 +2596,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  tabNotifDot: {
+    position: 'absolute',
+    top: -1,
+    right: -1,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#EF4444',
+  },
 });
+
