@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const mockUser: UserProfile = {
         userID: 3,
         userName: 'manager',
-        displayName: 'Lingesvaran',
+        displayName: 'Manager',
         empID: 102,
         groupID: 3,
       };

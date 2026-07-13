@@ -142,7 +142,7 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
   const [isEditing, setIsEditing] = useState(false);
 
   const [profile, setProfile] = useState<ProfileShape>({
-    fullName: 'Lingeswaran', role: 'Manager', employeeId: 'EMP02100',
+    fullName: 'Manager', role: 'Manager', employeeId: 'EMP02100',
     name: 'Manager', phone: '', designation: '', email: 'manager@cybervault.in',
     dateOfJoining: '', dateOfBirth: '', nationality: '', gender: '',
     address: '', postalCode: '', city: '', salary: '', country: '', maritalStatus: '',

@@ -1382,6 +1382,16 @@ export default function ManagerDashboardScreen({
               Team Overview
             </Text>
           )}
+          {currentTab === 'time' && (
+            <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+              Timesheet
+            </Text>
+          )}
+          {currentTab === 'approvals' && (
+            <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+              Approvals
+            </Text>
+          )}
         </View>
 
 
@@ -1422,7 +1432,7 @@ export default function ManagerDashboardScreen({
         >
           {/* Welcome Text */}
           <View style={styles.welcomeContainer}>
-            <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Welcome, Lingesvaran</Text>
+            <Text style={[styles.welcomeGreeting, { color: colors.textPrimary }]}>Welcome, Manager</Text>
             <Text style={[styles.welcomeDate, { color: colors.textSecond }]}>Monday, 20 Nov - 09:45 AM</Text>
           </View>
 

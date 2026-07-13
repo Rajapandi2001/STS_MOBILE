@@ -63,7 +63,7 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
   const getDeviceIcon = (type: string): any => {
     switch (type) {
       case 'laptop':
-        return 'monitor'; // 'laptop' is not a valid Feather icon, using 'monitor' instead
+        return 'monitor';
       case 'mobile':
         return 'smartphone';
       case 'monitor':
@@ -74,23 +74,33 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgScreen || '#F8FAFC', paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.bgScreen || '#F8FAFC' }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Assets</Text>
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Assets
+          </Text>
+        </View>
         <TouchableOpacity
-          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
+          style={styles.avatarWrapper}
           activeOpacity={0.8}
-          onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
+          onPress={() => onNavigate?.('manager_profile')}
         >
-          <Feather name="user" size={20} color={colors.brand} />
+          <Image
+            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+            style={styles.avatarImage}
+          />
+          <View style={styles.activeDot} />
         </TouchableOpacity>
       </View>
 
@@ -152,23 +162,23 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
 
       {/* Bottom Tab Bar */}
       <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard')}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
           <Feather name="home" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
           <Feather name="users" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('attendance_history')}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
           <Feather name="clock" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
+          <Feather name="check-circle" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
@@ -191,26 +201,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 14,
     borderBottomWidth: 1,
   },
-  hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
-  hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
   },
-  avatarCircle: {
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarImage: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+  },
+  activeDot: {
+    position: 'absolute',
+    bottom: -1,
+    right: -1,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+    backgroundColor: '#10B981',
   },
   scrollContent: {
     padding: 20,

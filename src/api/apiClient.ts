@@ -36,7 +36,11 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       const isLoginRequest = error.config && error.config.url && error.config.url.includes('/Auth/login');
       if (!isLoginRequest && unauthorizedCallback) {
-        unauthorizedCallback();
+        const token = await storageService.getToken();
+        const isMockToken = token && token.startsWith('mock_');
+        if (!isMockToken) {
+          unauthorizedCallback();
+        }
       }
     }
     return Promise.reject(error);

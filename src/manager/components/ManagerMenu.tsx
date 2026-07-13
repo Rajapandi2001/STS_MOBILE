@@ -104,7 +104,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             <MaterialCommunityIcons name="account" size={28} color={colors.brand} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={[styles.profileName, { color: colors.textPrimary }]}>{user?.displayName || 'Lingesvaran'}</Text>
+            <Text style={[styles.profileName, { color: colors.textPrimary }]}>{user?.displayName || 'Manager'}</Text>
             <Text style={[styles.profileRole, { color: colors.textSecond }]} numberOfLines={1}>{user?.userName || 'manager@cybervault.in'}</Text>
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>

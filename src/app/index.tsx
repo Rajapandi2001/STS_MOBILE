@@ -806,6 +806,7 @@ function AppContent() {
             <ManagerAttendanceHistoryScreen
               liveRecords={checkInHistory}
               onReturnHome={() => transitionTo('manager_dashboard', undefined, 'backward')}
+              onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             />
           );
         }

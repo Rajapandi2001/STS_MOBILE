@@ -62,9 +62,10 @@ const STATUS_CONFIG = {
 interface Props {
   onReturnHome: () => void;
   liveRecords?: AttendanceRecord[];  // Real check-in records from this session
+  onNavigate?: (screen: string, params?: any) => void;
 }
 
-export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecords = [] }: Props) {
+export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecords = [], onNavigate }: Props) {
   const insets = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useTheme();
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'present' | 'absent' | 'late'>('all');
@@ -88,8 +89,8 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
   });
 
   const totalPresent = allRecords.filter(r => r.status === 'on_time').length;
-  const totalLate    = allRecords.filter(r => r.status === 'late').length;
-  const totalAbsent  = allRecords.filter(r => r.status === 'absent').length;
+  const totalLate = allRecords.filter(r => r.status === 'late').length;
+  const totalAbsent = allRecords.filter(r => r.status === 'absent').length;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.bgScreen }]}>
@@ -104,6 +105,9 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
           >
             <Feather name="menu" size={20} color={colors.brand} />
           </TouchableOpacity>
+          <Text style={[styles.topHeaderTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Attendance
+          </Text>
         </View>
 
         <View style={styles.headerRight}>
@@ -120,7 +124,10 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
             <View style={styles.notifDot} />
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
             <View style={styles.avatarWrapper}>
               <Image
                 source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
@@ -262,30 +269,27 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
 
       {/* ── BOTTOM NAV TAB BAR ── */}
       <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={onReturnHome}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
           <Feather name="home" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
           <Feather name="users" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
           <Feather name="clock" size={20} color={colors.tabActive} />
           <Text style={[styles.tabTextActive, { color: colors.tabActive }]}>Time</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
-          <View style={{ position: 'relative', width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}>
-            <Feather name="check-circle" size={20} color={colors.tabInactive} />
-            <View style={styles.tabNotifDot} />
-          </View>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
+          <Feather name="check-circle" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
           <Feather name="package" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
         </TouchableOpacity>
@@ -399,6 +403,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '800',
     color: '#0F172A',
+  },
+  topHeaderTitle: {
+    fontSize: 16,
+    fontWeight: '700',
   },
   headerSubtitle: {
     fontSize: 13,
