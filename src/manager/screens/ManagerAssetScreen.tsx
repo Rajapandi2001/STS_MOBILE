@@ -63,7 +63,7 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
   const getDeviceIcon = (type: string): any => {
     switch (type) {
       case 'laptop':
-        return 'laptop';
+        return 'monitor'; // 'laptop' is not a valid Feather icon, using 'monitor' instead
       case 'mobile':
         return 'smartphone';
       case 'monitor':

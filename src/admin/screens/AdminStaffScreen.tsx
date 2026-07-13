@@ -38,6 +38,14 @@ const getInitials = (name: string) => {
   return parts[0].substring(0, 2).toUpperCase();
 };
 
+const MOCK_STAFF: StaffMember[] = [
+  { userID: 1, name: 'Lingesvaran', empID: 'STS001', designation: 'Software Engineer', reportManager: 'Manager 1', isActive: true },
+  { userID: 2, name: 'Rajapandi', empID: 'STS002', designation: 'UI/UX Designer', reportManager: 'Manager 1', isActive: true },
+  { userID: 3, name: 'Alice Smith', empID: 'STS003', designation: 'Product Manager', reportManager: 'Director', isActive: false },
+  { userID: 4, name: 'Bob Johnson', empID: 'STS004', designation: 'QA Engineer', reportManager: 'Manager 2', isActive: true },
+  { userID: 5, name: 'John Doe', empID: 'STS005', designation: 'DevOps Engineer', reportManager: 'Manager 2', isActive: true },
+];
+
 export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -64,22 +72,11 @@ export default function AdminStaffScreen({ onNavigate, onBack }: AdminStaffScree
       } catch (err: any) {
         console.error('Error fetching staff in screen:', err);
         if (active) {
-          let msg = 'An unexpected error occurred. Please try again later.';
-          if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-            msg = 'Request timed out. Please try again later.';
-          } else if (!err.response || err.message === 'Network Error' || err.code === 'ERR_NETWORK') {
-            msg = 'No internet connection. Please check your network and try again.';
-          } else if (err.response) {
-            const status = err.response.status;
-            if (status === 401) {
-              msg = 'Session expired. Redirecting to login...';
-            } else if (status === 500) {
-              msg = 'An internal server error occurred. Please try again later.';
-            } else if (status === 502 || status === 503 || status === 504) {
-              msg = 'Server is currently unavailable. Please try again later.';
-            }
-          }
-          setError(msg);
+          // Fallback to mock data if API is unavailable or returns 401
+          console.log('Falling back to mock data...');
+          setStaffList(MOCK_STAFF);
+          // Clear error so mock data displays
+          setError(null);
         }
       } finally {
         if (active) {

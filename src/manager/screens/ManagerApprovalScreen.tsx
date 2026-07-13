@@ -57,10 +57,7 @@ export default function ManagerApprovalScreen({
             <Text style={[styles.apprTitleText, { color: colors.textPrimary }]}>Approvals</Text>
             <Text style={[styles.apprSubtitleText, { color: colors.textSecond }]}>Review and manage team requests.</Text>
           </View>
-          <TouchableOpacity style={[styles.historyBtn, { borderColor: colors.border }]} activeOpacity={0.7}>
-            <MaterialCommunityIcons name="history" size={14} color={colors.brand} style={{ marginRight: 6 }} />
-            <Text style={[styles.historyBtnText, { color: colors.brand }]}>History</Text>
-          </TouchableOpacity>
+
         </View>
 
         {/* KPI Cards Row */}
@@ -248,19 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 4,
   },
-  historyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 100,
-    borderWidth: 1,
-    backgroundColor: '#FFFFFF',
-  },
-  historyBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
+
   apprKpiContainer: {
     flexDirection: 'row',
     gap: 16,
