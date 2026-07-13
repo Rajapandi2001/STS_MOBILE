@@ -80,6 +80,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true, message: 'Logged in as Manager (Demo)', user: mockUser };
     }
 
+    const is_employee = username.trim().toLowerCase() === 'employee';
+    if (is_employee) {
+      const mockUser: UserProfile = {
+        userID: 2,
+        userName: 'employee',
+        displayName: 'Demo Employee',
+        empID: 101,
+        groupID: 1,
+      };
+      await storageService.setToken('mock_jwt_token_for_employee');
+      await storageService.setExpireDate('2026-07-08T06:22:38Z');
+      await storageService.setUserID(mockUser.userID.toString());
+      await storageService.setUserName(mockUser.userName);
+      await storageService.setDisplayName(mockUser.displayName);
+      await storageService.setGroupID(mockUser.groupID.toString());
+      await storageService.setEmpID(mockUser.empID.toString());
+      await storageService.setUser(mockUser);
+
+      setToken('mock_jwt_token_for_employee');
+      setUser(mockUser);
+      return { success: true, message: 'Logged in as Employee (Demo)', user: mockUser };
+    }
+
     if (forceOffline) {
       const is_admin = username.trim().toLowerCase() === 'admin';
       const mockUser: UserProfile = {

@@ -406,6 +406,7 @@ function AppContent() {
           <DashboardScreen
             onSignOut={() => transitionTo('login', undefined, 'backward')}
             onCheckIn={() => transitionTo('checkin_location')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
 
@@ -679,13 +680,15 @@ function AppContent() {
           />
         );
 
-      case 'manager_create_claim':
+      case 'manager_create_claim': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
         return (
           <ManagerCreateClaimScreen
-            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onBack={() => transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
+      }
 
       case 'manager_assets':
         return (
@@ -703,13 +706,15 @@ function AppContent() {
           />
         );
 
-      case 'manager_apply_leave':
+      case 'manager_apply_leave': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
         return (
           <ManagerApplyLeaveScreen
-            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onBack={() => transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
+      }
 
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location': {

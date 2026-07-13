@@ -17,14 +17,16 @@ import { MaterialCommunityIcons, Feather, Ionicons, FontAwesome5 } from '@expo/v
 interface DashboardScreenProps {
   onSignOut?: () => void;
   onCheckIn?: () => void;
+  onNavigate?: (screen: string, params?: any) => void;
 }
 
-export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScreenProps) {
+export default function DashboardScreen({ onSignOut, onCheckIn, onNavigate }: DashboardScreenProps) {
   const insets = useSafeAreaInsets();
 
   // Dynamic Calendar States
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [calendarViewMode, setCalendarViewMode] = useState<'calendar' | 'month' | 'year'>('calendar');
 
   // Navigation tab state
   const [currentTab, setCurrentTab] = useState<'home' | 'calendar' | 'team' | 'approvals' | 'profile'>('home');
@@ -120,6 +122,217 @@ export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScree
 
   const handleNextMonth = () => {
     setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  };
+
+  const handleSelectMonth = (monthIndex: number) => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), monthIndex, 1));
+  };
+
+  const handleSelectYear = (year: number) => {
+    setCurrentDate(prev => new Date(year, prev.getMonth(), 1));
+  };
+
+  const renderCalendarCard = () => {
+    const calendarRows = getCalendarGrid();
+    return (
+      <View style={styles.calendarCard}>
+        {calendarViewMode === 'calendar' ? (
+          <>
+            <View style={styles.calendarHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {/* Month Selector */}
+                <TouchableOpacity
+                  onPress={() => setCalendarViewMode('month')}
+                  style={styles.calendarHeaderClickable}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.calendarTitle}>
+                    {months[currentDate.getMonth()]}
+                  </Text>
+                  <Feather name="chevron-down" size={12} color="#64748B" style={{ marginLeft: 3 }} />
+                </TouchableOpacity>
+
+                {/* Year Selector */}
+                <TouchableOpacity
+                  onPress={() => setCalendarViewMode('year')}
+                  style={[styles.calendarHeaderClickable, { marginLeft: 8 }]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.calendarTitle}>
+                    {currentDate.getFullYear()}
+                  </Text>
+                  <Feather name="chevron-down" size={12} color="#64748B" style={{ marginLeft: 3 }} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.calendarControls}>
+                <TouchableOpacity style={styles.calendarArrow} activeOpacity={0.6} onPress={handlePrevMonth}>
+                  <Feather name="chevron-left" size={18} color="#64748B" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.calendarArrow} activeOpacity={0.6} onPress={handleNextMonth}>
+                  <Feather name="chevron-right" size={18} color="#64748B" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Calendar Grid */}
+            <View style={styles.calendarGrid}>
+              <View style={styles.calendarDaysRow}>
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
+                  <Text key={idx} style={styles.calendarDayHeader}>{day}</Text>
+                ))}
+              </View>
+
+              {calendarRows.map((row, rowIdx) => (
+                <View key={rowIdx} style={styles.calendarDaysRow}>
+                  {row.map((item, cellIdx) => {
+                    const isSelected = selectedDate.getDate() === item.day &&
+                      selectedDate.getMonth() === item.date.getMonth() &&
+                      selectedDate.getFullYear() === item.date.getFullYear();
+
+                    const dotStatus = getDayStatusDot(item.date);
+
+                    return (
+                      <TouchableOpacity
+                        key={cellIdx}
+                        style={styles.calendarDayCell}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          if (item.isCurrentMonth) {
+                            setSelectedDate(item.date);
+                          }
+                        }}
+                      >
+                        {isSelected ? (
+                          <View style={styles.selectedDayCircle}>
+                            <Text style={styles.selectedDayText}>{item.day}</Text>
+                          </View>
+                        ) : (
+                          <Text style={item.isCurrentMonth ? styles.calendarDayText : styles.calendarDayTextGray}>
+                            {item.day}
+                          </Text>
+                        )}
+
+                        {!isSelected && dotStatus && (
+                          <View style={[
+                            {
+                              width: 4,
+                              height: 4,
+                              borderRadius: 2,
+                              position: 'absolute',
+                              bottom: 2,
+                            },
+                            dotStatus === 'present' && { backgroundColor: '#22C55E' },
+                            dotStatus === 'absent' && { backgroundColor: '#EF4444' },
+                            dotStatus === 'leave' && { backgroundColor: '#D97706' },
+                            dotStatus === 'holiday' && { backgroundColor: '#0A52D6' },
+                            dotStatus === 'wfh' && { backgroundColor: '#9333EA' },
+                          ]} />
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+
+            {/* Calendar Legend */}
+            <View style={styles.legendContainer}>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
+                <Text style={styles.legendText}>PRESENT</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
+                <Text style={styles.legendText}>ABSENT</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
+                <Text style={styles.legendText}>LEAVE</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#0A52D6' }]} />
+                <Text style={styles.legendText}>HOLIDAY</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <View style={[styles.legendDot, { backgroundColor: '#9333EA' }]} />
+                <Text style={styles.legendText}>WFH</Text>
+              </View>
+            </View>
+          </>
+        ) : calendarViewMode === 'month' ? (
+          <>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>Select Month</Text>
+              <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
+                <Text style={{ color: '#0A52D6', fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.selectorGrid}>
+              {monthNames.map((m, idx) => (
+                <TouchableOpacity
+                  key={m}
+                  style={[
+                    styles.selectorGridItem,
+                    { backgroundColor: '#F8FAFC' },
+                    currentDate.getMonth() === idx && { backgroundColor: '#0A52D6' }
+                  ]}
+                  onPress={() => {
+                    handleSelectMonth(idx);
+                    setCalendarViewMode('calendar');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.selectorGridItemText,
+                      { color: currentDate.getMonth() === idx ? '#FFFFFF' : '#0F172A' }
+                    ]}
+                  >
+                    {m.substring(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            <View style={styles.calendarHeader}>
+              <Text style={styles.calendarTitle}>Select Year</Text>
+              <TouchableOpacity onPress={() => setCalendarViewMode('calendar')}>
+                <Text style={{ color: '#0A52D6', fontSize: 13, fontWeight: '700' }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.selectorGrid}>
+              {yearOptions.map((y) => (
+                <TouchableOpacity
+                  key={y}
+                  style={[
+                    styles.selectorGridItem,
+                    { backgroundColor: '#F8FAFC' },
+                    currentDate.getFullYear() === y && { backgroundColor: '#0A52D6' }
+                  ]}
+                  onPress={() => {
+                    handleSelectYear(y);
+                    setCalendarViewMode('calendar');
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.selectorGridItemText,
+                      { color: currentDate.getFullYear() === y ? '#FFFFFF' : '#0F172A' }
+                    ]}
+                  >
+                    {y}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+      </View>
+    );
   };
 
   // Generate calendar grid (starting on Monday)
@@ -334,106 +547,7 @@ export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScree
     return (
       <View style={{ marginTop: 16 }}>
         <Text style={[styles.sectionTitle, { marginBottom: 16 }]}>My Schedule</Text>
-        <View style={styles.calendarCard}>
-          <View style={styles.calendarHeader}>
-            <Text style={styles.calendarTitle}>
-              {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-            </Text>
-            <View style={styles.calendarControls}>
-              <TouchableOpacity style={styles.calendarArrow} activeOpacity={0.6} onPress={handlePrevMonth}>
-                <Feather name="chevron-left" size={18} color="#64748B" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.calendarArrow} activeOpacity={0.6} onPress={handleNextMonth}>
-                <Feather name="chevron-right" size={18} color="#64748B" />
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Calendar Grid */}
-          <View style={styles.calendarGrid}>
-            <View style={styles.calendarDaysRow}>
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
-                <Text key={idx} style={styles.calendarDayHeader}>{day}</Text>
-              ))}
-            </View>
-
-            {calendarRows.map((row, rowIdx) => (
-              <View key={rowIdx} style={styles.calendarDaysRow}>
-                {row.map((item, cellIdx) => {
-                  const isSelected = selectedDate.getDate() === item.day &&
-                    selectedDate.getMonth() === item.date.getMonth() &&
-                    selectedDate.getFullYear() === item.date.getFullYear();
-
-                  const dotStatus = getDayStatusDot(item.date);
-
-                  return (
-                    <TouchableOpacity
-                      key={cellIdx}
-                      style={styles.calendarDayCell}
-                      activeOpacity={0.7}
-                      onPress={() => {
-                        if (item.isCurrentMonth) {
-                          setSelectedDate(item.date);
-                        }
-                      }}
-                    >
-                      {isSelected ? (
-                        <View style={styles.selectedDayCircle}>
-                          <Text style={styles.selectedDayText}>{item.day}</Text>
-                        </View>
-                      ) : (
-                        <Text style={item.isCurrentMonth ? styles.calendarDayText : styles.calendarDayTextGray}>
-                          {item.day}
-                        </Text>
-                      )}
-
-                      {!isSelected && dotStatus && (
-                        <View style={[
-                          {
-                            width: 4,
-                            height: 4,
-                            borderRadius: 2,
-                            position: 'absolute',
-                            bottom: 2,
-                          },
-                          dotStatus === 'present' && { backgroundColor: '#22C55E' },
-                          dotStatus === 'absent' && { backgroundColor: '#EF4444' },
-                          dotStatus === 'leave' && { backgroundColor: '#D97706' },
-                          dotStatus === 'holiday' && { backgroundColor: '#0A52D6' },
-                          dotStatus === 'wfh' && { backgroundColor: '#9333EA' },
-                        ]} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
-
-          {/* Calendar Legend */}
-          <View style={styles.legendContainer}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
-              <Text style={styles.legendText}>PRESENT</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
-              <Text style={styles.legendText}>ABSENT</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
-              <Text style={styles.legendText}>LEAVE</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#0A52D6' }]} />
-              <Text style={styles.legendText}>HOLIDAY</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: '#9333EA' }]} />
-              <Text style={styles.legendText}>WFH</Text>
-            </View>
-          </View>
-        </View>
+        {renderCalendarCard()}
       </View>
     );
   };
@@ -930,119 +1044,46 @@ export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScree
           </View>
 
           {/* Quick Actions */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Text style={styles.customizeText}>CUSTOMIZE</Text>
+          <View style={styles.quickActionsSection}>
+            <Text style={styles.quickActionsTitle}>Quick Actions</Text>
+            
+            <TouchableOpacity 
+              style={styles.quickActionListItem} 
+              activeOpacity={0.8}
+              onPress={() => onNavigate?.('manager_apply_leave')}
+            >
+              <View style={styles.quickActionLeft}>
+                <View style={[styles.quickActionIconBg, { backgroundColor: '#FFEAD9' }]}>
+                  <MaterialCommunityIcons name="calendar-text-outline" size={24} color="#C25E00" />
+                </View>
+                <View style={styles.quickActionTextContainer}>
+                  <Text style={styles.quickActionTitleText}>Apply Leave</Text>
+                  <Text style={styles.quickActionSubtitleText}>Request time off</Text>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={22} color="#64748B" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.quickActionListItem} 
+              activeOpacity={0.8}
+              onPress={() => onNavigate?.('manager_create_claim')}
+            >
+              <View style={styles.quickActionLeft}>
+                <View style={[styles.quickActionIconBg, { backgroundColor: '#E6EFFF' }]}>
+                  <MaterialCommunityIcons name="receipt-outline" size={24} color="#0A52D6" />
+                </View>
+                <View style={styles.quickActionTextContainer}>
+                  <Text style={styles.quickActionTitleText}>Apply Claim</Text>
+                  <Text style={styles.quickActionSubtitleText}>Submit expenses</Text>
+                </View>
+              </View>
+              <Feather name="chevron-right" size={22} color="#64748B" />
             </TouchableOpacity>
           </View>
 
-          <View style={styles.quickActionsGrid}>
-            {/* Row 1 */}
-            <View style={styles.quickActionRow}>
-              <TouchableOpacity style={styles.quickActionCard} activeOpacity={0.8}>
-                <View style={[styles.actionIconBg, { backgroundColor: '#EBF2FF' }]}>
-                  <MaterialCommunityIcons name="calendar-check-outline" size={22} color="#0A52D6" />
-                </View>
-                <Text style={styles.actionText}>Timesheet</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.quickActionCard} activeOpacity={0.8}>
-                <View style={[styles.actionIconBg, { backgroundColor: '#FFF5ED' }]}>
-                  <MaterialCommunityIcons name="umbrella-beach-outline" size={22} color="#FD8D3C" />
-                </View>
-                <Text style={styles.actionText}>Leave</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.quickActionCard} activeOpacity={0.8}>
-                <View style={[styles.actionIconBg, { backgroundColor: '#EAF7EE' }]}>
-                  <MaterialCommunityIcons name="file-document-outline" size={22} color="#22C55E" />
-                </View>
-                <Text style={styles.actionText}>Expenses</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Row 2 */}
-            <View style={styles.quickActionRow}>
-              <TouchableOpacity style={styles.quickActionCard} activeOpacity={0.8}>
-                <View style={[styles.actionIconBg, { backgroundColor: '#EEF2FF' }]}>
-                  <MaterialCommunityIcons name="bank-outline" size={22} color="#6366F1" />
-                </View>
-                <Text style={styles.actionText}>Payroll</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                activeOpacity={0.8}
-                onPress={() => setCurrentTab('team')}
-              >
-                <View style={[styles.actionIconBg, { backgroundColor: '#FDF4FF' }]}>
-                  <MaterialCommunityIcons name="account-group-outline" size={22} color="#D946EF" />
-                </View>
-                <Text style={styles.actionText}>Team</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.quickActionCard} activeOpacity={0.8}>
-                <View style={[styles.actionIconBg, { backgroundColor: '#FEF2F2' }]}>
-                  <MaterialCommunityIcons name="check-decagram-outline" size={22} color="#EF4444" />
-                </View>
-                <Text style={styles.actionText}>Approvals</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          {/* Stats / Cards Grid */}
-          <View style={styles.statsCardsContainer}>
-            {/* Row 1 */}
-            <View style={styles.statsRow}>
-              {/* Card 1: Present Days */}
-              <View style={styles.statsCardItem}>
-                <Text style={styles.statsLabelText}>PRESENT DAYS</Text>
-                <View style={styles.statsContent}>
-                  <Text style={styles.statsValueText}>18</Text>
-                  <View style={styles.trendBadge}>
-                    <Feather name="arrow-up-right" size={10} color="#22C55E" />
-                    <Text style={styles.trendText}>12%</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Card 2: Leave Balance */}
-              <View style={styles.statsCardItem}>
-                <Text style={styles.statsLabelText}>LEAVE BALANCE</Text>
-                <View style={styles.statsContent}>
-                  <Text style={styles.statsValueText}>12</Text>
-                  <Text style={styles.statsSubtitleText}>Days left</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Row 2 */}
-            <View style={styles.statsRow}>
-              {/* Card 3: Claim Status */}
-              <View style={styles.statsCardItem}>
-                <Text style={styles.statsLabelText}>CLAIM STATUS</Text>
-                <View style={styles.statsContent}>
-                  <Text style={styles.statsValueText}>$420</Text>
-                  <View style={styles.pendingBadge}>
-                    <Text style={styles.pendingText}>PENDING</Text>
-                  </View>
-                </View>
-              </View>
-
-              {/* Card 4: Pending Tasks */}
-              <View style={styles.statsCardItem}>
-                <Text style={styles.statsLabelText}>PENDING TASKS</Text>
-                <View style={styles.statsContent}>
-                  <Text style={styles.statsValueText}>05</Text>
-                  <View style={styles.urgentRow}>
-                    <View style={styles.redDot} />
-                    <Text style={styles.urgentText}>Urgent</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          </View>
+          {/* Calendar Card */}
+          {renderCalendarCard()}
 
           {/* Team Insights Card */}
           <View style={styles.insightsCard}>
@@ -1082,111 +1123,6 @@ export default function DashboardScreen({ onSignOut, onCheckIn }: DashboardScree
                 <Text style={[styles.insightSubtext, { color: '#64748B' }]}>Currently active</Text>
               </View>
             </ScrollView>
-          </View>
-
-          {/* Calendar Card */}
-          <View style={styles.calendarCard}>
-            <View style={styles.calendarHeader}>
-              <Text style={styles.calendarTitle}>
-                {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </Text>
-              <View style={styles.calendarControls}>
-                <TouchableOpacity style={styles.calendarArrow} activeOpacity={0.6} onPress={handlePrevMonth}>
-                  <Feather name="chevron-left" size={18} color="#64748B" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.calendarArrow} activeOpacity={0.6} onPress={handleNextMonth}>
-                  <Feather name="chevron-right" size={18} color="#64748B" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Calendar Grid */}
-            <View style={styles.calendarGrid}>
-              {/* Days header */}
-              <View style={styles.calendarDaysRow}>
-                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, idx) => (
-                  <Text key={idx} style={styles.calendarDayHeader}>{day}</Text>
-                ))}
-              </View>
-
-              {/* Dynamic Month Weeks */}
-              {calendarRows.map((row, rowIdx) => (
-                <View key={rowIdx} style={styles.calendarDaysRow}>
-                  {row.map((item, cellIdx) => {
-                    const isSelected = selectedDate.getDate() === item.day &&
-                      selectedDate.getMonth() === item.date.getMonth() &&
-                      selectedDate.getFullYear() === item.date.getFullYear();
-
-                    const dotStatus = getDayStatusDot(item.date);
-
-                    return (
-                      <TouchableOpacity
-                        key={cellIdx}
-                        style={styles.calendarDayCell}
-                        activeOpacity={0.7}
-                        onPress={() => {
-                          if (item.isCurrentMonth) {
-                            setSelectedDate(item.date);
-                          }
-                        }}
-                      >
-                        {isSelected ? (
-                          <View style={styles.selectedDayCircle}>
-                            <Text style={styles.selectedDayText}>{item.day}</Text>
-                          </View>
-                        ) : (
-                          <Text style={item.isCurrentMonth ? styles.calendarDayText : styles.calendarDayTextGray}>
-                            {item.day}
-                          </Text>
-                        )}
-
-                        {/* Dot Indicator under date */}
-                        {!isSelected && dotStatus && (
-                          <View style={[
-                            {
-                              width: 4,
-                              height: 4,
-                              borderRadius: 2,
-                              position: 'absolute',
-                              bottom: 2,
-                            },
-                            dotStatus === 'present' && { backgroundColor: '#22C55E' },
-                            dotStatus === 'absent' && { backgroundColor: '#EF4444' },
-                            dotStatus === 'leave' && { backgroundColor: '#D97706' },
-                            dotStatus === 'holiday' && { backgroundColor: '#0A52D6' },
-                            dotStatus === 'wfh' && { backgroundColor: '#9333EA' },
-                          ]} />
-                        )}
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              ))}
-            </View>
-
-            {/* Calendar Legend */}
-            <View style={styles.legendContainer}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#22C55E' }]} />
-                <Text style={styles.legendText}>PRESENT</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#EF4444' }]} />
-                <Text style={styles.legendText}>ABSENT</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
-                <Text style={styles.legendText}>LEAVE</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#0A52D6' }]} />
-                <Text style={styles.legendText}>HOLIDAY</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: '#9333EA' }]} />
-                <Text style={styles.legendText}>WFH</Text>
-              </View>
-            </View>
           </View>
 
           {/* This Week's Celebrations */}
@@ -2356,5 +2292,54 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  quickActionsSection: {
+    marginBottom: 24,
+  },
+  quickActionsTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 16,
+  },
+  quickActionListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  quickActionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quickActionIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickActionTextContainer: {
+    marginLeft: 16,
+  },
+  quickActionTitleText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+  },
+  quickActionSubtitleText: {
+    fontSize: 13,
+    color: '#64748B',
+    marginTop: 2,
   },
 });
