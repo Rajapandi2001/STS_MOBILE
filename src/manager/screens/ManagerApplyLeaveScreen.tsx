@@ -50,8 +50,8 @@ export default function ManagerApplyLeaveScreen({
   
   // Date Picker States
   const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
-  const [startDateStr, setStartDateStr] = useState<string | null>('2023-10-12'); // Default as in screenshot
-  const [endDateStr, setEndDateStr] = useState<string | null>('2023-10-16');   // Default as in screenshot
+  const [startDateStr, setStartDateStr] = useState<string | null>(null);
+  const [endDateStr, setEndDateStr] = useState<string | null>(null);
   
   // Attached document state
   const [attachedFile, setAttachedFile] = useState<{ name: string; size: string; uri: string } | null>(null);

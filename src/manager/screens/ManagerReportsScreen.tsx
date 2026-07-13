@@ -430,10 +430,7 @@ export default function ManagerReportsScreen({ onNavigate, onBack }: ManagerRepo
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <View style={{ position: 'relative', width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}>
-            <Feather name="check-circle" size={20} color={colors.tabInactive} />
-            <View style={styles.tabNotifDot} />
-          </View>
+          <Feather name="check-circle" size={20} color={colors.tabInactive} />
           <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 

@@ -375,16 +375,40 @@ export default function ManagerDashboardScreen({
 
   // Approval Handlers
   const handleApprove = (id: number, name: string) => {
-    Alert.alert('Request Approved', `Approved request for ${name}.`);
-    setPendingRequests(prev => prev.filter(req => req.id !== id));
-    setPendingCount(prev => Math.max(0, prev - 1));
-    setApprovedCount(prev => prev + 1);
+    Alert.alert(
+      'Confirm Approval',
+      `Are you sure you want to approve this request for ${name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'OK',
+          onPress: () => {
+            setPendingRequests(prev => prev.filter(req => req.id !== id));
+            setPendingCount(prev => Math.max(0, prev - 1));
+            setApprovedCount(prev => prev + 1);
+            Alert.alert('Success', `Approved request for ${name}.`);
+          }
+        }
+      ]
+    );
   };
 
   const handleReject = (id: number, name: string) => {
-    Alert.alert('Request Rejected', `Rejected request for ${name}.`);
-    setPendingRequests(prev => prev.filter(req => req.id !== id));
-    setPendingCount(prev => Math.max(0, prev - 1));
+    Alert.alert(
+      'Confirm Rejection',
+      `Are you sure you want to reject this request for ${name}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'OK',
+          onPress: () => {
+            setPendingRequests(prev => prev.filter(req => req.id !== id));
+            setPendingCount(prev => Math.max(0, prev - 1));
+            Alert.alert('Success', `Rejected request for ${name}.`);
+          }
+        }
+      ]
+    );
   };
 
   // Celebration action handler
@@ -1945,10 +1969,7 @@ export default function ManagerDashboardScreen({
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('approvals')}>
-          <View style={{ position: 'relative', width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}>
-            <Feather name="check-circle" size={20} color={currentTab === 'approvals' ? colors.tabActive : colors.tabInactive} />
-            <View style={styles.tabNotifDot} />
-          </View>
+          <Feather name="check-circle" size={20} color={currentTab === 'approvals' ? colors.tabActive : colors.tabInactive} />
           <Text style={[currentTab === 'approvals' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'approvals' ? colors.tabActive : colors.tabInactive }]}>Approvals</Text>
         </TouchableOpacity>
 
