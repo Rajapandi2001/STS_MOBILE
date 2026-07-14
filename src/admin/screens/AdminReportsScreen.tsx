@@ -156,7 +156,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   };
 
   const [selectedDept, setSelectedDept] = useState('Team / Departments');
-  const [selectedStaff, setSelectedStaff] = useState<string | null>(null);
+  const [selectedStaffIds, setSelectedStaffIds] = useState<number[]>([]);
   const [selectedClient, setSelectedClient] = useState('Select All');
   const [selectedProject, setSelectedProject] = useState('Select All');
   const [selectedHoliday, setSelectedHoliday] = useState('Select All');
@@ -167,8 +167,27 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   const [loading, setLoading] = useState(false);
 
   const [staffs, setStaffs] = useState<{ label: string; value: number }[]>([]);
-  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
   const [loadingStaff, setLoadingStaff] = useState(false);
+
+  const getSelectedStaffLabel = () => {
+    if (selectedStaffIds.length === 0) {
+      return 'Select All';
+    }
+    const selectedLabels = staffs
+      .filter(s => selectedStaffIds.includes(s.value))
+      .map(s => s.label);
+
+    if (selectedLabels.length === 0) {
+      return 'Select All';
+    }
+    if (selectedLabels.length === staffs.length) {
+      return 'All Selected';
+    }
+    if (selectedLabels.length > 2) {
+      return `${selectedLabels[0]}, ${selectedLabels[1]} + ${selectedLabels.length - 2} more`;
+    }
+    return selectedLabels.join(', ');
+  };
 
   useEffect(() => {
     const fetchDepartments = async () => {
@@ -223,8 +242,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   useEffect(() => {
     if (!selectedDepartmentId) {
       setStaffs([]);
-      setSelectedStaff(null);
-      setSelectedStaffId(null);
+      setSelectedStaffIds([]);
       return;
     }
 
@@ -319,11 +337,10 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
     setHolidayDropdownOpen(false);
     if (card === 'staff') {
       setSelectedDept('Team / Departments');
-      setSelectedStaff(null);
       setSelectedDepartment(null);
       setSelectedDepartmentId(null);
       setStaffs([]);
-      setSelectedStaffId(null);
+      setSelectedStaffIds([]);
     } else if (card === 'client') {
       setSelectedClient('Select All');
     } else if (card === 'project') {
@@ -387,8 +404,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               staff.department.toLowerCase() === selectedDept.toLowerCase()
             );
           }
-          if (selectedStaff !== 'Select All') {
-            filteredStaff = filteredStaff.filter(staff => staff.name === selectedStaff);
+          const selectedStaffNames = staffs
+            .filter(s => selectedStaffIds.includes(s.value))
+            .map(s => s.label);
+          if (selectedStaffNames.length > 0) {
+            filteredStaff = filteredStaff.filter(staff => selectedStaffNames.includes(staff.name));
           }
 
           rowsHTML = filteredStaff.map(staff => `
@@ -399,6 +419,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               <td><span class="badge badge-${staff.status.toLowerCase()}">${staff.status}</span></td>
             </tr>
           `).join('');
+
+          const staffFilterText = selectedStaffIds.length === 0
+            ? 'Select All'
+            : selectedStaffNames.join(', ');
+
           metaRows = `
             <tr>
               <td class="meta-label">Team / Department:</td>
@@ -406,7 +431,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             </tr>
             <tr>
               <td class="meta-label">Staff Filter:</td>
-              <td class="meta-value">${selectedStaff}</td>
+              <td class="meta-value">${staffFilterText}</td>
             </tr>
           `;
         } else if (selectedCard === 'client') {
@@ -635,8 +660,11 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               staff.department.toLowerCase() === selectedDept.toLowerCase()
             );
           }
-          if (selectedStaff !== 'Select All') {
-            filteredStaff = filteredStaff.filter(staff => staff.name === selectedStaff);
+          const selectedStaffNames = staffs
+            .filter(s => selectedStaffIds.includes(s.value))
+            .map(s => s.label);
+          if (selectedStaffNames.length > 0) {
+            filteredStaff = filteredStaff.filter(staff => selectedStaffNames.includes(staff.name));
           }
 
           csvContent = `Name,Department,Role,Status\n` +
@@ -1036,6 +1064,7 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             {/* Staff Name Selector */}
             {(() => {
               const isStaffDropdownDisabled = !selectedDepartmentId || loadingStaff;
+              const hasSelections = selectedStaffIds.length > 0;
               return (
                 <View style={styles.selectorContainer}>
                   <Text style={[styles.selectorLabel, { color: colors.textSecond }]}>FULL NAME</Text>
@@ -1055,8 +1084,8 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                   >
                     <View style={styles.dropdownLeftCol}>
                       <Feather name="user" size={16} color={colors.textSecond} style={{ marginRight: 8 }} />
-                      <Text style={[styles.dropdownText, { color: (selectedStaff === 'Select All' || !selectedStaff) ? colors.textSecond : colors.textPrimary }]}>
-                        {selectedStaff || 'Select All'}
+                      <Text style={[styles.dropdownText, { color: !hasSelections ? colors.textSecond : colors.textPrimary }]}>
+                        {getSelectedStaffLabel()}
                       </Text>
                     </View>
                     {loadingStaff ? (
@@ -1074,49 +1103,74 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
                         style={[
                           styles.dropdownOption,
                           { borderBottomColor: colors.borderLight },
-                          (selectedStaff === 'Select All' || !selectedStaff) && { backgroundColor: colors.brandBg }
+                          !hasSelections && { backgroundColor: colors.brandBg }
                         ]}
                         onPress={() => {
-                          setSelectedStaff('Select All');
-                          setSelectedStaffId(null);
-                          setStaffDropdownOpen(false);
+                          setSelectedStaffIds([]);
                         }}
                         activeOpacity={0.7}
                       >
                         <Text style={[
                           styles.dropdownOptionText,
-                          { color: (selectedStaff === 'Select All' || !selectedStaff) ? colors.brand : colors.textPrimary }
+                          { color: !hasSelections ? colors.brand : colors.textPrimary }
                         ]}>
                           Select All
                         </Text>
-                        {(selectedStaff === 'Select All' || !selectedStaff) && <Feather name="check" size={14} color={colors.brand} />}
+                        {!hasSelections && <Feather name="check" size={14} color={colors.brand} />}
                       </TouchableOpacity>
 
                       {/* Staff List Options */}
-                      {staffs.map((staff) => (
-                        <TouchableOpacity
-                          key={staff.value.toString()}
-                          style={[
-                            styles.dropdownOption,
-                            { borderBottomColor: colors.borderLight },
-                            selectedStaffId === staff.value && { backgroundColor: colors.brandBg }
-                          ]}
-                          onPress={() => {
-                            setSelectedStaff(staff.label);
-                            setSelectedStaffId(staff.value);
-                            setStaffDropdownOpen(false);
-                          }}
-                          activeOpacity={0.7}
-                        >
-                          <Text style={[
-                            styles.dropdownOptionText,
-                            { color: selectedStaffId === staff.value ? colors.brand : colors.textPrimary }
-                          ]}>
-                            {staff.label}
-                          </Text>
-                          {selectedStaffId === staff.value && <Feather name="check" size={14} color={colors.brand} />}
-                        </TouchableOpacity>
-                      ))}
+                      {staffs.map((staff) => {
+                        const isSelected = selectedStaffIds.includes(staff.value);
+                        return (
+                          <TouchableOpacity
+                            key={staff.value.toString()}
+                            style={[
+                              styles.dropdownOption,
+                              { borderBottomColor: colors.borderLight },
+                              isSelected && { backgroundColor: colors.brandBg }
+                            ]}
+                            onPress={() => {
+                              setSelectedStaffIds(prev => {
+                                if (prev.includes(staff.value)) {
+                                  return prev.filter(id => id !== staff.value);
+                                } else {
+                                  return [...prev, staff.value];
+                                }
+                              });
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[
+                              styles.dropdownOptionText,
+                              { color: isSelected ? colors.brand : colors.textPrimary }
+                            ]}>
+                              {staff.label}
+                            </Text>
+                            {isSelected && <Feather name="check" size={14} color={colors.brand} />}
+                          </TouchableOpacity>
+                        );
+                      })}
+
+                      {/* Done Button */}
+                      <TouchableOpacity
+                        style={[
+                          styles.dropdownOption,
+                          {
+                            backgroundColor: colors.brand,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            borderBottomWidth: 0,
+                            paddingVertical: 14
+                          }
+                        ]}
+                        onPress={() => setStaffDropdownOpen(false)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.dropdownOptionText, { color: '#FFFFFF' }]}>
+                          Done
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
