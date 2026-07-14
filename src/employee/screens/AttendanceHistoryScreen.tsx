@@ -6,9 +6,12 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Feather, Ionicons } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
+import EmployeeMenu from '@/employee/components/EmployeeMenu';
 
 export interface AttendanceRecord {
   date: string;       // e.g. 'Jun 23'
@@ -25,7 +28,7 @@ const HISTORICAL_RECORDS: AttendanceRecord[] = [
   {
     date: 'Oct 24',
     dayLabel: '',
-    shift: 'Regular Shift',
+    shift: 'Regular',
     status: 'on_time',
     checkIn: '09:12 AM',
     checkOut: '06:45 PM',
@@ -34,7 +37,7 @@ const HISTORICAL_RECORDS: AttendanceRecord[] = [
   {
     date: 'Oct 23',
     dayLabel: '',
-    shift: 'Regular Shift',
+    shift: 'Regular',
     status: 'late',
     checkIn: '10:45 AM',
     checkOut: '07:50 PM',
@@ -43,7 +46,7 @@ const HISTORICAL_RECORDS: AttendanceRecord[] = [
   {
     date: 'Oct 22',
     dayLabel: '',
-    shift: 'Regular Shift',
+    shift: 'Regular',
     status: 'on_time',
     checkIn: '08:55 AM',
     checkOut: '06:00 PM',
@@ -52,7 +55,7 @@ const HISTORICAL_RECORDS: AttendanceRecord[] = [
   {
     date: 'Oct 21',
     dayLabel: '',
-    shift: 'Regular Shift',
+    shift: 'Regular',
     status: 'absent',
     checkIn: '—',
     checkOut: '—',
@@ -62,20 +65,22 @@ const HISTORICAL_RECORDS: AttendanceRecord[] = [
 
 const STATUS_CONFIG = {
   on_time: { label: 'On Time', color: '#16A34A', bgColor: '#DCFCE7', icon: 'check-circle' as const },
-  late: { label: 'Late Arrival', color: '#D97706', bgColor: '#FEF3C7', icon: 'clock-alert' as const },
-  absent: { label: 'Absent', color: '#DC2626', bgColor: '#FEE2E2', icon: 'close-circle' as const },
+  late: { label: 'Late Arrival', color: '#D97706', bgColor: '#FEF3C7', icon: 'clock-outline' as const },
+  absent: { label: 'Absent', color: '#DC2626', bgColor: '#FEE2E2', icon: 'close-circle-outline' as const },
 };
 
 interface Props {
   onReturnHome: () => void;
-  liveRecords?: AttendanceRecord[];  // Real check-in records from this session
+  onNavigate?: (screen: string, params?: any) => void;
+  liveRecords?: AttendanceRecord[];
 }
 
-export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = [] }: Props) {
+export default function AttendanceHistoryScreen({ onReturnHome, onNavigate, liveRecords = [] }: Props) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark, toggleTheme } = useTheme();
+  const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'present' | 'absent' | 'late'>('all');
 
-  // Merge: live check-ins (newest first) + historical sample records
   const allRecords: AttendanceRecord[] = [...liveRecords, ...HISTORICAL_RECORDS];
 
   const filters = [
@@ -98,35 +103,78 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
   const totalAbsent  = allRecords.filter(r => r.status === 'absent').length;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F4F6FA" />
+    <View style={[styles.root, { backgroundColor: colors.bgScreen }]}>
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Attendance History</Text>
-          <Text style={styles.headerSubtitle}>Review your daily logs and shift details.</Text>
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.brand, marginLeft: 12 }]}>
+            Attendance
+          </Text>
         </View>
-        <TouchableOpacity style={styles.notifBtn} activeOpacity={0.7}>
-          <Feather name="bell" size={20} color="#1E293B" />
-        </TouchableOpacity>
+
+        <View style={styles.headerRight}>
+          {/* Theme Toggle */}
+          <TouchableOpacity
+            style={[styles.iconButtonHeader, { backgroundColor: colors.iconBg }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          {/* Bell Icon */}
+          <TouchableOpacity
+            style={[styles.iconButtonHeader, { backgroundColor: colors.iconBg }]}
+            activeOpacity={0.7}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={[styles.notificationDotHeader, { borderColor: colors.header }]} />
+          </TouchableOpacity>
+
+          {/* Avatar */}
+          <TouchableOpacity
+            style={[styles.avatarCircleHeader, { backgroundColor: colors.brandBorder }]}
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('employee_profile')}
+          >
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=120' }}
+              style={styles.avatarImageHeader}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Body Title Block */}
+      <View style={[styles.bodyTitleBlock, { backgroundColor: colors.bgScreen }]}>
+        <Text style={[styles.bodyTitle, { color: colors.textPrimary }]}>Attendance History</Text>
+        <Text style={[styles.bodySubtitle, { color: colors.textSecond }]}>Review your daily logs and shift details.</Text>
       </View>
 
       {/* Summary strip */}
-      <View style={styles.summaryStrip}>
+      <View style={[styles.summaryStrip, { backgroundColor: colors.card, shadowColor: colors.brand }]}>
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryNum, { color: '#16A34A' }]}>{totalPresent}</Text>
-          <Text style={styles.summaryLabel}>Present</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecond }]}>Present</Text>
         </View>
-        <View style={styles.summaryDivider} />
+        <View style={[styles.summaryDivider, { backgroundColor: colors.borderLight }]} />
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryNum, { color: '#D97706' }]}>{totalLate}</Text>
-          <Text style={styles.summaryLabel}>Late</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecond }]}>Late</Text>
         </View>
-        <View style={styles.summaryDivider} />
+        <View style={[styles.summaryDivider, { backgroundColor: colors.borderLight }]} />
         <View style={styles.summaryItem}>
           <Text style={[styles.summaryNum, { color: '#DC2626' }]}>{totalAbsent}</Text>
-          <Text style={styles.summaryLabel}>Absent</Text>
+          <Text style={[styles.summaryLabel, { color: colors.textSecond }]}>Absent</Text>
         </View>
       </View>
 
@@ -136,11 +184,15 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
           {filters.map(f => (
             <TouchableOpacity
               key={f.key}
-              style={[styles.filterPill, activeFilter === f.key && styles.filterPillActive]}
+              style={[
+                styles.filterPill,
+                { backgroundColor: colors.card, borderColor: colors.borderLight },
+                activeFilter === f.key && [styles.filterPillActive, { backgroundColor: colors.brand, borderColor: colors.brand }]
+              ]}
               activeOpacity={0.8}
               onPress={() => setActiveFilter(f.key)}
             >
-              <Text style={[styles.filterText, activeFilter === f.key && styles.filterTextActive]}>
+              <Text style={[styles.filterText, { color: colors.textSecond }, activeFilter === f.key && styles.filterTextActive]}>
                 {f.label}
               </Text>
             </TouchableOpacity>
@@ -155,27 +207,28 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
       >
         {filtered.length === 0 && (
           <View style={styles.emptyState}>
-            <MaterialCommunityIcons name="calendar-blank" size={48} color="#CBD5E1" />
-            <Text style={styles.emptyText}>No records found</Text>
+            <MaterialCommunityIcons name="calendar-blank" size={48} color={colors.textMuted} />
+            <Text style={[styles.emptyText, { color: colors.textSecond }]}>No records found</Text>
           </View>
         )}
 
         {filtered.map((record, idx) => {
           const cfg = STATUS_CONFIG[record.status];
+          const isAbsent = record.status === 'absent';
           return (
-            <View key={idx} style={[styles.recordCard, record.status === 'late' && styles.recordCardLate]}>
+            <View key={idx} style={[styles.recordCard, { backgroundColor: colors.card, borderColor: colors.borderLight, borderWidth: 1 }, record.status === 'late' && styles.recordCardLate]}>
 
               <View style={styles.recordHeader}>
                 <View>
                   <View style={styles.recordDateRow}>
-                    <Text style={styles.recordDate}>{record.date}</Text>
+                    <Text style={[styles.recordDate, { color: colors.textPrimary }]}>{record.date}</Text>
                     {record.dayLabel ? (
-                      <View style={styles.todayBadge}>
-                        <Text style={styles.todayBadgeText}>{record.dayLabel}</Text>
+                      <View style={[styles.todayBadge, { backgroundColor: colors.brandBg }]}>
+                        <Text style={[styles.todayBadgeText, { color: colors.brand }]}>{record.dayLabel}</Text>
                       </View>
                     ) : null}
                   </View>
-                  <Text style={styles.recordShift}>{record.shift}</Text>
+                  <Text style={[styles.recordShift, { color: colors.textSecond }]}>{record.shift}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: cfg.bgColor }]}>
                   <MaterialCommunityIcons name={cfg.icon} size={13} color={cfg.color} />
@@ -183,17 +236,17 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
                 </View>
               </View>
 
-              <View style={styles.recordDivider} />
+              <View style={[styles.recordDivider, { backgroundColor: colors.borderLight }]} />
 
               <View style={styles.recordTimingsRow}>
                 {/* IN */}
                 <View style={styles.timingItem}>
-                  <View style={[styles.timingIconWrap, { backgroundColor: '#EBF2FF' }]}>
-                    <MaterialCommunityIcons name="login" size={14} color="#0A52D6" />
+                  <View style={[styles.timingIconWrap, { backgroundColor: isAbsent ? (isDark ? '#334155' : '#F1F5F9') : '#EBF2FF' }]}>
+                    <MaterialCommunityIcons name="login" size={14} color={isAbsent ? '#94A3B8' : '#0A52D6'} />
                   </View>
                   <View>
-                    <Text style={styles.timingLabel}>IN</Text>
-                    <Text style={[styles.timingValue, record.checkIn === '—' && styles.timingNA]}>
+                    <Text style={[styles.timingLabel, { color: colors.textSecond }]}>IN</Text>
+                    <Text style={[styles.timingValue, { color: colors.textPrimary }, record.checkIn === '—' && styles.timingNA]}>
                       {record.checkIn}
                     </Text>
                   </View>
@@ -201,12 +254,12 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
 
                 {/* OUT */}
                 <View style={styles.timingItem}>
-                  <View style={[styles.timingIconWrap, { backgroundColor: '#EBF2FF' }]}>
-                    <MaterialCommunityIcons name="logout" size={14} color="#0A52D6" />
+                  <View style={[styles.timingIconWrap, { backgroundColor: isAbsent ? (isDark ? '#334155' : '#F1F5F9') : '#EBF2FF' }]}>
+                    <MaterialCommunityIcons name="logout" size={14} color={isAbsent ? '#94A3B8' : '#0A52D6'} />
                   </View>
                   <View>
-                    <Text style={styles.timingLabel}>OUT</Text>
-                    <Text style={[styles.timingValue, record.checkOut === '—' && styles.timingNA]}>
+                    <Text style={[styles.timingLabel, { color: colors.textSecond }]}>OUT</Text>
+                    <Text style={[styles.timingValue, { color: colors.textPrimary }, record.checkOut === '—' && styles.timingNA]}>
                       {record.checkOut}
                     </Text>
                   </View>
@@ -215,11 +268,11 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
                 {/* TOTAL */}
                 <View style={styles.timingItem}>
                   <View>
-                    <Text style={styles.timingLabel}>TOTAL</Text>
+                    <Text style={[styles.timingLabel, { color: colors.textSecond }]}>TOTAL</Text>
                     <Text
                       style={[
                         styles.timingTotal,
-                        { color: record.total === '—' ? '#CBD5E1' : '#0A52D6' },
+                        { color: record.total === '—' ? colors.textMuted : '#0A52D6' },
                       ]}
                     >
                       {record.total}
@@ -232,13 +285,40 @@ export default function AttendanceHistoryScreen({ onReturnHome, liveRecords = []
         })}
       </ScrollView>
 
-      {/* Return Home Button */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <TouchableOpacity style={styles.homeBtn} activeOpacity={0.85} onPress={onReturnHome}>
-          <MaterialCommunityIcons name="home-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.homeBtnText}>Return to Home</Text>
+      {/* Sticky Bottom Tab Bar */}
+      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('dashboard')}>
+          <Ionicons name="home-outline" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('employee_create_claim')}>
+          <MaterialCommunityIcons name="receipt-outline" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Claim</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('dashboard', { openCalendar: true })}>
+          <Feather name="clock" size={22} color={colors.tabActive} />
+          <Text style={[styles.tabTextActive, { color: colors.tabActive }]}>Time</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('employee_apply_leave')}>
+          <Feather name="calendar" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Leave</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('employee_assets')}>
+          <MaterialCommunityIcons name="laptop" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Asset</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Side Menu Drawer overlay */}
+      <EmployeeMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={onNavigate}
+      />
     </View>
   );
 }
@@ -257,7 +337,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: '800',
     color: '#0F172A',
   },
@@ -419,11 +499,14 @@ const styles = StyleSheet.create({
   recordTimingsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
   },
   timingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    minWidth: '28%',
   },
   timingIconWrap: {
     width: 30,
@@ -452,32 +535,98 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 2,
   },
-  bottomBar: {
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  hamburgerBtn: {
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  iconButtonHeader: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  notificationDotHeader: {
+    position: 'absolute',
+    top: -1,
+    right: -1,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    borderWidth: 1,
+  },
+  avatarCircleHeader: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarImageHeader: {
+    width: '100%',
+    height: '100%',
+  },
+  bottomTabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    backgroundColor: '#F4F6FA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 10,
   },
-  homeBtn: {
-    flexDirection: 'row',
+  tabItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 10,
-    backgroundColor: '#0A52D6',
-    borderRadius: 18,
-    paddingVertical: 17,
-    shadowColor: '#0A52D6',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 12,
-    elevation: 6,
   },
-  homeBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
+  tabText: {
+    fontSize: 11,
+    marginTop: 4,
+    fontWeight: '500',
+  },
+  tabTextActive: {
+    fontSize: 11,
+    marginTop: 4,
+    fontWeight: '700',
+  },
+  bodyTitleBlock: {
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 10,
+  },
+  bodyTitle: {
+    fontSize: 26,
     fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  bodySubtitle: {
+    fontSize: 13,
+    marginTop: 4,
   },
 });

@@ -1,0 +1,197 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  StatusBar,
+  ActivityIndicator,
+  Platform,
+  Alert,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTheme } from '@/context/ThemeContext';
+import EmployeeMenu from '@/employee/components/EmployeeMenu';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
+import { Asset } from 'expo-asset';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+interface EmployeeHelpScreenProps {
+  onBack?: () => void;
+  onNavigate?: (screen: string, params?: any) => void;
+}
+
+export default function EmployeeHelpScreen({ onNavigate, onBack }: EmployeeHelpScreenProps) {
+  const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    try {
+      setIsDownloading(true);
+      const asset = Asset.fromModule(require('../../../assets/images/Smart_Time_Sheet_User_Guide.pdf'));
+      await asset.downloadAsync();
+
+      const fileUri = `${FileSystem.documentDirectory}Smart_Time_Sheet_User_Guide.pdf`;
+      const downloadedFile = await FileSystem.downloadAsync(asset.uri, fileUri);
+
+      if (Platform.OS === 'android') {
+        let directoryUri = await AsyncStorage.getItem('savedDownloadFolder');
+
+        if (!directoryUri) {
+          const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+          if (permissions.granted) {
+            directoryUri = permissions.directoryUri;
+            await AsyncStorage.setItem('savedDownloadFolder', directoryUri);
+          } else {
+            Alert.alert('Permission Required', 'Storage permission is needed to save the PDF.');
+            return;
+          }
+        }
+
+        if (directoryUri) {
+          try {
+            const base64 = await FileSystem.readAsStringAsync(downloadedFile.uri, { encoding: FileSystem.EncodingType.Base64 });
+            const newUri = await FileSystem.StorageAccessFramework.createFileAsync(directoryUri, 'Smart_Time_Sheet_User_Guide', 'application/pdf');
+            await FileSystem.writeAsStringAsync(newUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+            Alert.alert('Success', 'User Guide downloaded successfully to your folder!');
+          } catch (err) {
+            await AsyncStorage.removeItem('savedDownloadFolder');
+            Alert.alert('Error', 'Could not save to the previous folder. Please try again to select a new folder.');
+          }
+        }
+      } else {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(downloadedFile.uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: 'Save User Manual',
+            UTI: 'com.adobe.pdf',
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Error downloading PDF:', e);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <View style={[styles.container, { backgroundColor: colors.bgScreen, paddingTop: insets.top }]}>
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
+
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+        <TouchableOpacity
+          style={[styles.hamburgerBtn, { backgroundColor: colors.iconBg }]}
+          onPress={() => setMenuOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Feather name="menu" size={20} color={colors.brand} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: colors.brand }]}>Help & Support</Text>
+        <TouchableOpacity
+          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
+          activeOpacity={0.8}
+          onPress={() => onNavigate?.('employee_profile')}
+        >
+          <Feather name="user" size={20} color={colors.brand} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]} showsVerticalScrollIndicator={false}>
+        <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.brand }]}>
+          <View style={[styles.iconContainer, { backgroundColor: colors.iconBg }]}>
+            <MaterialCommunityIcons name="book-open-page-variant-outline" size={32} color={colors.brand} />
+          </View>
+
+          <Text style={[styles.cardTitle, { color: colors.textPrimary }]}>Smart Timesheet User Guide</Text>
+          <Text style={[styles.cardSubtitle, { color: colors.textSecond }]}>Having difficulties in using this system?</Text>
+
+          <Text style={[styles.cardBody, { color: colors.textPrimary }]}>
+            Click the download button to download the user guide for the Smart Time Sheet application. This user guide serves as a reference for using the application and provides an overview of the system functions.
+          </Text>
+
+          <View style={styles.downloadRow}>
+            <Text style={[styles.downloadLabel, { color: colors.textPrimary }]}>Download User Manual: </Text>
+            <TouchableOpacity
+              style={[styles.downloadButton, isDownloading && { opacity: 0.5 }]}
+              activeOpacity={0.7}
+              onPress={handleDownload}
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <ActivityIndicator size="small" color={colors.danger} />
+              ) : (
+                <MaterialCommunityIcons name="file-pdf-box" size={20} color={colors.danger} />
+              )}
+              <Text style={[styles.downloadButtonText, { color: colors.danger }]}>
+                {isDownloading ? 'Downloading...' : 'Download (PDF)'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* Bottom Tab Bar */}
+      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('dashboard')}>
+          <MaterialCommunityIcons name="home-outline" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('employee_create_claim')}>
+          <MaterialCommunityIcons name="receipt-outline" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Claim</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('dashboard', { openCalendar: true })}>
+          <Feather name="clock" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('employee_apply_leave')}>
+          <Feather name="calendar" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Leave</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} activeOpacity={0.7} onPress={() => onNavigate?.('employee_assets')}>
+          <MaterialCommunityIcons name="laptop" size={22} color={colors.tabInactive} />
+          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Asset</Text>
+        </TouchableOpacity>
+      </View>
+
+      <EmployeeMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={onNavigate}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1 },
+  hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', borderRadius: 10 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: '800', letterSpacing: -0.5, marginLeft: 12 },
+  avatarCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  scrollContent: { padding: 16, paddingTop: 24 },
+  card: { borderRadius: 20, padding: 24, borderWidth: 1, alignItems: 'center', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  iconContainer: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  cardTitle: { fontSize: 20, fontWeight: '800', textAlign: 'center', marginBottom: 12 },
+  cardSubtitle: { fontSize: 15, fontWeight: '500', textAlign: 'center', marginBottom: 20 },
+  cardBody: { fontSize: 14, lineHeight: 22, textAlign: 'center', marginBottom: 28 },
+  downloadRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 6 },
+  downloadLabel: { fontSize: 15, fontWeight: '600' },
+  downloadButton: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  downloadButtonText: { fontSize: 15, fontWeight: '600' },
+  bottomTabBar: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingTop: 12, borderTopWidth: 1, position: 'absolute', bottom: 0, left: 0, right: 0, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 10 },
+  tabItem: { alignItems: 'center', justifyContent: 'center' },
+  tabText: { fontSize: 11, marginTop: 4, fontWeight: '500' },
+});

@@ -16,6 +16,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import AdminMenu from '@/admin/components/AdminMenu';
 import apiClient from '@/api/apiClient';
+import MaskedPIIText from '@/admin/components/MaskedPIIText';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -114,11 +115,15 @@ function SectionHeader({ icon, title, color }: { icon: string; title: string; co
   );
 }
 
-function InfoRow({ label, value, icon }: { label: string; value: string; icon?: string }) {
+function InfoRow({ label, value, icon, type }: { label: string; value: string; icon?: string; type?: 'email' | 'phone' | 'text' }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+      {type ? (
+        <MaskedPIIText value={value} type={type} style={styles.infoValue} />
+      ) : (
+        <Text style={styles.infoValue}>{value}</Text>
+      )}
     </View>
   );
 }
@@ -400,15 +405,13 @@ export default function AdminStaffDetailScreen({
           <View style={[styles.contactChipRow]}>
             <View style={[styles.contactChip, { backgroundColor: colors.iconBg }]}>
               <Feather name="mail" size={13} color={colors.brand} style={{ marginRight: 6 }} />
-              <Text style={[styles.contactChipText, { color: colors.brand }]} numberOfLines={1}>
-                {staff.email}
-              </Text>
+              <MaskedPIIText value={staff.email} type="email" style={[styles.contactChipText, { color: colors.brand }]} />
             </View>
           </View>
           <View style={[styles.contactChipRow]}>
             <View style={[styles.contactChip, { backgroundColor: colors.iconBg }]}>
               <Feather name="phone" size={13} color={colors.brand} style={{ marginRight: 6 }} />
-              <Text style={[styles.contactChipText, { color: colors.brand }]}>{staff.mobile}</Text>
+              <MaskedPIIText value={staff.mobile} type="phone" style={[styles.contactChipText, { color: colors.brand }]} />
             </View>
           </View>
 
@@ -467,7 +470,7 @@ export default function AdminStaffDetailScreen({
           <View style={[styles.contactChipRow]}>
             <View style={[styles.contactChip, { backgroundColor: '#FEF2F2' }]}>
               <Feather name="phone" size={13} color="#EF4444" style={{ marginRight: 6 }} />
-              <Text style={[styles.contactChipText, { color: '#EF4444' }]}>{staff.emergencyPhone}</Text>
+              <MaskedPIIText value={staff.emergencyPhone} type="phone" style={[styles.contactChipText, { color: '#EF4444' }]} />
             </View>
           </View>
         </View>
@@ -477,7 +480,7 @@ export default function AdminStaffDetailScreen({
           <SectionHeader icon="bank" title="Bank Information" color="#10B981" />
           <View style={[styles.sectionDivider, { backgroundColor: colors.borderLight }]} />
           <InfoRow label="Bank Name" value={staff.bankName} />
-          <InfoRow label="Account No." value={staff.bankAccountNo} />
+          <InfoRow label="Account No." value={staff.bankAccountNo} type="text" />
           <InfoRow label="IFSC Code" value={staff.ifscCode} />
         </View>
 

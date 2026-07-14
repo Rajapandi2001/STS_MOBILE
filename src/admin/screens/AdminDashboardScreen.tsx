@@ -28,6 +28,7 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
 
   // ── Menu overlay state ───────────────────────────────────────────────────────
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredBar, setHoveredBar] = useState<string | null>(null);
 
   useEffect(() => {
     if (routeParams?.menuOpen) {
@@ -59,6 +60,14 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
     { id: 3, title: 'Workflow Deployed', time: '3h ago', desc: 'V2 Expense Approval workflow is now active.', dotColor: colors.textSecond },
     { id: 4, title: 'System Backup', time: 'Yesterday', desc: 'Automated daily backup completed successfully.', dotColor: colors.success },
   ];
+
+  const dayDetails: Record<string, { present: number; absent: number; wfh: number }> = {
+    Mon: { present: 60, absent: 60, wfh: 15 },
+    Tue: { present: 84, absent: 36, wfh: 12 },
+    Wed: { present: 48, absent: 72, wfh: 20 },
+    Thu: { present: 108, absent: 12, wfh: 10 },
+    Fri: { present: 72, absent: 48, wfh: 14 },
+  };
 
   return (
     <View style={[{ flex: 1, backgroundColor: colors.bgScreen }, { paddingTop: insets.top }]}>
@@ -122,7 +131,7 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
             { label: 'Active Staff', value: '115', badge: '+4%', icon: 'account-check' },
             { label: 'Clients', value: '18', badge: '+2', icon: 'account-tie' },
             { label: 'Projects', value: '32', badge: '+5', icon: 'briefcase-outline' },
-            { label: 'Holidays', value: '12', badge: 'Rem', icon: 'beach', neutral: true },
+            { label: 'Absent', value: '5', badge: '-2%', icon: 'account-remove-outline', neutral: true },
           ].map((card) => (
             <View key={card.label} style={[styles.overviewCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
               <View style={styles.overviewHeader}>
@@ -184,12 +193,65 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
             <View style={[styles.gridLine, { bottom: '50%', backgroundColor: colors.borderLight }]} />
             <View style={[styles.gridLine, { bottom: '75%', backgroundColor: colors.borderLight }]} />
             <View style={styles.barsRow}>
-              {[['50%', 'Mon'], ['70%', 'Tue'], ['40%', 'Wed'], ['90%', 'Thu'], ['60%', 'Fri']].map(([h, l]) => (
-                <View key={l} style={styles.barGroup}>
-                  <View style={[styles.bar, { height: h as any, backgroundColor: colors.brand }]} />
-                  <Text style={[styles.barLabel, { color: colors.textSecond }]}>{l}</Text>
-                </View>
-              ))}
+             {[['50%', 'Mon'], ['70%', 'Tue'], ['40%', 'Wed'], ['90%', 'Thu'], ['60%', 'Fri']].map(([h, l]) => {
+                const isHovered = hoveredBar === l;
+                const details = dayDetails[l];
+
+                // Responsive positioning adjustments to prevent card/screen edge overflow
+                let tooltipPositionStyle: any = { left: '50%', marginLeft: -45 };
+                let arrowPositionStyle: any = { left: '50%', marginLeft: -4 };
+                if (l === 'Mon') {
+                  tooltipPositionStyle = { left: 0, marginLeft: -8 };
+                  arrowPositionStyle = { left: 16 };
+                } else if (l === 'Fri') {
+                  tooltipPositionStyle = { right: 0, marginRight: -8 };
+                  arrowPositionStyle = { right: 16 };
+                }
+
+                return (
+                  <TouchableOpacity
+                    key={l}
+                    style={[styles.barGroup, { zIndex: isHovered ? 999 : 1 }]}
+                    activeOpacity={0.9}
+                    onPress={() => setHoveredBar(prev => prev === l ? null : l)}
+                    {...({
+                      onMouseEnter: () => setHoveredBar(l),
+                      onMouseLeave: () => setHoveredBar(null),
+                    } as any)}
+                  >
+                    <View style={styles.barWrapper}>
+                      {isHovered && (
+                        <View style={[styles.tooltipContainer, tooltipPositionStyle, { backgroundColor: '#FFFFFF', borderColor: colors.borderLight, bottom: h as any }]}>
+                          <Text style={[styles.tooltipTitle, { color: colors.textPrimary }]}>{l} Stats</Text>
+                          <View style={[styles.tooltipDivider, { backgroundColor: colors.border }]} />
+
+                          {/* Present Row */}
+                          <View style={styles.tooltipRow}>
+                            <View style={styles.tooltipLabelContainer}>
+                              <View style={[styles.colorDot, { backgroundColor: '#22C55E' }]} />
+                              <Text style={[styles.tooltipLabel, { color: colors.textSecond }]}>Present:</Text>
+                            </View>
+                            <Text style={[styles.tooltipValue, { color: '#040404ff' }]}>{details.present}</Text>
+                          </View>
+
+                          {/* Absent Row */}
+                          <View style={styles.tooltipRow}>
+                            <View style={styles.tooltipLabelContainer}>
+                              <View style={[styles.colorDot, { backgroundColor: '#EF4444' }]} />
+                              <Text style={[styles.tooltipLabel, { color: colors.textSecond }]}>Absent:</Text>
+                            </View>
+                            <Text style={[styles.tooltipValue, { color: '#040404ff' }]}>{details.absent}</Text>
+                          </View>
+
+                          <View style={[styles.tooltipArrow, arrowPositionStyle, { borderTopColor: '#FFFFFF' }]} />
+                        </View>
+                      )}
+                      <View style={[styles.bar, { height: h as any, backgroundColor: colors.brand, opacity: hoveredBar ? (isHovered ? 1 : 0.6) : 1 }]} />
+                    </View>
+                    <Text style={[styles.barLabel, { color: colors.textSecond }]}>{l}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         </View>
@@ -298,9 +360,73 @@ const styles = StyleSheet.create({
   chartContainer: { height: 180, position: 'relative', marginTop: 10 },
   gridLine: { position: 'absolute', left: 0, right: 0, height: 1 },
   barsRow: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', paddingHorizontal: 10 },
-  barGroup: { alignItems: 'center', height: '100%', justifyContent: 'flex-end', width: 30 },
+  barGroup: { alignItems: 'center', height: '100%', justifyContent: 'flex-end', width: 30, position: 'relative' },
+  barWrapper: { height: '100%', justifyContent: 'flex-end', alignItems: 'center', width: '100%', position: 'relative' },
   bar: { width: 24, borderRadius: 4 },
   barLabel: { fontSize: 11, marginTop: 8 },
+  tooltipContainer: {
+    position: 'absolute',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 8,
+    zIndex: 10,
+    minWidth: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    transform: [{ translateY: -6 }],
+    alignItems: 'stretch',
+    borderWidth: 1,
+  },
+  tooltipTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  tooltipDivider: {
+    height: 1,
+    marginVertical: 4,
+  },
+  tooltipRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 1.5,
+    gap: 12,
+  },
+  tooltipLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  colorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  tooltipLabel: {
+    fontSize: 9,
+    fontWeight: '500',
+  },
+  tooltipValue: {
+    fontSize: 9,
+    fontWeight: '700',
+  },
+  tooltipArrow: {
+    position: 'absolute',
+    bottom: -4,
+    width: 0,
+    height: 0,
+    borderLeftWidth: 4,
+    borderRightWidth: 4,
+    borderTopWidth: 4,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    zIndex: 11,
+  },
 
   /* ── Activity ── */
   activityCard: { borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.03, shadowRadius: 10, elevation: 2 },

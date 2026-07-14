@@ -12,6 +12,12 @@ import CheckInLocationScreen from '@/employee/screens/CheckInLocationScreen';
 import CheckInSuccessScreen from '@/employee/screens/CheckInSuccessScreen';
 import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
 import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
+import EmployeeProfileScreen from '@/employee/screens/EmployeeProfileScreen';
+import EmployeeHelpScreen from '@/employee/screens/EmployeeHelpScreen';
+import EmployeeAssetScreen from '@/employee/screens/EmployeeAssetScreen';
+import EmployeeApplyLeaveScreen from '@/employee/screens/EmployeeApplyLeaveScreen';
+import EmployeeCreateClaimScreen from '@/employee/screens/EmployeeCreateClaimScreen';
+import EmployeeChangePasswordScreen from '@/employee/screens/EmployeeChangePasswordScreen';
 import AdminDashboardScreen from '@/admin/screens/AdminDashboardScreen';
 import ManagerDashboardScreen from '@/manager/screens/ManagerDashboardScreen';
 import ManagerCheckInLocationScreen from '@/manager/screens/ManagerCheckInLocationScreen';
@@ -91,7 +97,13 @@ type ScreenName =
   | 'manager_create_claim'
   | 'manager_assets'
   | 'manager_reports'
-  | 'manager_apply_leave';
+  | 'manager_apply_leave'
+  | 'employee_profile'
+  | 'employee_help'
+  | 'employee_assets'
+  | 'employee_apply_leave'
+  | 'employee_create_claim'
+  | 'employee_change_password';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -248,9 +260,11 @@ function AppContent() {
 
       case 'manager_create_claim':
       case 'manager_assets':
-      case 'manager_reports':
-        transitionTo('manager_dashboard', undefined, 'backward');
+      case 'manager_reports': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+        transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward');
         return true;
+      }
 
       case 'checkin_location':
       case 'location_failed':
@@ -260,6 +274,15 @@ function AppContent() {
         transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward');
         return true;
       }
+
+      case 'employee_profile':
+      case 'employee_help':
+      case 'employee_assets':
+      case 'employee_apply_leave':
+      case 'employee_create_claim':
+      case 'employee_change_password':
+        transitionTo('dashboard', undefined, 'backward');
+        return true;
 
       default:
         return false;
@@ -407,6 +430,7 @@ function AppContent() {
             onSignOut={() => transitionTo('login', undefined, 'backward')}
             onCheckIn={() => transitionTo('checkin_location')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            routeParams={p}
           />
         );
 
@@ -690,13 +714,15 @@ function AppContent() {
         );
       }
 
-      case 'manager_assets':
+      case 'manager_assets': {
+        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
         return (
           <ManagerAssetScreen
-            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onBack={() => transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
+      }
 
       case 'manager_reports':
         return (
@@ -814,9 +840,58 @@ function AppContent() {
           <AttendanceHistoryScreen
             liveRecords={checkInHistory}
             onReturnHome={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
       }
+
+      case 'employee_profile':
+        return (
+          <EmployeeProfileScreen
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'employee_help':
+        return (
+          <EmployeeHelpScreen
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'employee_assets':
+        return (
+          <EmployeeAssetScreen
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'employee_apply_leave':
+        return (
+          <EmployeeApplyLeaveScreen
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'employee_create_claim':
+        return (
+          <EmployeeCreateClaimScreen
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'employee_change_password':
+        return (
+          <EmployeeChangePasswordScreen
+            onBack={() => transitionTo('dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
 
       default:
         return null;

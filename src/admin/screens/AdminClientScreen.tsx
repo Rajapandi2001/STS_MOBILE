@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,13 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import MaskedPIIText from '@/admin/components/MaskedPIIText';
 
 interface AdminClientScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
@@ -51,12 +53,78 @@ const CLIENT_DATA = [
     country: 'India',
     status: 'Pending',
   },
+  {
+    id: '5',
+    name: 'BLUE SKY ENTERPRISES',
+    clientId: 'CLN-2026-805',
+    email: 'info@bluesky.com',
+    country: 'Canada',
+    status: 'Active',
+  },
+  {
+    id: '6',
+    name: 'CLOUD LABS INC',
+    clientId: 'CLN-2026-102',
+    email: 'cloudlabs@contact.com',
+    country: 'Australia',
+    status: 'Active',
+  },
+  {
+    id: '7',
+    name: 'DIGITAL WAVE CO',
+    clientId: 'CLN-2026-309',
+    email: 'hello@digitalwave.io',
+    country: 'Germany',
+    status: 'Active',
+  },
+  {
+    id: '8',
+    name: 'ELEVATE CONSULTING',
+    clientId: 'CLN-2026-556',
+    email: 'elevate@consulting.com',
+    country: 'Japan',
+    status: 'Inactive',
+  },
+  {
+    id: '9',
+    name: 'FUTURE MEDIA',
+    clientId: 'CLN-2026-670',
+    email: 'media@future.co',
+    country: 'France',
+    status: 'Pending',
+  },
+  {
+    id: '10',
+    name: 'GREEN RENEWABLES',
+    clientId: 'CLN-2026-412',
+    email: 'contact@green.org',
+    country: 'Norway',
+    status: 'Active',
+  },
+  {
+    id: '11',
+    name: 'HORIZON SOFTWARE',
+    clientId: 'CLN-2026-229',
+    email: 'support@horizon.com',
+    country: 'South Korea',
+    status: 'Active',
+  },
+  {
+    id: '12',
+    name: 'INFINITY DESIGNS',
+    clientId: 'CLN-2026-118',
+    email: 'design@infinity.io',
+    country: 'New Zealand',
+    status: 'Active',
+  },
 ];
 
 export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
   const [search, setSearch] = useState('');
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const renderStatusBadge = (status: string) => {
@@ -77,17 +145,62 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
     );
   };
 
-  const filteredClients = CLIENT_DATA.filter((client) => {
-    const query = search.toLowerCase().trim();
-    if (!query) return true;
+  const filteredClients = (() => {
+    let list = [...CLIENT_DATA];
 
-    return (
-      client.name.toLowerCase().includes(query) ||
-      client.clientId.toLowerCase().includes(query) ||
-      client.email.toLowerCase().includes(query) ||
-      client.country.toLowerCase().includes(query)
-    );
-  });
+    // 1. Apply selected letter filter
+    if (selectedLetter) {
+      list = list.filter((client) => {
+        const name = (client.name || '').trim();
+        return name.toLowerCase().startsWith(selectedLetter.toLowerCase());
+      });
+    }
+
+    // 2. Apply search filter
+    const query = search.toLowerCase().trim();
+    if (query) {
+      list = list.filter((client) => {
+        return (
+          client.name.toLowerCase().includes(query) ||
+          client.clientId.toLowerCase().includes(query) ||
+          client.email.toLowerCase().includes(query) ||
+          client.country.toLowerCase().includes(query)
+        );
+      });
+
+      // 3. Sort so that names starting with query show at the top
+      list.sort((a, b) => {
+        const aName = (a.name || '').trim().toLowerCase();
+        const bName = (b.name || '').trim().toLowerCase();
+        const aStarts = aName.startsWith(query);
+        const bStarts = bName.startsWith(query);
+
+        if (aStarts && !bStarts) return -1;
+        if (!aStarts && bStarts) return 1;
+
+        // Fallback to alphabetical sort
+        return aName.localeCompare(bName);
+      });
+    } else {
+      // Sort alphabetically by name
+      list.sort((a, b) => {
+        const aName = (a.name || '').trim().toLowerCase();
+        const bName = (b.name || '').trim().toLowerCase();
+        return aName.localeCompare(bName);
+      });
+    }
+
+    return list;
+  })();
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / ITEMS_PER_PAGE));
+  const activePage = Math.min(currentPage, totalPages);
+  const paginatedClients = filteredClients.slice((activePage - 1) * ITEMS_PER_PAGE, activePage * ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedLetter]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
@@ -123,7 +236,7 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
           <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
           <TextInput
             style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search Corporate Clients by Name or ID..."
+            placeholder="Search Clients..."
             placeholderTextColor={colors.textSecond}
             value={search}
             onChangeText={setSearch}
@@ -133,51 +246,184 @@ export default function AdminClientScreen({ onNavigate, onBack }: AdminClientScr
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+        {/* Alphabet Filter */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.alphabetContainer}
+        >
+          {['All', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')].map((letter) => {
+            const isSelected = selectedLetter === letter || (letter === 'All' && !selectedLetter);
+            return (
+              <TouchableOpacity
+                key={letter}
+                onPress={() => setSelectedLetter(letter === 'All' ? null : letter)}
+                style={[
+                  styles.alphabetButton,
+                  {
+                    backgroundColor: isSelected ? colors.brand : colors.card,
+                    borderColor: isSelected ? colors.brand : colors.border,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.alphabetButtonText,
+                    {
+                      color: isSelected ? '#FFFFFF' : colors.textSecond,
+                    },
+                  ]}
+                >
+                  {letter}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <View style={[styles.divider, { backgroundColor: colors.border, marginTop: 8 }]} />
 
         {/* Section Header */}
         <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>CLIENT ACCOUNTS INDEX</Text>
 
         {/* Client List */}
-        {filteredClients.map((client) => {
-          return (
-            <TouchableOpacity
-              key={client.id}
-              activeOpacity={0.8}
-              onPress={() => onNavigate?.('admin_client_detail', { clientId: client.id })}
-              style={[styles.clientCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-            >
-              <View style={styles.clientHeaderRow}>
-                <View style={styles.clientInfoRow}>
-                  <View style={[styles.iconContainer, { backgroundColor: colors.iconBg }]}>
-                    <MaterialCommunityIcons name="office-building" size={24} color={colors.brand} />
+        {filteredClients.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <MaterialCommunityIcons name="account-off-outline" size={48} color={colors.textSecond} />
+            <Text style={[styles.emptyText, { color: colors.textPrimary }]}>No clients found.</Text>
+          </View>
+        ) : (
+          <>
+            {paginatedClients.map((client) => {
+              return (
+                <TouchableOpacity
+                  key={client.id}
+                  activeOpacity={0.8}
+                  onPress={() => onNavigate?.('admin_client_detail', { clientId: client.id })}
+                  style={[styles.clientCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+                >
+                  <View style={styles.clientHeaderRow}>
+                    <View style={styles.clientInfoRow}>
+                      <View style={[styles.iconContainer, { backgroundColor: colors.iconBg }]}>
+                        <MaterialCommunityIcons name="office-building" size={24} color={colors.brand} />
+                      </View>
+                      <View>
+                        <Text style={[styles.clientName, { color: colors.textPrimary }]}>{client.name}</Text>
+                        <Text style={[styles.clientIdText, { color: colors.textSecond }]}>ID: {client.clientId}</Text>
+                      </View>
+                    </View>
                   </View>
-                  <View>
-                    <Text style={[styles.clientName, { color: colors.textPrimary }]}>{client.name}</Text>
-                    <Text style={[styles.clientIdText, { color: colors.textSecond }]}>ID: {client.clientId}</Text>
+
+                  <View style={[styles.clientDivider, { backgroundColor: colors.borderLight }]} />
+
+                  <View style={styles.clientDetailsRow}>
+                    <View style={styles.detailCol}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Mail</Text>
+                      <MaskedPIIText value={client.email} type="email" style={[styles.detailValue, { color: colors.textPrimary }]} />
+                    </View>
+                    <View style={styles.detailCol}>
+                      <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Country</Text>
+                      <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{client.country}</Text>
+                    </View>
                   </View>
-                </View>
-              </View>
 
-              <View style={[styles.clientDivider, { backgroundColor: colors.borderLight }]} />
+                  <View style={styles.statusContainer}>
+                    {renderStatusBadge(client.status)}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
 
-              <View style={styles.clientDetailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Mail</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{client.email}</Text>
-                </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Country</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{client.country}</Text>
-                </View>
-              </View>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <View style={styles.paginationContainer}>
+                <TouchableOpacity
+                  onPress={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  style={[
+                    styles.paginationArrowButton,
+                    currentPage === 1 && styles.paginationButtonDisabled,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  <Feather
+                    name="chevron-left"
+                    size={18}
+                    color={currentPage === 1 ? colors.textMuted : colors.textPrimary}
+                  />
+                </TouchableOpacity>
 
-              <View style={styles.statusContainer}>
-                {renderStatusBadge(client.status)}
+                <View style={styles.pageNumbersRow}>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                    const isActive = pageNum === currentPage;
+                    if (totalPages > 5) {
+                      const shouldShow =
+                        pageNum === 1 ||
+                        pageNum === totalPages ||
+                        Math.abs(pageNum - currentPage) <= 1;
+
+                      if (!shouldShow) {
+                        if (pageNum === 2 && currentPage > 3) {
+                          return (
+                            <Text key="ellipsis-start" style={[styles.paginationEllipsis, { color: colors.textSecond }]}>
+                              ...
+                            </Text>
+                          );
+                        }
+                        if (pageNum === totalPages - 1 && currentPage < totalPages - 2) {
+                          return (
+                            <Text key="ellipsis-end" style={[styles.paginationEllipsis, { color: colors.textSecond }]}>
+                              ...
+                            </Text>
+                          );
+                        }
+                        return null;
+                      }
+                    }
+
+                    return (
+                      <TouchableOpacity
+                        key={pageNum}
+                        onPress={() => setCurrentPage(pageNum)}
+                        style={[
+                          styles.pageNumberButton,
+                          isActive
+                            ? { backgroundColor: colors.brand, borderColor: colors.brand, borderWidth: 1 }
+                            : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.pageNumberText,
+                            { color: isActive ? '#FFFFFF' : colors.textSecond },
+                          ]}
+                        >
+                          {pageNum}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  disabled={currentPage === totalPages}
+                  style={[
+                    styles.paginationArrowButton,
+                    currentPage === totalPages && styles.paginationButtonDisabled,
+                    { backgroundColor: colors.card, borderColor: colors.border },
+                  ]}
+                >
+                  <Feather
+                    name="chevron-right"
+                    size={18}
+                    color={currentPage === totalPages ? colors.textMuted : colors.textPrimary}
+                  />
+                </TouchableOpacity>
               </View>
-            </TouchableOpacity>
-          );
-        })}
+            )}
+          </>
+        )}
       </ScrollView>
 
       {/* Bottom Tab Bar */}
@@ -410,6 +656,100 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 4,
     color: '#64748B',
+    fontWeight: '500',
+  },
+  alphabetContainer: {
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alphabetButton: {
+    minWidth: 36,
+    height: 36,
+    borderRadius: 18,
+    paddingHorizontal: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.01,
+    shadowRadius: 2,
+    elevation: 0.5,
+  },
+  alphabetButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 20,
+    gap: 10,
+  },
+  paginationArrowButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.01,
+    shadowRadius: 2,
+    elevation: 0.5,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }) as any,
+  },
+  paginationButtonDisabled: {
+    opacity: 0.4,
+  },
+  pageNumbersRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  pageNumberButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.01,
+    shadowRadius: 2,
+    elevation: 0.5,
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }) as any,
+  },
+  pageNumberText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  paginationEllipsis: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginHorizontal: 4,
+  },
+  emptyContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 14,
     fontWeight: '500',
   },
 });

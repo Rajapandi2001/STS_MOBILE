@@ -16,6 +16,7 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import AdminMenu from '@/admin/components/AdminMenu';
 import apiClient from '@/api/apiClient';
+import MaskedPIIText from '@/admin/components/MaskedPIIText';
 import { useAuth } from '@/context/AuthContext';
 import { storageService, DEFAULT_BASE_URL } from '@/services/storageService';
 
@@ -91,12 +92,16 @@ function SectionHeader({ icon, title, color }: { icon: string; title: string; co
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, type }: { label: string; value: string; type?: 'email' | 'phone' | 'text' }) {
   const { colors } = useTheme();
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{value || '—'}</Text>
+      {type ? (
+        <MaskedPIIText value={value || '—'} type={type} style={[styles.infoValue, { color: colors.textPrimary }]} />
+      ) : (
+        <Text style={[styles.infoValue, { color: colors.textPrimary }]}>{value || '—'}</Text>
+      )}
     </View>
   );
 }
@@ -343,9 +348,9 @@ export default function AdminCompanyDetailScreen({
           <Divider />
           <InfoRow label="Entity Type" value={company.type} />
           <Divider />
-          <InfoRow label="E-Mail" value={company.email || ''} />
+          <InfoRow label="E-Mail" value={company.email || ''} type="email" />
           <Divider />
-          <InfoRow label="Phone Number" value={company.phone || ''} />
+          <InfoRow label="Phone Number" value={company.phone || ''} type="phone" />
         </View>
 
         {/* ── Address ── */}

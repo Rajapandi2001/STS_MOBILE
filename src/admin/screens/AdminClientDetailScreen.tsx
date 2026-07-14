@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import MaskedPIIText from '@/admin/components/MaskedPIIText';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -111,11 +112,15 @@ function SectionHeader({ icon, title, color }: { icon: string; title: string; co
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, type }: { label: string; value: string; type?: 'email' | 'phone' | 'text' }) {
   return (
     <View style={styles.infoRow}>
       <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value || '—'}</Text>
+      {type ? (
+        <MaskedPIIText value={value || '—'} type={type} style={styles.infoValue} />
+      ) : (
+        <Text style={styles.infoValue}>{value || '—'}</Text>
+      )}
     </View>
   );
 }
@@ -215,9 +220,9 @@ export default function AdminClientDetailScreen({
           <Divider />
           <InfoRow label="Reference" value={client.reference} />
           <Divider />
-          <InfoRow label="Email" value={client.email} />
+          <InfoRow label="Email" value={client.email} type="email" />
           <Divider />
-          <InfoRow label="Mobile" value={client.mobile} />
+          <InfoRow label="Mobile" value={client.mobile} type="phone" />
         </View>
 
         {/* ── Address ── */}
