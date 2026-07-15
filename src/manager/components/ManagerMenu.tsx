@@ -32,6 +32,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
+  const [teamHubExpanded, setTeamHubExpanded] = useState(false);
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
@@ -64,6 +65,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
       ]).start(() => {
         if (!visibleRef.current) {
           setIsRendered(false);
+          setTeamHubExpanded(false);
         }
       });
     }
@@ -127,6 +129,39 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Profile</Text>
           </TouchableOpacity>
 
+          {/* Team Hub accordion */}
+          <TouchableOpacity
+            style={[styles.menuItem, teamHubExpanded && { backgroundColor: colors.iconBg }]}
+            activeOpacity={0.7}
+            onPress={() => setTeamHubExpanded(prev => !prev)}
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
+              <MaterialCommunityIcons name="account-group-outline" size={22} color={colors.brand} />
+            </View>
+            <Text style={[styles.menuItemText, teamHubExpanded && { color: colors.brand }, { color: teamHubExpanded ? colors.brand : colors.textPrimary }]}>
+              Team Hub
+            </Text>
+            <Feather name={teamHubExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecond} />
+          </TouchableOpacity>
+
+          {teamHubExpanded && (
+            <View style={[styles.subMenu, { backgroundColor: colors.card }]}>
+              {[
+                { name: 'Leave Management', screen: 'manager_apply_leave' },
+                { name: 'Claim Management', screen: 'manager_create_claim' }
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.name}
+                  style={[styles.subMenuItem, { borderLeftColor: colors.brandBorder }]}
+                  activeOpacity={0.7}
+                  onPress={() => handleNavigate(item.screen)}
+                >
+                  <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+          
           {/* Change password */}
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
@@ -150,6 +185,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             </View>
             <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Roles & permissions</Text>
           </TouchableOpacity>
+
 
           {/* Help */}
           <TouchableOpacity
@@ -210,6 +246,9 @@ const styles = StyleSheet.create({
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, marginBottom: 1 },
   menuIconWrap: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   menuItemText: { flex: 1, fontSize: 15, fontWeight: '600' },
+  subMenu: { paddingLeft: 70, paddingBottom: 8, marginBottom: 1 },
+  subMenuItem: { paddingVertical: 11, borderLeftWidth: 2, paddingLeft: 16, marginLeft: -2 },
+  subMenuText: { fontSize: 14, fontWeight: '500' },
   logoutContainer: { paddingHorizontal: 20, position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: 'transparent' },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EF4444', borderRadius: 14, paddingVertical: 16, gap: 10, shadowColor: '#EF4444', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
   logoutText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF', letterSpacing: 0.3 },
