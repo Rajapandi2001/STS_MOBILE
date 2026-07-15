@@ -491,9 +491,7 @@ export default function AdminStaffDetailScreen({
           <InfoRow label="User Name" value={staff.userName} />
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Password</Text>
-            <View style={styles.passwordRow}>
-              <Text style={[styles.infoValue, { letterSpacing: 3 }]}>••••••••</Text>
-            </View>
+            <MaskedPIIText value="admin@123" type="text" style={styles.infoValue} />
           </View>
           <InfoRow label="Login Type" value={staff.loginType} />
         </View>

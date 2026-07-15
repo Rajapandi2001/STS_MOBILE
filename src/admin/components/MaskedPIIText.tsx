@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 
 interface MaskedPIITextProps {
   value: string;
@@ -12,36 +13,111 @@ export default function MaskedPIIText({ value, type = 'text', style }: MaskedPII
 
   const getMaskedValue = () => {
     if (!value || value === '---' || value === '—') return value;
-
-    if (type === 'email') {
-      const parts = value.split('@');
-      if (parts.length !== 2) return '••••••••';
-      const [local, domain] = parts;
-      const visibleLocal = local.length > 2 ? local.slice(0, 2) + '••••' : '••';
-      const domainParts = domain.split('.');
-      if (domainParts.length < 2) return `${visibleLocal}@••••.com`;
-      const domainName = domainParts[0];
-      const ext = domainParts.slice(1).join('.');
-      const visibleDomain = domainName.length > 2 ? domainName.slice(0, 2) + '••••' : '••';
-      return `${visibleLocal}@${visibleDomain}.${ext}`;
-    }
-
-    if (type === 'phone') {
-      // Keep country code and first digits, mask center, keep last 2 digits
-      if (value.length <= 5) return '••••••••';
-      return value.slice(0, 4) + '••••••' + value.slice(-2);
-    }
-
-    // Generic text masking
-    if (value.length <= 4) return '••••';
-    return value.slice(0, 2) + '••••' + value.slice(-2);
+    return '******';
   };
 
+  const isMaskable = value && value !== '---' && value !== '—';
+
+  if (!isMaskable) {
+    return <Text style={style}>{value || '—'}</Text>;
+  }
+
+  // Flatten the style prop
+  const flatStyle = StyleSheet.flatten(style) || {};
+
+  // Extract layout vs text styles
+  const {
+    flex,
+    margin,
+    marginHorizontal,
+    marginVertical,
+    marginTop,
+    marginBottom,
+    marginLeft,
+    marginRight,
+    padding,
+    paddingHorizontal,
+    paddingVertical,
+    paddingTop,
+    paddingBottom,
+    paddingLeft,
+    paddingRight,
+    alignSelf,
+    position,
+    top,
+    bottom,
+    left,
+    right,
+    width,
+    height,
+    maxWidth,
+    minWidth,
+    flexDirection,
+    alignItems,
+    justifyContent,
+    ...textStyle
+  } = flatStyle;
+
+  const layoutStyle = {
+    flex,
+    margin,
+    marginHorizontal,
+    marginVertical,
+    marginTop,
+    marginBottom,
+    marginLeft,
+    marginRight,
+    padding,
+    paddingHorizontal,
+    paddingVertical,
+    paddingTop,
+    paddingBottom,
+    paddingLeft,
+    paddingRight,
+    alignSelf,
+    position,
+    top,
+    bottom,
+    left,
+    right,
+    width,
+    height,
+    maxWidth,
+    minWidth,
+  };
+
+  const isRightAligned = flatStyle.textAlign === 'right';
+
   return (
-    <TouchableOpacity activeOpacity={0.7} onPress={() => setRevealed(!revealed)}>
-      <Text style={style}>
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => setRevealed(!revealed)}
+      style={[
+        styles.container,
+        layoutStyle,
+        isRightAligned ? { justifyContent: 'flex-end' } : { justifyContent: 'flex-start' }
+      ]}
+    >
+      <Text style={textStyle}>
         {revealed ? value : getMaskedValue()}
       </Text>
+      <Feather
+        name={revealed ? "eye-off" : "eye"}
+        size={14}
+        color={(textStyle.color as string) || '#94A3B8'}
+        style={styles.eyeIcon}
+      />
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  eyeIcon: {
+    marginLeft: 6,
+  },
+});
+
