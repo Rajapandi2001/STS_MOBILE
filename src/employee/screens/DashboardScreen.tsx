@@ -1577,13 +1577,13 @@ const styles = StyleSheet.create({
   },
   statusStatsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: 20,
+    gap: 12,
   },
   statBox: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    width: '48%',
   },
   statIconWrapper: {
     width: 40,
@@ -1595,6 +1595,7 @@ const styles = StyleSheet.create({
   },
   statTextContainer: {
     marginLeft: 10,
+    flex: 1,
   },
   statLabel: {
     fontSize: 9,

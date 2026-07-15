@@ -116,7 +116,7 @@ export default function ManagerDashboardScreen({
     const first = days[0];
     const last = days[6];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
     if (first.getMonth() === last.getMonth()) {
       return `${months[first.getMonth()]} ${first.getDate()} - ${last.getDate()}`;
     } else {
@@ -127,12 +127,12 @@ export default function ManagerDashboardScreen({
   const getMockHistory = () => {
     const today = new Date();
     const history = [];
-    
+
     let count = 0;
     let offset = 1;
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
+
     while (count < 3 && offset < 10) {
       const d = new Date();
       d.setDate(today.getDate() - offset);
@@ -1287,7 +1287,7 @@ export default function ManagerDashboardScreen({
         <Text style={[styles.timeSectionTitle, { color: colors.textPrimary, marginTop: 24, marginBottom: 12 }]}>
           Recent History
         </Text>
-        
+
         <View style={styles.historyListContainer}>
           {historyList.map((record, index) => (
             <View
@@ -1364,7 +1364,7 @@ export default function ManagerDashboardScreen({
     </View>
   );
 
-  
+
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
@@ -1458,7 +1458,7 @@ export default function ManagerDashboardScreen({
                 <Text style={{ color: '#FFFFFF', fontSize: 36, fontWeight: 'bold', marginBottom: 24 }}>
                   Checked In
                 </Text>
-                
+
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 32 }}>
                     <Feather name="clock" size={18} color="#E2E8F0" style={{ marginRight: 8 }} />
