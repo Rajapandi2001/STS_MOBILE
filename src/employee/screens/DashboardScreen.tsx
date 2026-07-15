@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import EmployeeMenu from '@/employee/components/EmployeeMenu';
+import { LinearGradient } from 'expo-linear-gradient';
+import SlideToCheckOut from '@/components/SlideToCheckOut';
 
 const ALL_CELEBRATIONS = [
   { name: 'Sarah Mitchell', subtitle: 'Birthday • Tomorrow', uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120', action: 'WISH HER' },
@@ -43,9 +45,20 @@ interface DashboardScreenProps {
   onCheckIn?: () => void;
   onNavigate?: (screen: string, params?: any) => void;
   routeParams?: { openCalendar?: boolean };
+  isCheckedInGlobal?: boolean;
+  checkInTimeGlobal?: Date | null;
+  onCheckOutPress?: () => void;
 }
 
-export default function DashboardScreen({ onSignOut, onCheckIn, onNavigate, routeParams }: DashboardScreenProps) {
+export default function DashboardScreen({ 
+  onSignOut, 
+  onCheckIn, 
+  onNavigate, 
+  routeParams,
+  isCheckedInGlobal,
+  checkInTimeGlobal,
+  onCheckOutPress
+}: DashboardScreenProps) {
   const insets = useSafeAreaInsets();
   const { isDark, toggleTheme, colors } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,6 +73,13 @@ export default function DashboardScreen({ onSignOut, onCheckIn, onNavigate, rout
 
   // Navigation tab state
   const [currentTab, setCurrentTab] = useState<'home' | 'calendar' | 'team' | 'approvals' | 'profile'>('home');
+  
+  // Functional States
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
+  const [checkInTime, setCheckInTime] = useState('00:00 AM/PM');
+  const [workedHours, setWorkedHours] = useState('00.00 Hr');
+  const [timerIntervalId, setTimerIntervalId] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
 
   useEffect(() => {
     if (routeParams?.openCalendar) {
@@ -68,6 +88,53 @@ export default function DashboardScreen({ onSignOut, onCheckIn, onNavigate, rout
       setCurrentTab('home');
     }
   }, [routeParams]);
+
+  useEffect(() => {
+    if (isCheckedInGlobal === undefined) return;
+
+    if (isCheckedInGlobal && checkInTimeGlobal) {
+      setIsCheckedIn(true);
+
+      const hours = checkInTimeGlobal.getHours();
+      const minutes = checkInTimeGlobal.getMinutes().toString().padStart(2, '0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const formattedHours = (hours % 12 || 12).toString().padStart(2, '0');
+      setCheckInTime(`${formattedHours}:${minutes} ${ampm}`);
+
+      const diffMs = Date.now() - checkInTimeGlobal.getTime();
+      const initialSeconds = Math.max(0, Math.floor(diffMs / 1000));
+      setSecondsElapsed(initialSeconds);
+
+      const initHrs = Math.floor(initialSeconds / 3600);
+      const initMins = Math.floor((initialSeconds % 3600) / 60);
+      setWorkedHours(`${initHrs}.${initMins.toString().padStart(2, '0')} Hr`);
+
+      const interval = setInterval(() => {
+        setSecondsElapsed(prev => {
+          const next = prev + 1;
+          const hrs = Math.floor(next / 3600);
+          const mins = Math.floor((next % 3600) / 60);
+          setWorkedHours(`${hrs}.${mins.toString().padStart(2, '0')} Hr`);
+          return next;
+        });
+      }, 1000);
+
+      setTimerIntervalId(interval);
+
+      return () => {
+        clearInterval(interval);
+      };
+    } else {
+      setIsCheckedIn(false);
+      setCheckInTime('00:00 AM/PM');
+      setWorkedHours('00.00 Hr');
+      setSecondsElapsed(0);
+      if (timerIntervalId) {
+        clearInterval(timerIntervalId);
+        setTimerIntervalId(null);
+      }
+    }
+  }, [isCheckedInGlobal, checkInTimeGlobal]);
 
   // Team Page States
   const [teamSearchQuery, setTeamSearchQuery] = useState('');
@@ -1073,51 +1140,87 @@ export default function DashboardScreen({ onSignOut, onCheckIn, onNavigate, rout
           </View>
 
           {/* Current Status Card */}
-          <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-            <View style={styles.statusHeader}>
-              <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
-              <View style={[styles.presentBadge, { backgroundColor: colors.successBg }]}>
-                <View style={[styles.greenDot, { backgroundColor: colors.success }]} />
-                <Text style={[styles.presentText, { color: colors.successText }]}>PRESENT</Text>
+          {isCheckedIn ? (
+            <View style={{ marginBottom: 20 }}>
+              <LinearGradient
+                colors={['#1E7F8C', '#0C3266']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  borderRadius: 16,
+                  padding: 24,
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#22C55E', marginRight: 8, shadowColor: '#22C55E', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 3 }} />
+                  <Text style={{ color: '#E2E8F0', fontSize: 14, fontWeight: '500' }}>Currently Active</Text>
+                </View>
+                <Text style={{ color: '#FFFFFF', fontSize: 36, fontWeight: 'bold', marginBottom: 24 }}>
+                  Checked In
+                </Text>
+                
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 32 }}>
+                    <Feather name="clock" size={18} color="#E2E8F0" style={{ marginRight: 8 }} />
+                    <View>
+                      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '500' }}>{checkInTime.split(' ')[0]}</Text>
+                      <Text style={{ color: '#E2E8F0', fontSize: 14 }}>{checkInTime.split(' ')[1] || 'AM'}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Feather name="map-pin" size={18} color="#E2E8F0" style={{ marginRight: 8 }} />
+                    <Text style={{ color: '#FFFFFF', fontSize: 14, flexWrap: 'wrap' }}>Office - Main Entrance</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+
+              <SlideToCheckOut onCheckOut={() => { if (onCheckOutPress) onCheckOutPress(); }} />
+            </View>
+          ) : (
+            <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+              <View style={styles.statusHeader}>
+                <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
+                <View style={[styles.presentBadge, { backgroundColor: colors.successBg }]}>
+                  <View style={[styles.greenDot, { backgroundColor: colors.success }]} />
+                  <Text style={[styles.presentText, { color: colors.successText }]}>PRESENT</Text>
+                </View>
+              </View>
+
+              <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>Inside: HQ Block A</Text>
+
+              <View style={styles.statusStatsRow}>
+                {/* Check-In */}
+                <View style={styles.statBox}>
+                  <View style={[styles.statIconWrapper, { backgroundColor: colors.iconBg }]}>
+                    <MaterialCommunityIcons name="login" size={20} color={colors.brand} />
+                  </View>
+                  <View style={styles.statTextContainer}>
+                    <Text style={[styles.statLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
+                    <Text style={[styles.statValue, { color: colors.textPrimary }]}>00:00 AM/PM</Text>
+                  </View>
+                </View>
+
+                {/* Worked */}
+                <View style={styles.statBox}>
+                  <View style={[styles.statIconWrapper, { backgroundColor: colors.iconBg }]}>
+                    <MaterialCommunityIcons name="timer-sand-empty" size={20} color={colors.brand} />
+                  </View>
+                  <View style={styles.statTextContainer}>
+                    <Text style={[styles.statLabel, { color: colors.textSecond }]}>WORKED</Text>
+                    <Text style={[styles.statValue, { color: colors.textPrimary }]}>00.00 Hr</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.statusActionsRow}>
+                <TouchableOpacity style={[styles.checkInButton, { backgroundColor: colors.brand }]} activeOpacity={0.8} onPress={() => { if (onCheckIn) onCheckIn(); }}>
+                  <Text style={styles.checkInButtonText}>Check In</Text>
+                </TouchableOpacity>
               </View>
             </View>
-
-            <Text style={[styles.statusTitle, { color: colors.textPrimary }]}>Inside: HQ Block A</Text>
-
-            <View style={styles.statusStatsRow}>
-              {/* Check-In */}
-              <View style={styles.statBox}>
-                <View style={[styles.statIconWrapper, { backgroundColor: colors.iconBg }]}>
-                  <MaterialCommunityIcons name="login" size={20} color={colors.brand} />
-                </View>
-                <View style={styles.statTextContainer}>
-                  <Text style={[styles.statLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>09:00 AM</Text>
-                </View>
-              </View>
-
-              {/* Worked */}
-              <View style={styles.statBox}>
-                <View style={[styles.statIconWrapper, { backgroundColor: colors.iconBg }]}>
-                  <MaterialCommunityIcons name="timer-sand-empty" size={20} color={colors.brand} />
-                </View>
-                <View style={styles.statTextContainer}>
-                  <Text style={[styles.statLabel, { color: colors.textSecond }]}>WORKED</Text>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>04h 30m</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.statusActionsRow}>
-              <TouchableOpacity style={[styles.checkInButton, { backgroundColor: colors.brand }]} activeOpacity={0.8} onPress={onCheckIn}>
-                <Text style={styles.checkInButtonText}>Check In</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.checkOutButton, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.8} onPress={onSignOut}>
-                <Text style={[styles.checkOutButtonText, { color: colors.textSecond }]}>Check Out</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          )}
 
           {/* Quick Actions Grid */}
           <View style={styles.quickActionsGridHeader}>
@@ -1515,7 +1618,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
-    marginRight: 10,
     shadowColor: '#0A52D6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,

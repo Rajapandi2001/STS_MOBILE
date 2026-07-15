@@ -16,6 +16,8 @@ import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '../components/ManagerMenu';
 import ManagerApprovalScreen from './ManagerApprovalScreen';
+import { LinearGradient } from 'expo-linear-gradient';
+import SlideToCheckOut from '@/components/SlideToCheckOut';
 
 interface ManagerDashboardScreenProps {
   onNavigate?: (screen: any, params?: any) => void;
@@ -1437,47 +1439,86 @@ export default function ManagerDashboardScreen({
           </View>
 
           {/* Current Status Card */}
-          <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
-            <Text style={[styles.statusLocation, { color: colors.textPrimary }]}>
-              Location : {isCheckedIn ? 'HQ Block A' : 'Not checked in'}
-            </Text>
+          {isCheckedIn ? (
+            <View style={{ marginBottom: 20, paddingHorizontal: 20 }}>
+              <LinearGradient
+                colors={['#1E7F8C', '#0C3266']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  borderRadius: 16,
+                  padding: 24,
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#22C55E', marginRight: 8, shadowColor: '#22C55E', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 3 }} />
+                  <Text style={{ color: '#E2E8F0', fontSize: 14, fontWeight: '500' }}>Currently Active</Text>
+                </View>
+                <Text style={{ color: '#FFFFFF', fontSize: 36, fontWeight: 'bold', marginBottom: 24 }}>
+                  Checked In
+                </Text>
+                
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 32 }}>
+                    <Feather name="clock" size={18} color="#E2E8F0" style={{ marginRight: 8 }} />
+                    <View>
+                      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '500' }}>08:00</Text>
+                      <Text style={{ color: '#E2E8F0', fontSize: 14 }}>AM</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Feather name="map-pin" size={18} color="#E2E8F0" style={{ marginRight: 8 }} />
+                    <Text style={{ color: '#FFFFFF', fontSize: 14, flexWrap: 'wrap' }}>Office - Main Entrance</Text>
+                  </View>
+                </View>
+              </LinearGradient>
 
-            <View style={styles.statusTimesContainer}>
-              {/* Check-In */}
-              <View style={styles.statusTimeBox}>
-                <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
-                  <MaterialCommunityIcons name="logout" size={20} color={colors.brand} style={{ transform: [{ scaleX: -1 }] }} />
-                </View>
-                <View style={styles.statusTimeTextWrap}>
-                  <Text style={[styles.timeLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
-                  <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{checkInTime}</Text>
-                </View>
-              </View>
-
-              {/* Worked */}
-              <View style={styles.statusTimeBox}>
-                <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
-                  <MaterialCommunityIcons name="timer-sand" size={20} color={colors.brand} />
-                </View>
-                <View style={styles.statusTimeTextWrap}>
-                  <Text style={[styles.timeLabel, { color: colors.textSecond }]}>WORKED</Text>
-                  <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{workedHours}</Text>
-                </View>
-              </View>
+              <SlideToCheckOut onCheckOut={handleCheckInToggle} />
             </View>
-
-            {/* Action Button */}
-            <TouchableOpacity
-              style={[styles.checkInBtn, { backgroundColor: isCheckedIn ? '#EF4444' : colors.brand }]}
-              onPress={handleCheckInToggle}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.checkInBtnText}>
-                {isCheckedIn ? 'Check Out' : 'Check In'}
+          ) : (
+            <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
+              <Text style={[styles.statusLocation, { color: colors.textPrimary }]}>
+                Location : Not checked in
               </Text>
-            </TouchableOpacity>
-          </View>
+
+              <View style={styles.statusTimesContainer}>
+                {/* Check-In */}
+                <View style={styles.statusTimeBox}>
+                  <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
+                    <MaterialCommunityIcons name="logout" size={20} color={colors.brand} style={{ transform: [{ scaleX: -1 }] }} />
+                  </View>
+                  <View style={styles.statusTimeTextWrap}>
+                    <Text style={[styles.timeLabel, { color: colors.textSecond }]}>CHECK-IN</Text>
+                    <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{checkInTime}</Text>
+                  </View>
+                </View>
+
+                {/* Worked */}
+                <View style={styles.statusTimeBox}>
+                  <View style={[styles.statusIconWrap, { backgroundColor: colors.iconBg }]}>
+                    <MaterialCommunityIcons name="timer-sand" size={20} color={colors.brand} />
+                  </View>
+                  <View style={styles.statusTimeTextWrap}>
+                    <Text style={[styles.timeLabel, { color: colors.textSecond }]}>WORKED</Text>
+                    <Text style={[styles.timeValue, { color: colors.textPrimary }]}>{workedHours}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Action Button */}
+              <TouchableOpacity
+                style={[styles.checkInBtn, { backgroundColor: colors.brand }]}
+                onPress={handleCheckInToggle}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.checkInBtnText}>
+                  Check In
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Present & Absent Stats */}
           <View style={styles.statsRow}>

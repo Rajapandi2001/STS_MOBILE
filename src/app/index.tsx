@@ -431,6 +431,9 @@ function AppContent() {
             onCheckIn={() => transitionTo('checkin_location')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             routeParams={p}
+            isCheckedInGlobal={isCheckedIn}
+            checkInTimeGlobal={isCheckedIn ? checkInTime : null}
+            onCheckOutPress={handleCheckOut}
           />
         );
 
@@ -776,7 +779,7 @@ function AppContent() {
             <ManagerCheckInSuccessScreen
               checkInTime={checkInTime}
               locationName="HQ Block A"
-              onGoToHistory={() => transitionTo('attendance_history')}
+              onGoToDashboard={() => transitionTo('manager_dashboard', { isCheckedInGlobal: true, checkInTimeGlobal: checkInTime.getTime() }, 'backward')}
             />
           );
         }
@@ -784,7 +787,7 @@ function AppContent() {
           <CheckInSuccessScreen
             checkInTime={checkInTime}
             locationName="HQ Block A"
-            onGoToHistory={() => transitionTo('attendance_history')}
+            onGoToDashboard={() => transitionTo('dashboard', { isCheckedInGlobal: true, checkInTimeGlobal: checkInTime.getTime() }, 'backward')}
           />
         );
       }

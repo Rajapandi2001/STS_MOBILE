@@ -13,10 +13,10 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 interface Props {
   checkInTime: Date;
   locationName: string;
-  onGoToHistory: () => void;
+  onGoToDashboard: () => void;
 }
 
-export default function ManagerCheckInSuccessScreen({ checkInTime, locationName, onGoToHistory }: Props) {
+export default function ManagerCheckInSuccessScreen({ checkInTime, locationName, onGoToDashboard }: Props) {
   const insets = useSafeAreaInsets();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -36,6 +36,13 @@ export default function ManagerCheckInSuccessScreen({ checkInTime, locationName,
         Animated.spring(slideAnim, { toValue: 0, friction: 8, useNativeDriver: true }),
       ]),
     ]).start();
+
+    // Automatically redirect after a short delay
+    const timer = setTimeout(() => {
+      onGoToDashboard();
+    }, 2500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const formatTime = (d: Date) => {
@@ -119,13 +126,6 @@ export default function ManagerCheckInSuccessScreen({ checkInTime, locationName,
         </Animated.View>
       </View>
 
-      {/* Bottom Button */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
-        <TouchableOpacity style={styles.historyBtn} activeOpacity={0.85} onPress={onGoToHistory}>
-          <MaterialCommunityIcons name="home-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.historyBtnText}>Go to Attendance History</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
