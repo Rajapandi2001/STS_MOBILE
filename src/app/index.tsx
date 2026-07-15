@@ -744,7 +744,6 @@ function AppContent() {
           />
         );
       }
-
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
