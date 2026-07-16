@@ -30,6 +30,8 @@ import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import ManagerCreateClaimScreen from '@/manager/screens/ManagerCreateClaimScreen';
 import ManagerClaimsScreen from '@/manager/screens/ManagerClaimsScreen';
+import ManagerClaimsHistoryScreen from '@/manager/screens/ManagerClaimsHistoryScreen';
+import ManagerLeaveHistoryScreen from '@/manager/screens/ManagerLeaveHistoryScreen';
 import ManagerAssetScreen from '@/manager/screens/ManagerAssetScreen';
 import ManagerReportsScreen from '@/manager/screens/ManagerReportsScreen';
 import ManagerApplyLeaveScreen from '@/manager/screens/ManagerApplyLeaveScreen';
@@ -96,6 +98,8 @@ type ScreenName =
   | 'manager_help'
   | 'manager_profile'
   | 'manager_claims'
+  | 'manager_claims_history'
+  | 'manager_leave_history'
   | 'manager_create_claim'
   | 'manager_assets'
   | 'manager_reports'
@@ -262,6 +266,14 @@ function AppContent() {
 
       case 'manager_claims':
         transitionTo('manager_dashboard', undefined, 'backward');
+        return true;
+
+      case 'manager_claims_history':
+        transitionTo('manager_claims', undefined, 'backward');
+        return true;
+
+      case 'manager_leave_history':
+        transitionTo('manager_apply_leave', undefined, 'backward');
         return true;
 
       case 'manager_create_claim':
@@ -720,6 +732,22 @@ function AppContent() {
         return (
           <ManagerClaimsScreen
             onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'manager_claims_history':
+        return (
+          <ManagerClaimsHistoryScreen
+            onBack={() => transitionTo('manager_claims', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
+      case 'manager_leave_history':
+        return (
+          <ManagerLeaveHistoryScreen
+            onBack={() => transitionTo('manager_apply_leave', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );

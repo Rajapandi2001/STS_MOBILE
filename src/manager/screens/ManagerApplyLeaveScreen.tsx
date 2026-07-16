@@ -54,6 +54,10 @@ export default function ManagerApplyLeaveScreen({
   const [teamFilter, setTeamFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [selectedCalendarDay, setSelectedCalendarDay] = useState<number>(15);
 
+  // Interactive logs calendar states
+  const [selectedLogsDate, setSelectedLogsDate] = useState<Date>(new Date());
+  const [currentLogsCalendarDate, setCurrentLogsCalendarDate] = useState<Date>(new Date());
+
   // Mock Logs States
   const [myLogs, setMyLogs] = useState([
     {
@@ -496,42 +500,149 @@ export default function ManagerApplyLeaveScreen({
     );
   };
 
-  const renderMyLogsCalendar = () => {
-    // Generate October 2023
-    const cells: { day: number; isCurrentMonth: boolean }[] = [];
+  const isDateInLog = (checkDate: Date, log: any) => {
+    if (!log.dates) return false;
     
-    // Previous month padding (September 2023 has 30 days)
-    for (let i = 26; i <= 30; i++) {
-      cells.push({ day: i, isCurrentMonth: false });
+    const parts = log.dates.split('-');
+    
+    const parseSingleDate = (str: string, defaultYear?: number) => {
+      const cleanStr = str.trim();
+      const currentYear = defaultYear || new Date().getFullYear();
+      
+      const hasYear = /,\s*\d{4}$/.test(cleanStr) || /\s+\d{4}$/.test(cleanStr);
+      
+      let d = Date.parse(cleanStr);
+      if (!isNaN(d)) {
+        const parsedDate = new Date(d);
+        if (!hasYear && defaultYear !== undefined) {
+          parsedDate.setFullYear(defaultYear);
+        }
+        return parsedDate;
+      }
+      
+      const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+      const words = cleanStr.toLowerCase().replace(/,/g, '').split(' ');
+      if (words.length >= 2) {
+        const mIdx = months.findIndex(m => words[0].startsWith(m) || words[1].startsWith(m));
+        const dayWord = words.find(w => !isNaN(parseInt(w)));
+        if (mIdx !== -1 && dayWord) {
+          const day = parseInt(dayWord);
+          const year = words.find(w => w.length === 4 && !isNaN(parseInt(w))) || currentYear;
+          return new Date(Number(year), mIdx, day);
+        }
+      }
+      return null;
+    };
+
+    if (parts.length === 1) {
+      const d = parseSingleDate(parts[0]);
+      if (!d) return false;
+      return checkDate.getDate() === d.getDate() &&
+             checkDate.getMonth() === d.getMonth() &&
+             checkDate.getFullYear() === d.getFullYear();
+    } else if (parts.length === 2) {
+      let end = parseSingleDate(parts[1]);
+      const extractedYear = end ? end.getFullYear() : new Date().getFullYear();
+      let start = parseSingleDate(parts[0], extractedYear);
+      
+      if (!start) return false;
+      if (!end) {
+        const cleanEnd = parts[1].trim();
+        const startYear = start.getFullYear();
+        const startMonth = start.getMonth();
+        const d = Date.parse(`${cleanEnd} ${startYear}`);
+        if (!isNaN(d)) {
+          end = new Date(d);
+        } else {
+          const dayNum = parseInt(cleanEnd);
+          if (!isNaN(dayNum)) {
+            end = new Date(startYear, startMonth, dayNum);
+          }
+        }
+      }
+      
+      if (!end) return false;
+      
+      const checkTime = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate()).getTime();
+      const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+      const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+      
+      return checkTime >= startTime && checkTime <= endTime;
     }
     
-    // October days
-    for (let i = 1; i <= 31; i++) {
-      cells.push({ day: i, isCurrentMonth: true });
+    return false;
+  };
+
+  const generateLogsCalendarCells = () => {
+    const year = currentLogsCalendarDate.getFullYear();
+    const month = currentLogsCalendarDate.getMonth();
+
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const prevMonthDays = new Date(year, month, 0).getDate();
+
+    const cells: { date: Date; isCurrentMonth: boolean }[] = [];
+
+    // Prior Month Fillers
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      cells.push({
+        date: new Date(year, month - 1, prevMonthDays - i),
+        isCurrentMonth: false,
+      });
     }
-    
-    // Next month padding
-    for (let i = 1; i <= 6; i++) {
-      cells.push({ day: i, isCurrentMonth: false });
+
+    // Current Month Days
+    for (let i = 1; i <= daysInMonth; i++) {
+      cells.push({
+        date: new Date(year, month, i),
+        isCurrentMonth: true,
+      });
     }
+
+    // Next Month Fillers
+    const remaining = 42 - cells.length;
+    const finalRemaining = remaining >= 7 ? remaining - 7 : remaining;
+    const totalTarget = cells.length + (cells.length + finalRemaining <= 35 ? finalRemaining : remaining);
     
-    // Split into rows of 7
+    const nextCellsCount = totalTarget - cells.length;
+    for (let i = 1; i <= nextCellsCount; i++) {
+      cells.push({
+        date: new Date(year, month + 1, i),
+        isCurrentMonth: false,
+      });
+    }
+
     const rows = [];
     for (let i = 0; i < cells.length; i += 7) {
       rows.push(cells.slice(i, i + 7));
     }
-    
+    return rows;
+  };
+
+  const renderMyLogsCalendar = () => {
+    const calendarRows = generateLogsCalendarCells();
+    const monthYearLabel = currentLogsCalendarDate.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+
     const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-    
+
     return (
       <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.calendarHeader}>
-          <Text style={[styles.calendarMonthTitle, { color: colors.textPrimary }]}>October 2023</Text>
+          <Text style={[styles.calendarMonthTitle, { color: colors.textPrimary }]}>{monthYearLabel}</Text>
           <View style={styles.monthNavButtons}>
-            <TouchableOpacity onPress={() => Alert.alert('Prev', 'Browsing prev month...')} style={[styles.navBtn, { backgroundColor: colors.iconBg }]}>
+            <TouchableOpacity 
+              onPress={() => setCurrentLogsCalendarDate(new Date(currentLogsCalendarDate.getFullYear(), currentLogsCalendarDate.getMonth() - 1, 1))} 
+              style={[styles.navBtn, { backgroundColor: colors.iconBg }]}
+            >
               <Feather name="chevron-left" size={16} color={colors.brand} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => Alert.alert('Next', 'Browsing next month...')} style={[styles.navBtn, { backgroundColor: colors.iconBg }]}>
+            <TouchableOpacity 
+              onPress={() => setCurrentLogsCalendarDate(new Date(currentLogsCalendarDate.getFullYear(), currentLogsCalendarDate.getMonth() + 1, 1))} 
+              style={[styles.navBtn, { backgroundColor: colors.iconBg }]}
+            >
               <Feather name="chevron-right" size={16} color={colors.brand} />
             </TouchableOpacity>
           </View>
@@ -548,43 +659,43 @@ export default function ManagerApplyLeaveScreen({
         
         {/* Grid Cells */}
         <View style={styles.gridCellsContainer}>
-          {rows.map((row, rowIdx) => (
+          {calendarRows.map((row, rowIdx) => (
             <View key={rowIdx} style={styles.gridRow}>
               {row.map((cell, cellIdx) => {
-                const isOct = cell.isCurrentMonth;
-                const isDay5 = isOct && cell.day === 5;
-                const isSelected = isOct && cell.day === selectedCalendarDay;
+                const isSelected = selectedLogsDate.getDate() === cell.date.getDate() &&
+                                   selectedLogsDate.getMonth() === cell.date.getMonth() &&
+                                   selectedLogsDate.getFullYear() === cell.date.getFullYear();
                 
+                const hasLeave = myLogs.find(l => isDateInLog(cell.date, l));
+
                 return (
                   <TouchableOpacity
                     key={cellIdx}
                     activeOpacity={0.8}
                     onPress={() => {
-                      if (cell.isCurrentMonth) {
-                        setSelectedCalendarDay(cell.day);
-                      }
+                      setSelectedLogsDate(cell.date);
                     }}
                     style={[
                       styles.cellContainer,
-                      isDay5 && { backgroundColor: isDark ? colors.brand + '25' : '#EFF6FF', borderRadius: 18 }
+                      hasLeave && { backgroundColor: isDark ? colors.brand + '25' : '#EFF6FF', borderRadius: 18 }
                     ]}
                   >
                     <View
                       style={[
                         styles.cellCircle,
-                        isDay5 && { backgroundColor: colors.brand },
+                        hasLeave && { backgroundColor: hasLeave.iconColor || colors.brand },
                         isSelected && { borderWidth: 1.5, borderColor: colors.brand }
                       ]}
                     >
                       <Text
                         style={[
                           styles.cellText,
-                          { color: isOct ? colors.textPrimary : colors.textMuted },
-                          isDay5 && { color: '#FFFFFF', fontWeight: '700' },
+                          { color: cell.isCurrentMonth ? colors.textPrimary : colors.textMuted },
+                          hasLeave && { color: '#FFFFFF', fontWeight: '700' },
                           isSelected && { color: colors.brand, fontWeight: '700' }
                         ]}
                       >
-                        {cell.day}
+                        {cell.date.getDate()}
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -598,9 +709,11 @@ export default function ManagerApplyLeaveScreen({
   };
 
   const renderActivityCard = () => {
-    const day = selectedCalendarDay;
-    const dayOfWeek = (day - 1) % 7; 
+    const dayOfWeek = selectedLogsDate.getDay();
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    // Check if there is an approved or pending leave on this day
+    const matchingLeave = myLogs.find(l => isDateInLog(selectedLogsDate, l));
     
     let title = "Regular Working Day";
     let icon = "clock-outline";
@@ -615,31 +728,18 @@ export default function ManagerApplyLeaveScreen({
       { label: "Worked Hours", value: "8.5 Hrs" }
     ];
 
-    if (day === 5) {
-      title = "Annual Leave";
-      icon = "calendar-blank-outline";
-      iconColor = "#3B82F6";
-      badgeText = "Approved";
-      badgeBg = colors.successBg;
-      badgeTextColor = colors.successText;
+    if (matchingLeave) {
+      title = matchingLeave.type;
+      icon = matchingLeave.icon;
+      iconColor = matchingLeave.iconColor || '#3B82F6';
+      badgeText = matchingLeave.status;
+      badgeBg = matchingLeave.status === 'Approved' ? colors.successBg : colors.amberBg;
+      badgeTextColor = matchingLeave.status === 'Approved' ? colors.successText : colors.amber;
       details = [
-        { label: "Duration", value: "1 Day" },
-        { label: "Reason", value: "Family vacation trip." },
-        { label: "Applied On", value: "Oct 2, 2023" },
-        { label: "Approved By", value: "HR Department" }
-      ];
-    } else if (day === 21) {
-      title = "Sick Leave";
-      icon = "heart-pulse";
-      iconColor = "#EF4444";
-      badgeText = "Approved";
-      badgeBg = colors.successBg;
-      badgeTextColor = colors.successText;
-      details = [
-        { label: "Duration", value: "1 Day" },
-        { label: "Reason", value: "Medical appointment and recovery." },
-        { label: "Applied On", value: "Oct 20, 2023" },
-        { label: "Approved By", value: "HR Department" }
+        { label: "Duration", value: matchingLeave.days },
+        { label: "Reason", value: matchingLeave.reason },
+        { label: "Applied On", value: matchingLeave.dates.split(' - ')[0] },
+        { label: "Approved By", value: matchingLeave.status === 'Approved' ? "HR Department" : "Pending Review" }
       ];
     } else if (isWeekend) {
       title = "Weekly Off";
@@ -653,7 +753,32 @@ export default function ManagerApplyLeaveScreen({
         { label: "Status", value: "Non-working day" },
         { label: "Activity", value: "No check-in required" }
       ];
+    } else {
+      // Check if selectedLogsDate is in the future
+      const today = new Date();
+      const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+      const selectedZero = new Date(selectedLogsDate.getFullYear(), selectedLogsDate.getMonth(), selectedLogsDate.getDate()).getTime();
+      
+      if (selectedZero > todayZero) {
+        title = "Scheduled Working Day";
+        icon = "clock-outline";
+        iconColor = colors.brand;
+        badgeText = "Scheduled";
+        badgeBg = colors.iconBg;
+        badgeTextColor = colors.brand;
+        details = [
+          { label: "Shift", value: "Regular Shift (09:00 AM - 05:30 PM)" },
+          { label: "Status", value: "Scheduled" },
+          { label: "Activity", value: "Check-in required on that day" }
+        ];
+      }
     }
+
+    const dateLabel = selectedLogsDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
 
     return (
       <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border, marginTop: -8, marginBottom: 24 }]}>
@@ -664,7 +789,7 @@ export default function ManagerApplyLeaveScreen({
             </View>
             <View>
               <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>{title}</Text>
-              <Text style={{ fontSize: 11, color: colors.textSecond }}>October {day}, 2023</Text>
+              <Text style={{ fontSize: 11, color: colors.textSecond }}>{dateLabel}</Text>
             </View>
           </View>
 
@@ -716,7 +841,7 @@ export default function ManagerApplyLeaveScreen({
             <TouchableOpacity 
               activeOpacity={0.8}
               style={styles.balanceBtnSecondary}
-              onPress={() => Alert.alert('History', 'Viewing full balance history...')}
+              onPress={() => onNavigate?.('manager_leave_history')}
             >
               <Text style={styles.balanceBtnSecondaryText}>View History</Text>
             </TouchableOpacity>
@@ -746,7 +871,7 @@ export default function ManagerApplyLeaveScreen({
         <TouchableOpacity 
           activeOpacity={0.7}
           style={[styles.historyLinkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => Alert.alert('History', 'Navigating to leave history...')}
+          onPress={() => onNavigate?.('manager_leave_history')}
         >
           <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg, marginBottom: 0 }]}>
             <MaterialCommunityIcons name="clock-outline" size={20} color={colors.brand} />
@@ -799,7 +924,7 @@ export default function ManagerApplyLeaveScreen({
         <TouchableOpacity 
           activeOpacity={0.7}
           style={[styles.historyLinkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => Alert.alert('History', 'Navigating to archive...')}
+          onPress={() => onNavigate?.('manager_leave_history')}
         >
           <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg, marginBottom: 0 }]}>
             <MaterialCommunityIcons name="archive-outline" size={20} color={colors.brand} />

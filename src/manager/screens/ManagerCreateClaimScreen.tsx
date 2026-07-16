@@ -171,6 +171,16 @@ export default function ManagerCreateClaimScreen({
     return () => subscription.remove();
   }, [step]);
 
+  // Auto-redirect to claim list page after 2 seconds on success screen (step 4)
+  useEffect(() => {
+    if (step === 4) {
+      const timer = setTimeout(() => {
+        onNavigate?.('manager_claims');
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [step, onNavigate]);
+
   const handleNextStep1 = () => {
     if (!amount.trim()) {
       Alert.alert('Required Info', 'Please enter a valid amount.');

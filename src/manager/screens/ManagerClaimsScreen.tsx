@@ -10,6 +10,7 @@ import {
   Alert,
   TextInput,
   Modal,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,7 +27,7 @@ export default function ManagerClaimsScreen({
   onNavigate,
 }: ManagerClaimsScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, toggleTheme, isDark } = useTheme();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'my' | 'team'>('my');
@@ -233,30 +234,49 @@ export default function ManagerClaimsScreen({
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
+    <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderLight }]}>
-        <TouchableOpacity
-          style={styles.headerBtn}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Feather name="menu" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Claim Management</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={styles.headerBtn} activeOpacity={0.7}>
-            <Feather name="bell" size={20} color={colors.textPrimary} />
-            <View style={styles.bellBadge} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
           >
-            <Feather name="user" size={18} color={colors.brand} />
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Claim Management
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} activeOpacity={0.7}>
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeDot} />
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -281,7 +301,7 @@ export default function ManagerClaimsScreen({
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}>
         {activeTab === 'my' ? (
           <>
             {/* Total Annual Claim limit card */}
@@ -296,14 +316,13 @@ export default function ManagerClaimsScreen({
                   activeOpacity={0.9}
                   onPress={() => onNavigate?.('manager_create_claim')}
                 >
-                  <Text style={styles.balanceBtnTextPrimary}>Submit Claim</Text>
+                  <Text style={styles.balanceBtnTextPrimary}>Claim</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.balanceBtnSecondary}
                   activeOpacity={0.9}
-                  onPress={() => Alert.alert('Claim History', 'Scroll down to view recent claims log.')}
+                  onPress={() => onNavigate?.('manager_claims_history')}
                 >
-                  <MaterialCommunityIcons name="history" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
                   <Text style={styles.balanceBtnTextSecondary}>View History</Text>
                 </TouchableOpacity>
               </View>
@@ -336,7 +355,7 @@ export default function ManagerClaimsScreen({
             <TouchableOpacity 
               style={[styles.linkCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
               activeOpacity={0.8}
-              onPress={() => Alert.alert('Full Claim History', 'Detailed claim metrics are loading...')}
+              onPress={() => onNavigate?.('manager_claims_history')}
             >
               <View style={[styles.linkIconWrap, { backgroundColor: colors.iconBg }]}>
                 <MaterialCommunityIcons name="history" size={20} color={colors.brand} />
@@ -688,6 +707,34 @@ export default function ManagerClaimsScreen({
           </View>
         </View>
       </Modal>
+
+      {/* Bottom Tab Bar */}
+      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
+          <Feather name="home" size={20} color={colors.tabInactive} />
+          <Text style={[styles.bottomTabText, { color: colors.tabInactive }]}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
+          <Feather name="users" size={20} color={colors.tabInactive} />
+          <Text style={[styles.bottomTabText, { color: colors.tabInactive }]}>Team</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
+          <Feather name="clock" size={20} color={colors.tabInactive} />
+          <Text style={[styles.bottomTabText, { color: colors.tabInactive }]}>Time</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
+          <Feather name="check-circle" size={20} color={colors.tabInactive} />
+          <Text style={[styles.bottomTabText, { color: colors.tabInactive }]}>Approvals</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
+          <Feather name="package" size={20} color={colors.tabInactive} />
+          <Text style={[styles.bottomTabText, { color: colors.tabInactive }]}>Assets</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -696,44 +743,82 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
   },
-  headerBtn: {
-    padding: 8,
-    position: 'relative',
-  },
-  bellBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#EF4444',
-  },
   headerTitle: {
-    flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    textAlign: 'center',
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
   },
-  avatarCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 4,
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#EF4444',
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  activeDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  bottomTabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  tabItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bottomTabText: {
+    fontSize: 11,
+    marginTop: 4,
+    fontWeight: '500',
   },
   tabBar: {
     flexDirection: 'row',
@@ -785,31 +870,31 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   balanceBtn: {
-    flex: 1.2,
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 12,
-    alignItems: 'center',
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   balanceBtnTextPrimary: {
     color: '#0A52D6',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
   },
   balanceBtnSecondary: {
     flex: 1,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 24,
-    paddingVertical: 12,
-    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   balanceBtnTextSecondary: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
   },
   metricRow: {
     flexDirection: 'row',
