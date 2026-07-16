@@ -7,6 +7,7 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -81,7 +82,7 @@ export default function ManagerRolesPermissionsScreen({
   onBack,
 }: ManagerRolesPermissionsScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -112,23 +113,45 @@ export default function ManagerRolesPermissionsScreen({
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Roles & Permissions</Text>
-        <TouchableOpacity
-          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-          activeOpacity={0.8}
-          onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
-        >
-          <Feather name="user" size={20} color={colors.brand} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+            <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
+            <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Roles & Permissions</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg || colors.cardAlt, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg || colors.cardAlt, marginRight: 12 }]} 
+            activeOpacity={0.7}
+            onPress={() => Alert.alert('Notifications', 'No new notifications')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
+          >
+            <Feather name="user" size={20} color={colors.brand} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -229,10 +252,13 @@ export default function ManagerRolesPermissionsScreen({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 15, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1 },
   hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', gap: 5, borderRadius: 10, paddingHorizontal: 8 },
   hamburgerLine: { width: 20, height: 2, borderRadius: 2 },
-  headerTitle: { fontSize: 18, fontWeight: '700' },
+  headerTitle: { fontSize: 16, fontWeight: '700' },
+  headerRight: { flexDirection: 'row', alignItems: 'center' },
+  notifDot: { position: 'absolute', top: 10, right: 10, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#EF4444' },
+  iconButton: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
   avatarCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
   scrollContent: { paddingHorizontal: 20, paddingTop: 10 },
   pageDescription: {

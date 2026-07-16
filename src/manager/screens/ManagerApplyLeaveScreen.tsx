@@ -464,32 +464,35 @@ export default function ManagerApplyLeaveScreen({
 
     return (
       <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Feather name="menu" size={20} color={colors.brand} />
-        </TouchableOpacity>
-
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Leave Management</Text>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity
-            style={{ padding: 4 }}
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Leave Management
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
             onPress={toggleTheme}
             activeOpacity={0.7}
           >
-            <Feather name={isDark ? 'sun' : 'moon'} size={20} color={colors.textPrimary} />
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
           </TouchableOpacity>
 
           <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
             activeOpacity={0.7}
-            style={{ position: 'relative', padding: 4 }}
             onPress={() => Alert.alert('Notifications', 'No new notifications')}
           >
-            <Feather name="bell" size={20} color={colors.textPrimary} />
-            <View style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} />
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -844,7 +847,7 @@ export default function ManagerApplyLeaveScreen({
               style={styles.balanceBtnPrimary}
               onPress={() => setShowApplyForm(true)}
             >
-              <Text style={styles.balanceBtnPrimaryText}>Request Leave</Text>
+              <Text style={styles.balanceBtnPrimaryText}>Leave</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               activeOpacity={0.8}
@@ -1441,6 +1444,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 14,
     borderBottomWidth: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#EF4444',
   },
   iconButton: {
     width: 38,
