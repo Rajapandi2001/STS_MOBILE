@@ -166,7 +166,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
             activeOpacity={0.7}
-            onPress={() => handleNavigate('change_password', { source: 'menu' })}
+            onPress={() => handleNavigate('manager_change_password', { source: 'menu' })}
           >
             <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
               <MaterialCommunityIcons name="lock-outline" size={22} color={colors.brand} />

@@ -24,6 +24,7 @@ import ManagerMenu from '../components/ManagerMenu';
 interface ManagerApplyLeaveScreenProps {
   onBack?: () => void;
   onNavigate?: (screen: string, params?: any) => void;
+  initialParams?: any;
 }
 
 const LEAVE_TYPES = [
@@ -37,13 +38,14 @@ const LEAVE_TYPES = [
 export default function ManagerApplyLeaveScreen({
   onBack,
   onNavigate,
+  initialParams,
 }: ManagerApplyLeaveScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useTheme();
 
   // Navigation states & forms
   const [activeTab, setActiveTab] = useState<'my_logs' | 'team_logs'>('my_logs');
-  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [showApplyForm, setShowApplyForm] = useState(initialParams?.showApplyForm || false);
   const [reason, setReason] = useState('');
   const [selectedLeaveType, setSelectedLeaveType] = useState('Annual Leave');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -449,15 +451,44 @@ export default function ManagerApplyLeaveScreen({
         <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
           <TouchableOpacity
             style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-            onPress={() => setShowApplyForm(false)}
+            onPress={() => setMenuOpen(true)}
             activeOpacity={0.7}
           >
-            <Feather name="arrow-left" size={20} color={colors.brand} />
+            <Feather name="menu" size={20} color={colors.brand} />
           </TouchableOpacity>
 
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Apply Leave</Text>
 
-          <View style={{ width: 38 }} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <TouchableOpacity
+              style={{ padding: 4 }}
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <Feather name={isDark ? 'sun' : 'moon'} size={20} color={colors.textPrimary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              activeOpacity={0.7}
+              style={{ position: 'relative', padding: 4 }}
+              onPress={() => onNavigate?.('manager_alerts')}
+            >
+              <Feather name="bell" size={20} color={colors.textPrimary} />
+              <View style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.avatarWrapper}
+              activeOpacity={0.8}
+              onPress={() => onNavigate?.('manager_profile')}
+            >
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeDot} />
+            </TouchableOpacity>
+          </View>
         </View>
       );
     }
@@ -489,7 +520,8 @@ export default function ManagerApplyLeaveScreen({
           <TouchableOpacity 
             style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
             activeOpacity={0.7}
-            onPress={() => Alert.alert('Notifications', 'No new notifications')}
+            style={{ position: 'relative', padding: 4 }}
+            onPress={() => onNavigate?.('manager_alerts')}
           >
             <Feather name="bell" size={18} color={colors.brand} />
             <View style={styles.notifDot} />

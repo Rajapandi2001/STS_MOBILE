@@ -56,7 +56,11 @@ import AdminHolidayDetailScreen from '@/admin/screens/AdminHolidayDetailScreen';
 import AdminRolesPermissionsScreen from '@/admin/screens/AdminRolesPermissionsScreen';
 import AdminRoleDetailScreen from '@/admin/screens/AdminRoleDetailScreen';
 import AdminAlertsScreen from '@/admin/screens/AdminAlertsScreen';
+import ManagerAlertScreen from '@/manager/screens/ManagerAlertScreen';
 import AdminReportsScreen from '@/admin/screens/AdminReportsScreen';
+import ManagerChangePasswordScreen from '@/manager/screens/ManagerChangePasswordScreen';
+import ManagerTeamScreen from '@/manager/screens/ManagerTeamScreen';
+import ManagerTimeScreen from '@/manager/screens/ManagerTimeScreen';
 
 type ScreenName =
   | 'splash'
@@ -67,6 +71,9 @@ type ScreenName =
   | 'dashboard'
   | 'admin_dashboard'
   | 'manager_dashboard'
+  | 'manager_team'
+  | 'manager_time'
+  | 'manager_alerts'
   | 'checkin_location'
   | 'checkin_success'
   | 'location_failed'
@@ -109,7 +116,8 @@ type ScreenName =
   | 'employee_assets'
   | 'employee_apply_leave'
   | 'employee_create_claim'
-  | 'employee_change_password';
+  | 'employee_change_password'
+  | 'manager_change_password';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -261,6 +269,7 @@ function AppContent() {
 
       case 'manager_help':
       case 'manager_profile':
+      case 'manager_change_password':
         transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
         return true;
 
@@ -469,6 +478,26 @@ function AppContent() {
       case 'manager_dashboard':
         return (
           <ManagerDashboardScreen
+            onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
+            routeParams={p}
+            isCheckedInGlobal={isCheckedIn}
+            checkInTimeGlobal={isCheckedIn ? checkInTime : null}
+            onCheckInPress={() => transitionTo('checkin_location')}
+            onCheckOutPress={handleCheckOut}
+          />
+        );
+
+      case 'manager_team':
+        return (
+          <ManagerTeamScreen
+            onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
+            routeParams={p}
+          />
+        );
+
+      case 'manager_time':
+        return (
+          <ManagerTimeScreen
             onNavigate={(navS, navP) => transitionTo(navS as ScreenName, navP)}
             routeParams={p}
             isCheckedInGlobal={isCheckedIn}
@@ -728,6 +757,14 @@ function AppContent() {
           />
         );
 
+      case 'manager_change_password':
+        return (
+          <ManagerChangePasswordScreen
+            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
+
       case 'manager_claims':
         return (
           <ManagerClaimsScreen
@@ -784,9 +821,17 @@ function AppContent() {
           <ManagerApplyLeaveScreen
             onBack={() => transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            initialParams={screenParams}
           />
         );
       }
+      case 'manager_alerts':
+        return (
+          <ManagerAlertScreen
+            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
       // ── CHECK-IN FLOW ─────────────────────────────────────────────────────
       case 'checkin_location': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
