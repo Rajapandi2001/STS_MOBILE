@@ -1562,9 +1562,9 @@ export default function ManagerDashboardScreen({
           {/* Leaves, Reports, Claims Grid */}
           <View style={styles.gridContainer}>
             {[
-              { name: 'Leaves', icon: 'calendar-blank', color: '#3B82F6' },
+              { name: '+ -Leaves', icon: 'calendar-blank', color: '#3B82F6' },
               { name: 'Reports', icon: 'chart-bar', color: '#10B981' },
-              { name: 'Claims', icon: 'credit-card-outline', color: '#F59E0B' },
+              { name: '+ Claims', icon: 'credit-card-outline', color: '#F59E0B' },
             ].map((item) => (
               <TouchableOpacity
                 key={item.name}

@@ -29,6 +29,7 @@ import ManagerRoleDetailScreen from '@/manager/screens/ManagerRoleDetailScreen';
 import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import ManagerCreateClaimScreen from '@/manager/screens/ManagerCreateClaimScreen';
+import ManagerClaimsScreen from '@/manager/screens/ManagerClaimsScreen';
 import ManagerAssetScreen from '@/manager/screens/ManagerAssetScreen';
 import ManagerReportsScreen from '@/manager/screens/ManagerReportsScreen';
 import ManagerApplyLeaveScreen from '@/manager/screens/ManagerApplyLeaveScreen';
@@ -94,6 +95,7 @@ type ScreenName =
   | 'manager_role_detail'
   | 'manager_help'
   | 'manager_profile'
+  | 'manager_claims'
   | 'manager_create_claim'
   | 'manager_assets'
   | 'manager_reports'
@@ -258,7 +260,14 @@ function AppContent() {
         transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
         return true;
 
+      case 'manager_claims':
+        transitionTo('manager_dashboard', undefined, 'backward');
+        return true;
+
       case 'manager_create_claim':
+        transitionTo('manager_claims', undefined, 'backward');
+        return true;
+
       case 'manager_assets':
       case 'manager_reports': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
@@ -707,15 +716,21 @@ function AppContent() {
           />
         );
 
-      case 'manager_create_claim': {
-        const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
+      case 'manager_claims':
         return (
-          <ManagerCreateClaimScreen
-            onBack={() => transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward')}
+          <ManagerClaimsScreen
+            onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
-      }
+
+      case 'manager_create_claim':
+        return (
+          <ManagerCreateClaimScreen
+            onBack={() => transitionTo('manager_claims', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+          />
+        );
 
       case 'manager_assets': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;

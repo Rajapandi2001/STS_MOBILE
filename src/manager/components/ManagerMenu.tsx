@@ -148,7 +148,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             <View style={[styles.subMenu, { backgroundColor: colors.card }]}>
               {[
                 { name: 'Leave Management', screen: 'manager_apply_leave' },
-                { name: 'Claim Management', screen: 'manager_create_claim' }
+                { name: 'Claim Management', screen: 'manager_claims' }
               ].map((item) => (
                 <TouchableOpacity
                   key={item.name}
