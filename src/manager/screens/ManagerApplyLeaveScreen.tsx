@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import * as DocumentPicker from 'expo-document-picker';
+import { LinearGradient } from 'expo-linear-gradient';
 import ManagerMenu from '../components/ManagerMenu';
 
 interface ManagerApplyLeaveScreenProps {
@@ -41,15 +42,89 @@ export default function ManagerApplyLeaveScreen({
   const { colors, isDark } = useTheme();
 
   // Navigation states & forms
+  const [activeTab, setActiveTab] = useState<'my_logs' | 'team_logs'>('my_logs');
+  const [showApplyForm, setShowApplyForm] = useState(false);
   const [reason, setReason] = useState('');
   const [selectedLeaveType, setSelectedLeaveType] = useState('Annual Leave');
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmModalVisible, setConfirmModalVisible] = useState(false);
 
+  // Search and filter inside Team Logs
+  const [searchQuery, setSearchQuery] = useState('');
+  const [teamFilter, setTeamFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number>(15);
+
+  // Mock Logs States
+  const [myLogs, setMyLogs] = useState([
+    {
+      id: 1,
+      type: 'Annual Leave',
+      dates: 'Oct 5, 2023',
+      days: '1 Day',
+      reason: 'Family vacation trip.',
+      status: 'Approved',
+      icon: 'calendar-blank-outline',
+      iconColor: '#3B82F6',
+      bg: '#EFF6FF',
+    },
+    {
+      id: 2,
+      type: 'Sick Leave',
+      dates: 'Sep 12 - Sep 13, 2023',
+      days: '2 Days',
+      reason: 'Medical appointment and recovery.',
+      status: 'Approved',
+      icon: 'heart-pulse',
+      iconColor: '#EF4444',
+      bg: '#FEF2F2',
+    },
+    {
+      id: 3,
+      type: 'Annual Leave',
+      dates: 'Nov 20 - Nov 24, 2023',
+      days: '5 Days',
+      reason: 'Thanksgiving holiday travel.',
+      status: 'Pending',
+      icon: 'calendar-blank-outline',
+      iconColor: '#3B82F6',
+      bg: '#EFF6FF',
+    },
+  ]);
+
+  const [teamLogs, setTeamLogs] = useState([
+    {
+      id: 1,
+      name: 'Alex Rivers',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=100',
+      type: 'ANNUAL',
+      dates: 'Oct 24 - Oct 27',
+      days: 4,
+      status: 'Pending',
+    },
+    {
+      id: 2,
+      name: 'Sarah Jenkins',
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?fit=crop&w=100',
+      type: 'SICK',
+      dates: 'Oct 21',
+      days: 1,
+      status: 'Approved',
+    },
+    {
+      id: 3,
+      name: 'Michael Chen',
+      avatar: null, //MC initials
+      type: 'ANNUAL',
+      dates: 'Nov 10 - Nov 24',
+      days: 10,
+      status: 'Pending',
+    },
+  ]);
+
   const currentLeaveDetails = LEAVE_TYPES.find(item => item.name === selectedLeaveType);
   
   // Date Picker States
-  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date());
+  const [currentCalendarDate, setCurrentCalendarDate] = useState(new Date(2023, 9, 1)); // Default to October 2023
   const [startDateStr, setStartDateStr] = useState<string | null>(null);
   const [endDateStr, setEndDateStr] = useState<string | null>(null);
   
@@ -59,6 +134,10 @@ export default function ManagerApplyLeaveScreen({
   // Intercept hardware back button
   useEffect(() => {
     const onBackPress = () => {
+      if (showApplyForm) {
+        setShowApplyForm(false);
+        return true;
+      }
       if (onBack) {
         onBack();
         return true;
@@ -69,7 +148,7 @@ export default function ManagerApplyLeaveScreen({
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
-  }, [onBack, onNavigate]);
+  }, [onBack, onNavigate, showApplyForm]);
 
   // Utility to format date string YYYY-MM-DD
   const formatDateString = (date: Date) => {
@@ -358,11 +437,28 @@ export default function ManagerApplyLeaveScreen({
 
   // No success wizard page rendered. We redirect directly back upon submission.
 
-  return (
-    <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
-      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
+  // No success wizard page rendered. We redirect directly back upon submission.
 
-      {/* ── HEADER ── */}
+  const renderHeader = () => {
+    if (showApplyForm) {
+      return (
+        <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setShowApplyForm(false)}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={20} color={colors.brand} />
+          </TouchableOpacity>
+
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Apply Leave</Text>
+
+          <View style={{ width: 38 }} />
+        </View>
+      );
+    }
+
+    return (
       <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
         <TouchableOpacity
           style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
@@ -372,20 +468,539 @@ export default function ManagerApplyLeaveScreen({
           <Feather name="menu" size={20} color={colors.brand} />
         </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Apply Leave</Text>
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Leave Management</Text>
 
-        <TouchableOpacity
-          style={styles.avatarWrapper}
-          activeOpacity={0.8}
-          onPress={() => onNavigate?.('manager_profile')}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity 
+            activeOpacity={0.7}
+            style={{ position: 'relative', padding: 4 }}
+            onPress={() => Alert.alert('Notifications', 'No new notifications')}
+          >
+            <Feather name="bell" size={20} color={colors.textPrimary} />
+            <View style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+              style={styles.avatarImage}
+            />
+            <View style={styles.activeDot} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderMyLogsCalendar = () => {
+    // Generate October 2023
+    const cells: { day: number; isCurrentMonth: boolean }[] = [];
+    
+    // Previous month padding (September 2023 has 30 days)
+    for (let i = 26; i <= 30; i++) {
+      cells.push({ day: i, isCurrentMonth: false });
+    }
+    
+    // October days
+    for (let i = 1; i <= 31; i++) {
+      cells.push({ day: i, isCurrentMonth: true });
+    }
+    
+    // Next month padding
+    for (let i = 1; i <= 6; i++) {
+      cells.push({ day: i, isCurrentMonth: false });
+    }
+    
+    // Split into rows of 7
+    const rows = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      rows.push(cells.slice(i, i + 7));
+    }
+    
+    const weekdayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    
+    return (
+      <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.calendarHeader}>
+          <Text style={[styles.calendarMonthTitle, { color: colors.textPrimary }]}>October 2023</Text>
+          <View style={styles.monthNavButtons}>
+            <TouchableOpacity onPress={() => Alert.alert('Prev', 'Browsing prev month...')} style={[styles.navBtn, { backgroundColor: colors.iconBg }]}>
+              <Feather name="chevron-left" size={16} color={colors.brand} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => Alert.alert('Next', 'Browsing next month...')} style={[styles.navBtn, { backgroundColor: colors.iconBg }]}>
+              <Feather name="chevron-right" size={16} color={colors.brand} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        
+        {/* Days of Week */}
+        <View style={styles.weekdaysRow}>
+          {weekdayLabels.map((day, idx) => (
+            <Text key={idx} style={[styles.weekdayLabelText, { color: colors.textMuted }]}>
+              {day}
+            </Text>
+          ))}
+        </View>
+        
+        {/* Grid Cells */}
+        <View style={styles.gridCellsContainer}>
+          {rows.map((row, rowIdx) => (
+            <View key={rowIdx} style={styles.gridRow}>
+              {row.map((cell, cellIdx) => {
+                const isOct = cell.isCurrentMonth;
+                const isDay5 = isOct && cell.day === 5;
+                const isSelected = isOct && cell.day === selectedCalendarDay;
+                
+                return (
+                  <TouchableOpacity
+                    key={cellIdx}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      if (cell.isCurrentMonth) {
+                        setSelectedCalendarDay(cell.day);
+                      }
+                    }}
+                    style={[
+                      styles.cellContainer,
+                      isDay5 && { backgroundColor: isDark ? colors.brand + '25' : '#EFF6FF', borderRadius: 18 }
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.cellCircle,
+                        isDay5 && { backgroundColor: colors.brand },
+                        isSelected && { borderWidth: 1.5, borderColor: colors.brand }
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.cellText,
+                          { color: isOct ? colors.textPrimary : colors.textMuted },
+                          isDay5 && { color: '#FFFFFF', fontWeight: '700' },
+                          isSelected && { color: colors.brand, fontWeight: '700' }
+                        ]}
+                      >
+                        {cell.day}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderActivityCard = () => {
+    const day = selectedCalendarDay;
+    const dayOfWeek = (day - 1) % 7; 
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
+    let title = "Regular Working Day";
+    let icon = "clock-outline";
+    let iconColor = colors.brand;
+    let badgeText = "Present";
+    let badgeBg = colors.successBg;
+    let badgeTextColor = colors.successText;
+    let details = [
+      { label: "Shift", value: "Regular Shift (09:00 AM - 05:30 PM)" },
+      { label: "Check-In", value: "08:52 AM (On-Time)" },
+      { label: "Check-Out", value: "05:30 PM" },
+      { label: "Worked Hours", value: "8.5 Hrs" }
+    ];
+
+    if (day === 5) {
+      title = "Annual Leave";
+      icon = "calendar-blank-outline";
+      iconColor = "#3B82F6";
+      badgeText = "Approved";
+      badgeBg = colors.successBg;
+      badgeTextColor = colors.successText;
+      details = [
+        { label: "Duration", value: "1 Day" },
+        { label: "Reason", value: "Family vacation trip." },
+        { label: "Applied On", value: "Oct 2, 2023" },
+        { label: "Approved By", value: "HR Department" }
+      ];
+    } else if (day === 21) {
+      title = "Sick Leave";
+      icon = "heart-pulse";
+      iconColor = "#EF4444";
+      badgeText = "Approved";
+      badgeBg = colors.successBg;
+      badgeTextColor = colors.successText;
+      details = [
+        { label: "Duration", value: "1 Day" },
+        { label: "Reason", value: "Medical appointment and recovery." },
+        { label: "Applied On", value: "Oct 20, 2023" },
+        { label: "Approved By", value: "HR Department" }
+      ];
+    } else if (isWeekend) {
+      title = "Weekly Off";
+      icon = "calendar-clock";
+      iconColor = colors.textSecond;
+      badgeText = "Weekend";
+      badgeBg = colors.iconBg;
+      badgeTextColor = colors.textSecond;
+      details = [
+        { label: "Day Type", value: "Weekly Off" },
+        { label: "Status", value: "Non-working day" },
+        { label: "Activity", value: "No check-in required" }
+      ];
+    }
+
+    return (
+      <View style={[styles.calendarCard, { backgroundColor: colors.card, borderColor: colors.border, marginTop: -8, marginBottom: 24 }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={[styles.logIconBg, { backgroundColor: colors.iconBg, width: 36, height: 36, borderRadius: 18, marginRight: 0 }]}>
+              <MaterialCommunityIcons name={icon as any} size={18} color={iconColor} />
+            </View>
+            <View>
+              <Text style={{ fontSize: 15, fontWeight: '700', color: colors.textPrimary }}>{title}</Text>
+              <Text style={{ fontSize: 11, color: colors.textSecond }}>October {day}, 2023</Text>
+            </View>
+          </View>
+
+          <View style={[styles.teamLogStatus, { backgroundColor: badgeBg }]}>
+            <Text style={[styles.statusBadgeText, { color: badgeTextColor }]}>
+              {badgeText}
+            </Text>
+          </View>
+        </View>
+
+        <View style={{ gap: 8 }}>
+          {details.map((detail, idx) => (
+            <View key={idx} style={{ flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: idx < details.length - 1 ? 1 : 0, borderBottomColor: colors.borderLight, paddingBottom: 6 }}>
+              <Text style={{ fontSize: 12, color: colors.textSecond, fontWeight: '500' }}>{detail.label}</Text>
+              <Text style={{ fontSize: 12, color: colors.textPrimary, fontWeight: '600', maxWidth: '70%' }} numberOfLines={1}>{detail.value}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
+
+  const renderMyLogs = () => {
+    return (
+      <View style={{ flex: 1, marginTop: 16 }}>
+        {/* Total Annual Leave Balance Card */}
+        <LinearGradient
+          colors={isDark ? ['#1e3a8a', '#172554'] : ['#0A52D6', '#1E40AF']}
+          style={styles.balanceCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
         >
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-            style={styles.avatarImage}
-          />
-          <View style={styles.activeDot} />
+          {/* Accent decoration circles */}
+          <View style={styles.cardCircle1} />
+          <View style={styles.cardCircle2} />
+          
+          <Text style={styles.balanceCardTitle}>Total Annual Leave Balance</Text>
+          <Text style={styles.balanceCardValue}>14 Days</Text>
+          <Text style={styles.balanceCardSub}>Valid until Dec 31, 2023</Text>
+          
+          <View style={styles.balanceButtonsRow}>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              style={styles.balanceBtnPrimary}
+              onPress={() => setShowApplyForm(true)}
+            >
+              <Text style={styles.balanceBtnPrimaryText}>Request Leave</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              activeOpacity={0.8}
+              style={styles.balanceBtnSecondary}
+              onPress={() => Alert.alert('History', 'Viewing full balance history...')}
+            >
+              <Text style={styles.balanceBtnSecondaryText}>View History</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+
+        {/* Row of sub-cards (Sick / Unpaid) */}
+        <View style={styles.rowCardsContainer}>
+          <View style={[styles.rowCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.rowCardHeader}>
+              <MaterialCommunityIcons name="heart-pulse" size={18} color="#EF4444" />
+              <Text style={[styles.rowCardLabel, { color: colors.textSecond }]}>Sick Leave</Text>
+            </View>
+            <Text style={[styles.rowCardValue, { color: colors.textPrimary }]}>5 Days</Text>
+          </View>
+
+          <View style={[styles.rowCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <View style={styles.rowCardHeader}>
+              <MaterialCommunityIcons name="cash-off" size={18} color="#F59E0B" />
+              <Text style={[styles.rowCardLabel, { color: colors.textSecond }]}>Unpaid Leave</Text>
+            </View>
+            <Text style={[styles.rowCardValue, { color: colors.textPrimary }]}>0 Days</Text>
+          </View>
+        </View>
+
+        {/* Leave History Quick Link */}
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          style={[styles.historyLinkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => Alert.alert('History', 'Navigating to leave history...')}
+        >
+          <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg, marginBottom: 0 }]}>
+            <MaterialCommunityIcons name="clock-outline" size={20} color={colors.brand} />
+          </View>
+          <View style={styles.historyLinkContent}>
+            <Text style={[styles.historyLinkTitle, { color: colors.textPrimary }]}>Leave History</Text>
+            <Text style={[styles.historyLinkSub, { color: colors.textSecond }]}>View all past requests and balances</Text>
+          </View>
+          <View style={styles.historyLinkAction}>
+            <Text style={[styles.historyLinkActionText, { color: colors.brand }]}>View Full History</Text>
+            <Feather name="chevron-right" size={16} color={colors.brand} />
+          </View>
+        </TouchableOpacity>
+
+        {/* Calendar */}
+        {renderMyLogsCalendar()}
+
+        {/* Calendar Activity Card */}
+        {renderActivityCard()}
+
+        {/* Recent Logs List */}
+        <Text style={[styles.logsHeader, { color: colors.textPrimary }]}>Recent Logs</Text>
+        <View style={{ marginBottom: 20 }}>
+          {myLogs.map((log) => (
+            <View key={log.id} style={[styles.logItem, { borderBottomColor: colors.borderLight }]}>
+              <View style={[styles.logIconBg, { backgroundColor: log.bg }]}>
+                <MaterialCommunityIcons name={log.icon as any} size={20} color={log.iconColor} />
+              </View>
+              <View style={styles.logInfo}>
+                <Text style={[styles.logTitle, { color: colors.textPrimary }]}>{log.type}</Text>
+                <Text style={[styles.logMeta, { color: colors.textSecond }]}>{log.dates} • {log.days}</Text>
+                {log.reason ? <Text style={[styles.logReason, { color: colors.textMuted }]}>{log.reason}</Text> : null}
+              </View>
+              <View style={[
+                styles.teamLogStatus, 
+                { backgroundColor: log.status === 'Approved' ? colors.successBg : colors.amberBg }
+              ]}>
+                <Text style={[
+                  styles.statusBadgeText, 
+                  { color: log.status === 'Approved' ? colors.successText : colors.amber }
+                ]}>
+                  {log.status}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Full History Link */}
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          style={[styles.historyLinkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => Alert.alert('History', 'Navigating to archive...')}
+        >
+          <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg, marginBottom: 0 }]}>
+            <MaterialCommunityIcons name="archive-outline" size={20} color={colors.brand} />
+          </View>
+          <View style={styles.historyLinkContent}>
+            <Text style={[styles.historyLinkTitle, { color: colors.textPrimary }]}>Archive & History</Text>
+            <Text style={[styles.historyLinkSub, { color: colors.textSecond }]}>Access all past leave requests and balance adjustments.</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.textSecond} />
         </TouchableOpacity>
       </View>
+    );
+  };
+
+  const renderTeamLogs = () => {
+    // Filter logic
+    const filteredLogs = teamLogs.filter(log => {
+      const matchesSearch = log.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesFilter = teamFilter === 'all' || log.status.toLowerCase() === teamFilter.toLowerCase();
+      return matchesSearch && matchesFilter;
+    });
+
+    return (
+      <View style={{ flex: 1, marginTop: 16 }}>
+        {/* Row of two stats cards styled with brand blue gradient background */}
+        <View style={styles.teamStatsRow}>
+          <LinearGradient
+            colors={isDark ? ['#1e3a8a', '#172554'] : ['#0A52D6', '#1E40AF']}
+            style={styles.teamStatCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.cardCircle1} />
+            <Text style={styles.teamStatLabel}>Pending Requests</Text>
+            <Text style={styles.teamStatValue}>12</Text>
+          </LinearGradient>
+
+          <LinearGradient
+            colors={isDark ? ['#1e3a8a', '#172554'] : ['#0A52D6', '#1E40AF']}
+            style={styles.teamStatCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.cardCircle2} />
+            <Text style={styles.teamStatLabel}>On Leave Today</Text>
+            <Text style={styles.teamStatValue}>3</Text>
+          </LinearGradient>
+        </View>
+
+        {/* Search Bar Container */}
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Feather name="search" size={18} color={colors.textMuted} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+              placeholder="Search team members..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+          <TouchableOpacity 
+            activeOpacity={0.7}
+            style={[styles.filterBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => Alert.alert('Filter', 'Opening search filters...')}
+          >
+            <Feather name="sliders" size={18} color={colors.textSecond} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Chips */}
+        <View style={styles.chipsContainer}>
+          {(['all', 'pending', 'approved', 'rejected'] as const).map((filter) => {
+            const isActive = teamFilter === filter;
+            const label = filter.charAt(0).toUpperCase() + filter.slice(1);
+            return (
+              <TouchableOpacity
+                key={filter}
+                activeOpacity={0.7}
+                style={[
+                  styles.chip, 
+                  { 
+                    backgroundColor: isActive ? colors.brand : colors.card,
+                    borderColor: isActive ? colors.brand : colors.border
+                  }
+                ]}
+                onPress={() => setTeamFilter(filter)}
+              >
+                <Text style={[styles.chipText, { color: isActive ? '#FFFFFF' : colors.textSecond }]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Recent Applications List */}
+        <Text style={[styles.logsHeader, { color: colors.textPrimary }]}>Recent Applications</Text>
+        <View style={{ marginBottom: 20 }}>
+          {filteredLogs.length > 0 ? (
+            filteredLogs.map((log) => {
+              // Set up colors for type badge
+              const isAnnual = log.type === 'ANNUAL';
+              const badgeBg = isAnnual ? '#EEF2FF' : '#FFF1F2';
+              const badgeText = isAnnual ? '#4F46E5' : '#E11D48';
+
+              return (
+                <TouchableOpacity 
+                  key={log.id} 
+                  activeOpacity={0.7}
+                  style={[styles.teamLogItem, { borderBottomColor: colors.borderLight }]}
+                  onPress={() => Alert.alert('Application Details', `Viewing details for ${log.name}`)}
+                >
+                  {/* Avatar rendering */}
+                  {log.avatar ? (
+                    <Image source={{ uri: log.avatar }} style={styles.teamLogAvatar} />
+                  ) : (
+                    <View style={[styles.teamLogAvatar, { backgroundColor: '#E2E8F0' }]}>
+                      <Text style={[styles.teamLogAvatarText, { color: '#475569' }]}>MC</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.teamLogInfo}>
+                    <Text style={[styles.teamLogName, { color: colors.textPrimary }]}>{log.name}</Text>
+                    <View style={styles.teamLogMeta}>
+                      <View style={[styles.teamLogBadge, { backgroundColor: badgeBg }]}>
+                        <Text style={[styles.teamLogBadgeText, { color: badgeText }]}>{log.type}</Text>
+                      </View>
+                      <Text style={[styles.teamLogDates, { color: colors.textSecond }]}>{log.dates} ({log.days} Days)</Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <View style={[
+                      styles.teamLogStatus, 
+                      { backgroundColor: log.status === 'Approved' ? colors.successBg : colors.amberBg }
+                    ]}>
+                      <Text style={[
+                        styles.statusBadgeText, 
+                        { color: log.status === 'Approved' ? colors.successText : colors.amber }
+                      ]}>
+                        {log.status.toUpperCase()}
+                      </Text>
+                    </View>
+                    <Feather name="chevron-right" size={16} color={colors.textMuted} />
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          ) : (
+            <View style={{ paddingVertical: 30, alignItems: 'center' }}>
+              <Text style={{ color: colors.textMuted, fontSize: 14 }}>No applications found matching search criteria.</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Full History Link */}
+        <TouchableOpacity 
+          activeOpacity={0.7}
+          style={[styles.historyLinkCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => Alert.alert('History', 'Navigating to archive...')}
+        >
+          <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg, marginBottom: 0 }]}>
+            <MaterialCommunityIcons name="archive-outline" size={20} color={colors.brand} />
+          </View>
+          <View style={styles.historyLinkContent}>
+            <Text style={[styles.historyLinkTitle, { color: colors.textPrimary }]}>Archive & History</Text>
+            <Text style={[styles.historyLinkSub, { color: colors.textSecond }]}>Access all past leave requests and balance adjustments.</Text>
+          </View>
+          <Feather name="chevron-right" size={18} color={colors.textSecond} />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  return (
+    <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
+      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
+
+      {renderHeader()}
+
+      {!showApplyForm && (
+        <View style={[styles.tabsBar, { backgroundColor: colors.header, borderBottomColor: colors.borderLight }]}>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'my_logs' && { borderBottomColor: colors.brand }]}
+            onPress={() => setActiveTab('my_logs')}
+          >
+            <Text style={[styles.tabBtnText, { color: activeTab === 'my_logs' ? colors.brand : colors.textSecond }, activeTab === 'my_logs' && { fontWeight: '700' }]}>
+              My Logs
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabBtn, activeTab === 'team_logs' && { borderBottomColor: colors.brand }]}
+            onPress={() => setActiveTab('team_logs')}
+          >
+            <Text style={[styles.tabBtnText, { color: activeTab === 'team_logs' ? colors.brand : colors.textSecond }, activeTab === 'team_logs' && { fontWeight: '700' }]}>
+              Team Logs
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -395,117 +1010,124 @@ export default function ManagerApplyLeaveScreen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom, 12) + 80 }]}
         >
-          {/* Screen Subtitle */}
-          <Text style={[styles.screenSubtitleText, { color: colors.textSecond }]}>
-            Manage leave policies and employee leave configurations.
-          </Text>
+          {showApplyForm ? (
+            <>
+              {/* Screen Subtitle */}
+              <Text style={[styles.screenSubtitleText, { color: colors.textSecond }]}>
+                Provide details to apply for a leave.
+              </Text>
 
-          {/* Leave Type Cards */}
-          <View style={styles.cardsGrid}>
-            {LEAVE_TYPES.map((item) => {
-              const isSelected = selectedLeaveType === item.name;
-              return (
-                <TouchableOpacity
-                  key={item.name}
-                  activeOpacity={0.7}
-                  onPress={() => setSelectedLeaveType(item.name)}
-                  style={[
-                    styles.leaveCard,
-                    {
-                      backgroundColor: colors.card,
-                      borderColor: isSelected ? colors.brand : colors.border,
-                      borderWidth: isSelected ? 1.5 : 1,
-                    },
-                    isSelected && {
-                      shadowColor: colors.brand,
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.08,
-                      shadowRadius: 6,
-                      elevation: 2,
-                    }
-                  ]}
-                >
-                  {/* Badge in top right corner showing number of leaves */}
-                  <View style={[styles.cardBadge, { backgroundColor: isDark ? '#1e293b' : '#F1F5F9' }]}>
-                    <Text style={[styles.cardBadgeText, { color: item.iconColor }]}>
-                      {item.days}
+              {/* Leave Type Cards */}
+              <View style={styles.cardsGrid}>
+                {LEAVE_TYPES.map((item) => {
+                  const isSelected = selectedLeaveType === item.name;
+                  return (
+                    <TouchableOpacity
+                      key={item.name}
+                      activeOpacity={0.7}
+                      onPress={() => setSelectedLeaveType(item.name)}
+                      style={[
+                        styles.leaveCard,
+                        {
+                          backgroundColor: colors.card,
+                          borderColor: isSelected ? colors.brand : colors.border,
+                          borderWidth: isSelected ? 1.5 : 1,
+                        },
+                        isSelected && {
+                          shadowColor: colors.brand,
+                          shadowOffset: { width: 0, height: 4 },
+                          shadowOpacity: 0.08,
+                          shadowRadius: 6,
+                          elevation: 2,
+                        }
+                      ]}
+                    >
+                      {/* Badge in top right corner showing number of leaves */}
+                      <View style={[styles.cardBadge, { backgroundColor: isDark ? '#1e293b' : '#F1F5F9' }]}>
+                        <Text style={[styles.cardBadgeText, { color: item.iconColor }]}>
+                          {item.days}
+                        </Text>
+                      </View>
+
+                      <View style={[styles.cardIconCircle, { backgroundColor: isDark ? item.darkBg : item.lightBg }]}>
+                        <MaterialCommunityIcons name={item.icon as any} size={20} color={item.iconColor} />
+                      </View>
+                      <Text style={[styles.cardTitleText, { color: colors.textPrimary }]}>
+                        {item.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Calendar Range Picker */}
+              {renderCalendar()}
+
+              {/* Reason for Leave */}
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Reason for Leave</Text>
+              <View style={[styles.textAreaWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <TextInput
+                  style={[styles.textArea, { color: colors.textPrimary }]}
+                  placeholder="Provide a brief reason (Optional)..."
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  numberOfLines={4}
+                  value={reason}
+                  onChangeText={setReason}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              {/* Supporting Document */}
+              <View style={styles.supportingDocHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>Supporting Document</Text>
+                <Text style={[styles.optionalLabel, { color: colors.textMuted }]}>Optional</Text>
+              </View>
+
+              {attachedFile ? (
+                <View style={[styles.fileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                  <View style={styles.fileIconWrapper}>
+                    <Feather name="file-text" size={24} color={colors.brand} />
+                  </View>
+                  <View style={styles.fileDetails}>
+                    <Text style={[styles.fileName, { color: colors.textPrimary }]} numberOfLines={1}>
+                      {attachedFile.name}
                     </Text>
+                    <Text style={[styles.fileSize, { color: colors.textMuted }]}>{attachedFile.size}</Text>
                   </View>
-
-                  <View style={[styles.cardIconCircle, { backgroundColor: isDark ? item.darkBg : item.lightBg }]}>
-                    <MaterialCommunityIcons name={item.icon as any} size={20} color={item.iconColor} />
+                  <TouchableOpacity onPress={handleRemoveFile} style={styles.removeFileBtn}>
+                    <Feather name="x" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleFileUpload}
+                  style={[styles.uploadBox, { borderColor: colors.border, backgroundColor: colors.card }]}
+                >
+                  <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg }]}>
+                    <Feather name="upload-cloud" size={22} color={colors.brand} />
                   </View>
-                  <Text style={[styles.cardTitleText, { color: colors.textPrimary }]}>
-                    {item.name}
-                  </Text>
+                  <Text style={[styles.uploadText, { color: colors.brand }]}>Tap to upload file</Text>
+                  <Text style={[styles.uploadSubtext, { color: colors.textMuted }]}>PDF, JPG or PNG (Max 5MB)</Text>
                 </TouchableOpacity>
-              );
-            })}
-          </View>
+              )}
 
-          {/* Calendar Range Picker */}
-          {renderCalendar()}
-
-          {/* Reason for Leave */}
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Reason for Leave</Text>
-          <View style={[styles.textAreaWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <TextInput
-              style={[styles.textArea, { color: colors.textPrimary }]}
-              placeholder="Provide a brief reason (Optional)..."
-              placeholderTextColor={colors.textMuted}
-              multiline
-              numberOfLines={4}
-              value={reason}
-              onChangeText={setReason}
-              textAlignVertical="top"
-            />
-          </View>
-
-          {/* Supporting Document */}
-          <View style={styles.supportingDocHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginBottom: 0 }]}>Supporting Document</Text>
-            <Text style={[styles.optionalLabel, { color: colors.textMuted }]}>Optional</Text>
-          </View>
-
-          {attachedFile ? (
-            <View style={[styles.fileCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <View style={styles.fileIconWrapper}>
-                <Feather name="file-text" size={24} color={colors.brand} />
-              </View>
-              <View style={styles.fileDetails}>
-                <Text style={[styles.fileName, { color: colors.textPrimary }]} numberOfLines={1}>
-                  {attachedFile.name}
-                </Text>
-                <Text style={[styles.fileSize, { color: colors.textMuted }]}>{attachedFile.size}</Text>
-              </View>
-              <TouchableOpacity onPress={handleRemoveFile} style={styles.removeFileBtn}>
-                <Feather name="x" size={18} color="#EF4444" />
+              {/* Submit Button */}
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={handleSubmit}
+                style={[styles.continueButton, { backgroundColor: colors.brand }]}
+              >
+                <Text style={styles.continueBtnText}>Submit</Text>
+                <Feather name="check" size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
               </TouchableOpacity>
-            </View>
+            </>
+          ) : activeTab === 'my_logs' ? (
+            renderMyLogs()
           ) : (
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={handleFileUpload}
-              style={[styles.uploadBox, { borderColor: colors.border, backgroundColor: colors.card }]}
-            >
-              <View style={[styles.uploadIconWrapper, { backgroundColor: colors.iconBg }]}>
-                <Feather name="upload-cloud" size={22} color={colors.brand} />
-              </View>
-              <Text style={[styles.uploadText, { color: colors.brand }]}>Tap to upload file</Text>
-              <Text style={[styles.uploadSubtext, { color: colors.textMuted }]}>PDF, JPG or PNG (Max 5MB)</Text>
-            </TouchableOpacity>
+            renderTeamLogs()
           )}
-
-          {/* Submit Button */}
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={handleSubmit}
-            style={[styles.continueButton, { backgroundColor: colors.brand }]}
-          >
-            <Text style={styles.continueBtnText}>Submit</Text>
-            <Feather name="check" size={16} color="#FFFFFF" style={{ marginLeft: 6 }} />
-          </TouchableOpacity>
-
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -580,27 +1202,36 @@ export default function ManagerApplyLeaveScreen({
               >
                 <Text style={[styles.modalCancelBtnText, { color: colors.textSecond }]}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={[styles.modalConfirmBtn, { backgroundColor: colors.brand }]}
                 onPress={() => {
                   setConfirmModalVisible(false);
-                  Alert.alert(
-                    'Success',
-                    'Leave request submitted successfully!',
-                    [
-                      { 
-                        text: 'OK', 
-                        onPress: () => {
-                          if (onBack) {
-                            onBack();
-                          } else {
-                            onNavigate?.('manager_dashboard');
-                          }
-                        } 
-                      }
-                    ]
-                  );
+                  
+                  // Create dynamic applied leave request
+                  const newLog = {
+                    id: Date.now(),
+                    type: selectedLeaveType,
+                    dates: startDateStr && endDateStr 
+                      ? `${getReadableDate(startDateStr, '')} - ${getReadableDate(endDateStr, '')}` 
+                      : getReadableDate(startDateStr, ''),
+                    days: `${calculateRequestedDays()} Day${calculateRequestedDays() > 1 ? 's' : ''}`,
+                    reason: reason || 'No reason provided.',
+                    status: 'Pending',
+                    icon: LEAVE_TYPES.find(item => item.name === selectedLeaveType)?.icon || 'calendar-blank-outline',
+                    iconColor: LEAVE_TYPES.find(item => item.name === selectedLeaveType)?.iconColor || colors.brand,
+                    bg: LEAVE_TYPES.find(item => item.name === selectedLeaveType)?.lightBg || colors.iconBg,
+                  };
+                  
+                  setMyLogs(prev => [newLog, ...prev]);
+                  setShowApplyForm(false);
+                  
+                  // Reset form fields
+                  setReason('');
+                  setStartDateStr(null);
+                  setEndDateStr(null);
+                  setAttachedFile(null);
+                  
+                  Alert.alert('Success', 'Leave request submitted successfully!');
                 }}
                 activeOpacity={0.8}
               >
@@ -1096,5 +1727,312 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
+  },
+  tabsBar: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    height: 48,
+  },
+  tabBtn: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  tabBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  balanceCard: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  cardCircle1: {
+    position: 'absolute',
+    right: -20,
+    top: -20,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  cardCircle2: {
+    position: 'absolute',
+    right: 40,
+    bottom: -50,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  balanceCardTitle: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    opacity: 0.9,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  balanceCardValue: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  balanceCardSub: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    opacity: 0.7,
+    fontWeight: '500',
+    marginBottom: 20,
+  },
+  balanceButtonsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  balanceBtnPrimary: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  balanceBtnPrimaryText: {
+    color: '#0A52D6',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  balanceBtnSecondary: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  balanceBtnSecondaryText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  rowCardsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  rowCard: {
+    flex: 1,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    flexDirection: 'column',
+  },
+  rowCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+  },
+  rowCardLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  rowCardValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  historyLinkCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 24,
+  },
+  historyLinkContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  historyLinkTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  historyLinkSub: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  historyLinkAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  historyLinkActionText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  logsHeader: {
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  logItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+  },
+  logIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logInfo: {
+    flex: 1,
+  },
+  logTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  logMeta: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  logReason: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  teamStatsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  teamStatCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  teamStatLabel: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+    opacity: 0.9,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  teamStatValue: {
+    color: '#FFFFFF',
+    fontSize: 28,
+    fontWeight: '800',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    height: 44,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 8,
+    marginLeft: 8,
+  },
+  filterBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  chipsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 20,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  teamLogItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  teamLogAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teamLogAvatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  teamLogInfo: {
+    flex: 1,
+  },
+  teamLogName: {
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  teamLogMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  teamLogBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  teamLogBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  teamLogDates: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  teamLogStatus: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
 });
