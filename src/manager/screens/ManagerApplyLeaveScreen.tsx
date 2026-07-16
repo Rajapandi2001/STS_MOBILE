@@ -39,7 +39,7 @@ export default function ManagerApplyLeaveScreen({
   onNavigate,
 }: ManagerApplyLeaveScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
 
   // Navigation states & forms
   const [activeTab, setActiveTab] = useState<'my_logs' | 'team_logs'>('my_logs');
@@ -475,6 +475,14 @@ export default function ManagerApplyLeaveScreen({
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Leave Management</Text>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity
+            style={{ padding: 4 }}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={20} color={colors.textPrimary} />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             activeOpacity={0.7}
             style={{ position: 'relative', padding: 4 }}

@@ -106,7 +106,7 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
             <Feather name="menu" size={20} color={colors.brand} />
           </TouchableOpacity>
           <Text style={[styles.topHeaderTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
-            Attendance
+            Attendance 1234
           </Text>
         </View>
 
