@@ -190,8 +190,7 @@ export default function ManagerDashboardScreen({
       };
     } else {
       setIsCheckedIn(false);
-      setCheckInTime('00:00 AM/PM');
-      setWorkedHours('00.00 Hr');
+      // Removed resetting checkInTime and workedHours so they are preserved after checkout
       setSecondsElapsed(0);
       if (timerIntervalId) {
         clearInterval(timerIntervalId);
@@ -1440,7 +1439,7 @@ export default function ManagerDashboardScreen({
 
           {/* Current Status Card */}
           {isCheckedIn ? (
-            <View style={{ marginBottom: 20, paddingHorizontal: 20 }}>
+            <View style={{ marginBottom: 20 }}>
               <LinearGradient
                 colors={['#1E7F8C', '#0C3266']}
                 start={{ x: 0, y: 0 }}
@@ -1463,8 +1462,8 @@ export default function ManagerDashboardScreen({
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 32 }}>
                     <Feather name="clock" size={18} color="#E2E8F0" style={{ marginRight: 8 }} />
                     <View>
-                      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '500' }}>08:00</Text>
-                      <Text style={{ color: '#E2E8F0', fontSize: 14 }}>AM</Text>
+                      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '500' }}>{checkInTime.split(' ')[0]}</Text>
+                      <Text style={{ color: '#E2E8F0', fontSize: 14 }}>{checkInTime.split(' ')[1] || 'AM'}</Text>
                     </View>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
@@ -1480,7 +1479,7 @@ export default function ManagerDashboardScreen({
             <View style={[styles.statusCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <Text style={[styles.statusLabel, { color: colors.textSecond }]}>CURRENT STATUS</Text>
               <Text style={[styles.statusLocation, { color: colors.textPrimary }]}>
-                Location : Not checked in
+                {checkInTime !== '00:00 AM/PM' ? 'Location : Office - Main Entrance' : 'Location : Not checked in'}
               </Text>
 
               <View style={styles.statusTimesContainer}>
@@ -1507,14 +1506,19 @@ export default function ManagerDashboardScreen({
                 </View>
               </View>
 
-              {/* Action Button */}
               <TouchableOpacity
-                style={[styles.checkInBtn, { backgroundColor: colors.brand }]}
-                onPress={handleCheckInToggle}
-                activeOpacity={0.8}
+                style={[
+                  styles.checkInBtn, 
+                  { backgroundColor: checkInTime !== '00:00 AM/PM' ? colors.border : colors.brand }
+                ]}
+                onPress={checkInTime !== '00:00 AM/PM' ? undefined : handleCheckInToggle}
+                activeOpacity={checkInTime !== '00:00 AM/PM' ? 1 : 0.8}
               >
-                <Text style={styles.checkInBtnText}>
-                  Check In
+                <Text style={[
+                  styles.checkInBtnText,
+                  checkInTime !== '00:00 AM/PM' && { color: colors.textSecond }
+                ]}>
+                  {checkInTime !== '00:00 AM/PM' ? 'Checked Out for Today' : 'Check In'}
                 </Text>
               </TouchableOpacity>
             </View>

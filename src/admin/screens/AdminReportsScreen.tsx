@@ -86,9 +86,10 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   // Calendar Modal State
   const [dateModalOpen, setDateModalOpen] = useState(false);
 
-  // Hover states for export buttons
   const [excelHovered, setExcelHovered] = useState(false);
   const [pdfHovered, setPdfHovered] = useState(false);
+  const [exportingExcel, setExportingExcel] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
 
   // Parameter Values
   const [startDate, setStartDate] = useState('YYYY-MM-DD');
@@ -380,62 +381,85 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
   const handleExport = async (format: 'pdf' | 'excel') => {
     try {
       const cardTitle = selectedCard.charAt(0).toUpperCase() + selectedCard.slice(1);
-      const fileBaseName = `${cardTitle}_Report_${Date.now()}`;
+      let fileBaseName = `${cardTitle}_Report_${Date.now()}`;
       let tempFileUri = '';
+      
+      let mimeType = format === 'excel' ? 'text/csv' : 'application/pdf';
+      let extension = format === 'excel' ? '.csv' : '.pdf';
 
       if (format === 'pdf') {
-        let headersHTML = '';
-        let rowsHTML = '';
-        let titleName = '';
-        let metaRows = '';
-
         if (selectedCard === 'staff') {
-          titleName = 'Staff Report';
-          headersHTML = `
-            <th>Name</th>
-            <th>Department</th>
-            <th>Role</th>
-            <th>Status</th>
-          `;
+          setExportingPdf(true);
+          try {
+            const requestBody = {
+              groupId: selectedDepartmentId || null,
+              staffIds: selectedStaffIds || []
+            };
 
-          let filteredStaff = STAFF_LIST;
-          if (selectedDept !== 'Team / Departments') {
-            filteredStaff = filteredStaff.filter(staff =>
-              staff.department.toLowerCase() === selectedDept.toLowerCase()
-            );
+            const response = await apiClient.post('/Report/staff/export-pdf', requestBody, {
+              responseType: 'blob'
+            });
+
+            let filename = 'StaffReport.pdf';
+            const contentDisposition = response.headers['content-disposition'];
+            if (contentDisposition) {
+              const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+              if (filenameMatch && filenameMatch.length > 1) {
+                filename = filenameMatch[1];
+              }
+            }
+
+            extension = '.pdf';
+            mimeType = 'application/pdf';
+            fileBaseName = filename.replace('.pdf', '');
+            tempFileUri = `${FileSystem.documentDirectory}${filename}`;
+
+            const blob = response.data;
+            const reader = new FileReader();
+
+            await new Promise<void>((resolve, reject) => {
+              reader.onload = async () => {
+                try {
+                  const base64data = (reader.result as string).split(',')[1];
+                  await FileSystem.writeAsStringAsync(tempFileUri, base64data, {
+                    encoding: FileSystem.EncodingType.Base64,
+                  });
+                  resolve();
+                } catch (e) {
+                  reject(e);
+                }
+              };
+              reader.onerror = () => {
+                reject(new Error('Failed to read blob'));
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (error: any) {
+            setExportingPdf(false);
+            if (error.response?.status === 401) {
+              await storageService.clearAuthData();
+              onNavigate?.('login');
+              return;
+            }
+            let msg = 'Download Failure';
+            if (error.response?.status === 403) msg = 'Forbidden';
+            else if (error.response?.status === 404) msg = 'Not Found';
+            else if (error.response?.status === 500) msg = 'Internal Server Error';
+            else if (!error.response) msg = 'No Internet Connection';
+
+            Alert.alert('Error', msg);
+            return;
+          } finally {
+            setExportingPdf(false);
           }
-          const selectedStaffNames = staffs
-            .filter(s => selectedStaffIds.includes(s.value))
-            .map(s => s.label);
-          if (selectedStaffNames.length > 0) {
-            filteredStaff = filteredStaff.filter(staff => selectedStaffNames.includes(staff.name));
-          }
-
-          rowsHTML = filteredStaff.map(staff => `
-            <tr>
-              <td><strong>${staff.name}</strong></td>
-              <td>${staff.department}</td>
-              <td>${staff.role}</td>
-              <td><span class="badge badge-${staff.status.toLowerCase()}">${staff.status}</span></td>
-            </tr>
-          `).join('');
-
-          const staffFilterText = selectedStaffIds.length === 0
-            ? 'Select All'
-            : selectedStaffNames.join(', ');
-
-          metaRows = `
-            <tr>
-              <td class="meta-label">Team / Department:</td>
-              <td class="meta-value">${selectedDept}</td>
-            </tr>
-            <tr>
-              <td class="meta-label">Staff Filter:</td>
-              <td class="meta-value">${staffFilterText}</td>
-            </tr>
-          `;
-        } else if (selectedCard === 'client') {
-          titleName = 'Client Report';
+        } else {
+          let headersHTML = '';
+          let rowsHTML = '';
+          let titleName = '';
+          let metaRows = '';
+          
+          if (selectedCard === 'client') {
+            titleName = 'Client Report';
           headersHTML = `
             <th>Client Name</th>
             <th>Client ID</th>
@@ -651,52 +675,103 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
         const { uri } = await Print.printToFileAsync({ html: htmlContent });
         tempFileUri = uri;
+      }
       } else {
-        let csvContent = '';
         if (selectedCard === 'staff') {
-          let filteredStaff = STAFF_LIST;
-          if (selectedDept !== 'Team / Departments') {
-            filteredStaff = filteredStaff.filter(staff =>
-              staff.department.toLowerCase() === selectedDept.toLowerCase()
-            );
+          setExportingExcel(true);
+          try {
+            const requestBody = {
+              groupId: selectedDepartmentId || null,
+              staffIds: selectedStaffIds || []
+            };
+
+            const response = await apiClient.post('/Report/staff/export-excel', requestBody, {
+              responseType: 'blob'
+            });
+
+            let filename = 'StaffReport.xlsx';
+            const contentDisposition = response.headers['content-disposition'];
+            if (contentDisposition) {
+              const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+              if (filenameMatch && filenameMatch.length > 1) {
+                filename = filenameMatch[1];
+              }
+            }
+
+            extension = '.xlsx';
+            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            fileBaseName = filename.replace('.xlsx', '');
+            tempFileUri = `${FileSystem.documentDirectory}${filename}`;
+
+            const blob = response.data;
+            const reader = new FileReader();
+
+            await new Promise<void>((resolve, reject) => {
+              reader.onload = async () => {
+                try {
+                  const base64data = (reader.result as string).split(',')[1];
+                  await FileSystem.writeAsStringAsync(tempFileUri, base64data, {
+                    encoding: FileSystem.EncodingType.Base64,
+                  });
+                  resolve();
+                } catch (e) {
+                  reject(e);
+                }
+              };
+              reader.onerror = () => {
+                reject(new Error('Failed to read blob'));
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (error: any) {
+            setExportingExcel(false);
+            if (error.response?.status === 401) {
+              await storageService.clearAuthData();
+              onNavigate?.('login');
+              return;
+            }
+            let msg = 'Download Failure';
+            if (error.response?.status === 403) msg = 'Forbidden';
+            else if (error.response?.status === 404) msg = 'Not Found';
+            else if (error.response?.status === 500) msg = 'Internal Server Error';
+            else if (!error.response) msg = 'No Internet Connection';
+
+            Alert.alert('Error', msg);
+            return;
+          } finally {
+            setExportingExcel(false);
           }
-          const selectedStaffNames = staffs
-            .filter(s => selectedStaffIds.includes(s.value))
-            .map(s => s.label);
-          if (selectedStaffNames.length > 0) {
-            filteredStaff = filteredStaff.filter(staff => selectedStaffNames.includes(staff.name));
+        } else {
+          let csvContent = '';
+          if (selectedCard === 'client') {
+            let filteredClients = CLIENT_LIST;
+            if (selectedClient !== 'Select All') {
+              filteredClients = CLIENT_LIST.filter(c => c.name === selectedClient);
+            }
+            csvContent = `Client Name,Client ID,Email,Country,Status\n` +
+              filteredClients.map(c => `"${c.name}","${c.clientId}","${c.email}","${c.country}","${c.status}"`).join('\n') + '\n';
+          } else if (selectedCard === 'project') {
+            let filteredProjects = PROJECT_LIST;
+            if (selectedProject !== 'Select All') {
+              filteredProjects = PROJECT_LIST.filter(p => p.name === selectedProject);
+            }
+            csvContent = `Project Name,Project ID,Start Date,End Date,Status\n` +
+              filteredProjects.map(p => `"${p.name}","${p.projectId}","${p.startDate}","${p.endDate}","${p.status}"`).join('\n') + '\n';
+          } else if (selectedCard === 'holiday') {
+            let filteredHolidays = HOLIDAY_LIST;
+            if (selectedHoliday !== 'Select All') {
+              filteredHolidays = HOLIDAY_LIST.filter(h => h.name === selectedHoliday);
+            }
+            csvContent = `Holiday Name,Date,Emoji,Status\n` +
+              filteredHolidays.map(h => `"${h.name}","${h.date}","${h.emoji}","${h.status}"`).join('\n') + '\n';
           }
 
-          csvContent = `Name,Department,Role,Status\n` +
-            filteredStaff.map(staff => `"${staff.name}","${staff.department}","${staff.role}","${staff.status}"`).join('\n') + '\n';
-        } else if (selectedCard === 'client') {
-          let filteredClients = CLIENT_LIST;
-          if (selectedClient !== 'Select All') {
-            filteredClients = CLIENT_LIST.filter(c => c.name === selectedClient);
-          }
-          csvContent = `Client Name,Client ID,Email,Country,Status\n` +
-            filteredClients.map(c => `"${c.name}","${c.clientId}","${c.email}","${c.country}","${c.status}"`).join('\n') + '\n';
-        } else if (selectedCard === 'project') {
-          let filteredProjects = PROJECT_LIST;
-          if (selectedProject !== 'Select All') {
-            filteredProjects = PROJECT_LIST.filter(p => p.name === selectedProject);
-          }
-          csvContent = `Project Name,Project ID,Start Date,End Date,Status\n` +
-            filteredProjects.map(p => `"${p.name}","${p.projectId}","${p.startDate}","${p.endDate}","${p.status}"`).join('\n') + '\n';
-        } else if (selectedCard === 'holiday') {
-          let filteredHolidays = HOLIDAY_LIST;
-          if (selectedHoliday !== 'Select All') {
-            filteredHolidays = HOLIDAY_LIST.filter(h => h.name === selectedHoliday);
-          }
-          csvContent = `Holiday Name,Date,Emoji,Status\n` +
-            filteredHolidays.map(h => `"${h.name}","${h.date}","${h.emoji}","${h.status}"`).join('\n') + '\n';
+          const fileName = `${fileBaseName}.csv`;
+          tempFileUri = `${FileSystem.documentDirectory}${fileName}`;
+          await FileSystem.writeAsStringAsync(tempFileUri, csvContent, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
         }
-
-        const fileName = `${fileBaseName}.csv`;
-        tempFileUri = `${FileSystem.documentDirectory}${fileName}`;
-        await FileSystem.writeAsStringAsync(tempFileUri, csvContent, {
-          encoding: FileSystem.EncodingType.UTF8,
-        });
       }
 
       if (Platform.OS === 'android') {
@@ -708,15 +783,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             directoryUri = permissions.directoryUri;
             await AsyncStorage.setItem('savedDownloadFolder', directoryUri);
           } else {
-            Alert.alert('Permission Required', 'Storage permission is needed to save the report.');
+            Alert.alert('Permission Required', 'File Permission Denied');
             return;
           }
         }
 
         if (directoryUri) {
           try {
-            const mimeType = format === 'excel' ? 'text/csv' : 'application/pdf';
-            const extension = format === 'excel' ? '.csv' : '.pdf';
             const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
               directoryUri,
               fileBaseName + extension,
@@ -730,7 +803,18 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               encoding: FileSystem.EncodingType.Base64,
             });
 
-            Alert.alert('Success', `Report downloaded successfully as ${format.toUpperCase()}!`);
+            if (selectedCard === 'staff' && (format === 'excel' || format === 'pdf')) {
+              Alert.alert(
+                'Success',
+                'Staff Report downloaded successfully.',
+                [
+                  { text: 'Share', onPress: () => Sharing.shareAsync(tempFileUri) },
+                  { text: 'OK', style: 'cancel' }
+                ]
+              );
+            } else {
+              Alert.alert('Success', `Report downloaded successfully as ${format.toUpperCase()}!`);
+            }
           } catch (err) {
             console.error('SAF save failed, falling back to Sharing:', err);
             // Fallback to Sharing
@@ -738,15 +822,26 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               await Sharing.shareAsync(tempFileUri);
             } else {
               await AsyncStorage.removeItem('savedDownloadFolder');
-              Alert.alert('Error', 'Could not save the report. Please try again.');
+              Alert.alert('Error', 'Download Failure');
             }
           }
         }
       } else {
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(tempFileUri);
+        if (selectedCard === 'staff' && (format === 'excel' || format === 'pdf')) {
+          Alert.alert(
+            'Success',
+            'Staff Report downloaded successfully.',
+            [
+              { text: 'Share / Open', onPress: () => Sharing.shareAsync(tempFileUri) },
+              { text: 'OK', style: 'cancel' }
+            ]
+          );
         } else {
-          Alert.alert('File Saved', `Report successfully created at: ${tempFileUri}`);
+          if (await Sharing.isAvailableAsync()) {
+            await Sharing.shareAsync(tempFileUri);
+          } else {
+            Alert.alert('File Saved', `Report successfully created at: ${tempFileUri}`);
+          }
         }
       }
     } catch (error) {
@@ -1589,30 +1684,33 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
 
           {/* Export Buttons */}
           <Pressable
-            onHoverIn={() => setPdfHovered(true)}
-            onHoverOut={() => setPdfHovered(false)}
-            onPress={() => handleExport('pdf')}
+            onHoverIn={() => setExcelHovered(true)}
+            onHoverOut={() => setExcelHovered(false)}
+            onPress={() => handleExport('excel')}
+            disabled={exportingExcel}
             style={({ pressed }) => [
               styles.exportBtnDashed,
               {
-                backgroundColor: (pressed || pdfHovered) ? colors.brand : colors.card,
+                backgroundColor: colors.brand,
                 borderColor: colors.brand,
                 marginBottom: 12,
+                opacity: (pressed || excelHovered) ? 0.8 : (exportingExcel ? 0.6 : 1),
               }
             ]}
           >
             {({ pressed }) => {
-              const isBlueActive = pressed || pdfHovered;
-              return (
+              return exportingExcel ? (
+                <ActivityIndicator size="small" color={colors.card} />
+              ) : (
                 <>
                   <MaterialCommunityIcons
-                    name="file-pdf-box"
+                    name="file-excel"
                     size={18}
-                    color={isBlueActive ? colors.card : colors.brand}
+                    color={colors.card}
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={[styles.exportBtnDashedText, { color: isBlueActive ? colors.card : colors.brand }]}>
-                    EXPORT PDF
+                  <Text style={[styles.exportBtnDashedText, { color: colors.card }]}>
+                    EXPORT EXCEL
                   </Text>
                 </>
               );
@@ -1620,29 +1718,32 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           </Pressable>
 
           <Pressable
-            onHoverIn={() => setExcelHovered(true)}
-            onHoverOut={() => setExcelHovered(false)}
-            onPress={() => handleExport('excel')}
+            onHoverIn={() => setPdfHovered(true)}
+            onHoverOut={() => setPdfHovered(false)}
+            onPress={() => handleExport('pdf')}
+            disabled={exportingPdf}
             style={({ pressed }) => [
               styles.exportBtnDashed,
               {
-                backgroundColor: (pressed || excelHovered) ? colors.brand : colors.card,
+                backgroundColor: colors.brand,
                 borderColor: colors.brand,
+                opacity: (pressed || pdfHovered) ? 0.8 : (exportingPdf ? 0.6 : 1),
               }
             ]}
           >
             {({ pressed }) => {
-              const isBlueActive = pressed || excelHovered;
-              return (
+              return exportingPdf ? (
+                <ActivityIndicator size="small" color={colors.card} />
+              ) : (
                 <>
                   <MaterialCommunityIcons
-                    name="file-excel"
+                    name="file-pdf-box"
                     size={18}
-                    color={isBlueActive ? colors.card : colors.brand}
+                    color={colors.card}
                     style={{ marginRight: 8 }}
                   />
-                  <Text style={[styles.exportBtnDashedText, { color: isBlueActive ? colors.card : colors.brand }]}>
-                    EXPORT EXCEL
+                  <Text style={[styles.exportBtnDashedText, { color: colors.card }]}>
+                    EXPORT PDF
                   </Text>
                 </>
               );
@@ -1886,7 +1987,7 @@ const styles = StyleSheet.create({
     height: 46,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderStyle: 'dashed',
+    borderStyle: 'solid',
   },
   exportBtnDashedText: {
     fontSize: 14,
