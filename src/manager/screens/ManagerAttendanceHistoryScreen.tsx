@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
-import { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
+import { AttendanceRecord } from '@/employee/screens/EmployeeAttendanceHistoryScreen';
 import { useTheme } from '@/context/ThemeContext';
 
 // Historical sample records (past days, no live today entry)
@@ -106,7 +106,7 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
             <Feather name="menu" size={20} color={colors.brand} />
           </TouchableOpacity>
           <Text style={[styles.topHeaderTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
-            Attendance 1234
+            Attendance
           </Text>
         </View>
 

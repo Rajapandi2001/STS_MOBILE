@@ -7,11 +7,11 @@ import LoginScreen from '@/auth/screens/LoginScreen';
 import ForgotPasswordScreen from '@/auth/screens/ForgotPasswordScreen';
 import OtpScreen from '@/auth/screens/OtpScreen';
 import NewPasswordScreen from '@/auth/screens/NewPasswordScreen';
-import DashboardScreen from '@/employee/screens/DashboardScreen';
-import CheckInLocationScreen from '@/employee/screens/CheckInLocationScreen';
-import CheckInSuccessScreen from '@/employee/screens/CheckInSuccessScreen';
-import LocationFailedScreen from '@/employee/screens/LocationFailedScreen';
-import AttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/AttendanceHistoryScreen';
+import EmployeeDashboardScreen from '@/employee/screens/EmployeeDashboardScreen';
+import EmployeeCheckInLocationScreen from '@/employee/screens/EmployeeCheckInLocationScreen';
+import EmployeeCheckInSuccessScreen from '@/employee/screens/EmployeeCheckInSuccessScreen';
+import EmployeeLocationFailedScreen from '@/employee/screens/EmployeeLocationFailedScreen';
+import EmployeeAttendanceHistoryScreen, { AttendanceRecord } from '@/employee/screens/EmployeeAttendanceHistoryScreen';
 import EmployeeProfileScreen from '@/employee/screens/EmployeeProfileScreen';
 import EmployeeHelpScreen from '@/employee/screens/EmployeeHelpScreen';
 import EmployeeAssetScreen from '@/employee/screens/EmployeeAssetScreen';
@@ -456,7 +456,7 @@ function AppContent() {
 
       case 'dashboard':
         return (
-          <DashboardScreen
+          <EmployeeDashboardScreen
             onSignOut={() => transitionTo('login', undefined, 'backward')}
             onCheckIn={() => transitionTo('checkin_location')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
@@ -848,7 +848,7 @@ function AppContent() {
           );
         }
         return (
-          <CheckInLocationScreen
+          <EmployeeCheckInLocationScreen
             onBack={() => transitionTo('dashboard', undefined, 'backward')}
             onConfirm={handleCheckInConfirmed}
             onValidationFailed={(distance) => {
@@ -871,7 +871,7 @@ function AppContent() {
           );
         }
         return (
-          <CheckInSuccessScreen
+          <EmployeeCheckInSuccessScreen
             checkInTime={checkInTime}
             locationName="HQ Block A"
             onGoToDashboard={() => transitionTo('dashboard', { isCheckedInGlobal: true, checkInTimeGlobal: checkInTime.getTime() }, 'backward')}
@@ -891,7 +891,7 @@ function AppContent() {
           );
         }
         return (
-          <LocationFailedScreen
+          <EmployeeLocationFailedScreen
             distance={failedDistance}
             onRetry={() => transitionTo('checkin_location')}
             onBack={() => transitionTo('dashboard', undefined, 'backward')}
@@ -927,7 +927,7 @@ function AppContent() {
           );
         }
         return (
-          <AttendanceHistoryScreen
+          <EmployeeAttendanceHistoryScreen
             liveRecords={checkInHistory}
             onReturnHome={() => transitionTo('dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}

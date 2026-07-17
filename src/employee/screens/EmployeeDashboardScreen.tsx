@@ -40,7 +40,7 @@ const ALL_ACTIVITIES = [
   { time: 'MAY 10, 09:15 AM', title: 'Checked In Late', desc: 'Location: Headquarters Block A (Late arrival)', color: '#EF4444' },
 ];
 
-interface DashboardScreenProps {
+interface EmployeeDashboardScreenProps {
   onSignOut?: () => void;
   onCheckIn?: () => void;
   onNavigate?: (screen: string, params?: any) => void;
@@ -50,7 +50,7 @@ interface DashboardScreenProps {
   onCheckOutPress?: () => void;
 }
 
-export default function DashboardScreen({ 
+export default function EmployeeDashboardScreen({ 
   onSignOut, 
   onCheckIn, 
   onNavigate, 
@@ -58,7 +58,7 @@ export default function DashboardScreen({
   isCheckedInGlobal,
   checkInTimeGlobal,
   onCheckOutPress
-}: DashboardScreenProps) {
+}: EmployeeDashboardScreenProps) {
   const insets = useSafeAreaInsets();
   const { isDark, toggleTheme, colors } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);

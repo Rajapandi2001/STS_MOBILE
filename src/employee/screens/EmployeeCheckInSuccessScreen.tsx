@@ -16,7 +16,7 @@ interface Props {
   onGoToDashboard: () => void;
 }
 
-export default function CheckInSuccessScreen({ checkInTime, locationName, onGoToDashboard }: Props) {
+export default function EmployeeCheckInSuccessScreen({ checkInTime, locationName, onGoToDashboard }: Props) {
   const insets = useSafeAreaInsets();
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;

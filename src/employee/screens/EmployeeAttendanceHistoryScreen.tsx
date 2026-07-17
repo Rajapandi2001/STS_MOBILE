@@ -75,7 +75,7 @@ interface Props {
   liveRecords?: AttendanceRecord[];
 }
 
-export default function AttendanceHistoryScreen({ onReturnHome, onNavigate, liveRecords = [] }: Props) {
+export default function EmployeeAttendanceHistoryScreen({ onReturnHome, onNavigate, liveRecords = [] }: Props) {
   const insets = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useTheme();
   const [menuOpen, setMenuOpen] = React.useState(false);

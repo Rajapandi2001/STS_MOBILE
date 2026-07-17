@@ -159,7 +159,7 @@ const mapStyles = StyleSheet.create({
   },
 });
 
-export default function LocationFailedScreen({ distance, onRetry, onBack }: Props) {
+export default function EmployeeLocationFailedScreen({ distance, onRetry, onBack }: Props) {
   const insets = useSafeAreaInsets();
   const shakeAnim = useRef(new Animated.Value(0)).current;
 

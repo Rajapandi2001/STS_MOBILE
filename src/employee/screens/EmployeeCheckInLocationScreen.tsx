@@ -229,7 +229,7 @@ interface Props {
 
 type FetchStatus = 'idle' | 'fetching' | 'success' | 'error';
 
-export default function CheckInLocationScreen({ onConfirm, onValidationFailed, onBack }: Props) {
+export default function EmployeeCheckInLocationScreen({ onConfirm, onValidationFailed, onBack }: Props) {
   const insets = useSafeAreaInsets();
   const [fetchStatus, setFetchStatus] = useState<FetchStatus>('fetching');
   const [coords, setCoords] = useState<{ latitude: number; longitude: number; accuracy: number | null } | null>(null);
