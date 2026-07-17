@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '../components/ManagerMenu';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 import ManagerApprovalScreen from './ManagerApprovalScreen';
 import { LinearGradient } from 'expo-linear-gradient';
 import SlideToCheckOut from '@/components/SlideToCheckOut';
@@ -1417,32 +1418,16 @@ export default function ManagerDashboardScreen({
       )}
 
       {/* ── BOTTOM NAV TAB BAR ── */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('home')}>
-          <Feather name="home" size={20} color={currentTab === 'home' ? colors.tabActive : colors.tabInactive} />
-          <Text style={[currentTab === 'home' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'home' ? colors.tabActive : colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_team')}>
-          <Feather name="users" size={20} color={currentTab === 'team' ? colors.tabActive : colors.tabInactive} />
-          <Text style={[currentTab === 'team' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'team' ? colors.tabActive : colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_time')}>
-          <Feather name="clock" size={20} color={currentTab === 'time' ? colors.tabActive : colors.tabInactive} />
-          <Text style={[currentTab === 'time' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'time' ? colors.tabActive : colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => setCurrentTab('approvals')}>
-          <Feather name="check-circle" size={20} color={currentTab === 'approvals' ? colors.tabActive : colors.tabInactive} />
-          <Text style={[currentTab === 'approvals' ? styles.tabTextActive : styles.tabText, { color: currentTab === 'approvals' ? colors.tabActive : colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={currentTab as any}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            setCurrentTab(tab);
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       {/* ── SIDEBAR DRAWER OVERLAY ── */}
       <ManagerMenu

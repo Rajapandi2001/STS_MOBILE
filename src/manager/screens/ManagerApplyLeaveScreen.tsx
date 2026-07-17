@@ -518,9 +518,8 @@ export default function ManagerApplyLeaveScreen({
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12, position: 'relative', padding: 4 }]} 
             activeOpacity={0.7}
-            style={{ position: 'relative', padding: 4 }}
             onPress={() => onNavigate?.('manager_alerts')}
           >
             <Feather name="bell" size={18} color={colors.brand} />

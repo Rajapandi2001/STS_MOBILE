@@ -46,176 +46,177 @@ export default function ManagerApprovalScreen({
   const filteredRequests = pendingRequests.filter(req => req.category === activeSubTab);
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
-    >
-      <View style={{ marginTop: 8 }}>
-        {/* Approvals Title Section */}
-        <View style={styles.apprHeaderSection}>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.apprTitleText, { color: colors.textPrimary }]}>Approvals</Text>
-            <Text style={[styles.apprSubtitleText, { color: colors.textSecond }]}>Review and manage team requests.</Text>
-          </View>
-
-        </View>
-
-        {/* KPI Cards Row */}
-        <View style={styles.apprKpiContainer}>
-          {/* Pending Card */}
-          <View style={[styles.apprKpiCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-            <View style={styles.apprKpiPeachOverlay} />
-            <View style={styles.apprKpiHeader}>
-              <View style={[styles.apprKpiIconWrap, { backgroundColor: '#FFF5EB' }]}>
-                <MaterialCommunityIcons name="folder-clock-outline" size={18} color="#F97316" />
-              </View>
-              <Text style={[styles.apprKpiLabel, { color: colors.textSecond }]}>PENDING</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]}
+      >
+        <View style={{ marginTop: 8 }}>
+          {/* Approvals Title Section */}
+          <View style={styles.apprHeaderSection}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.apprTitleText, { color: colors.textPrimary }]}>Approvals</Text>
+              <Text style={[styles.apprSubtitleText, { color: colors.textSecond }]}>Review and manage team requests.</Text>
             </View>
-            <Text style={[styles.apprKpiValue, { color: colors.textPrimary }]}>{pendingCount}</Text>
           </View>
 
-          {/* Approved Card */}
-          <View style={[styles.apprKpiCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-            <View style={styles.apprKpiHeader}>
-              <View style={[styles.apprKpiIconWrap, { backgroundColor: '#F0FDF4' }]}>
-                <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={18} color="#22C55E" />
+          {/* KPI Cards Row */}
+          <View style={styles.apprKpiContainer}>
+            {/* Pending Card */}
+            <View style={[styles.apprKpiCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+              <View style={styles.apprKpiPeachOverlay} />
+              <View style={styles.apprKpiHeader}>
+                <View style={[styles.apprKpiIconWrap, { backgroundColor: '#FFF5EB' }]}>
+                  <MaterialCommunityIcons name="folder-clock-outline" size={18} color="#F97316" />
+                </View>
+                <Text style={[styles.apprKpiLabel, { color: colors.textSecond }]}>PENDING</Text>
               </View>
-              <Text style={[styles.apprKpiLabel, { color: colors.textSecond }]}>APPROVED</Text>
+              <Text style={[styles.apprKpiValue, { color: colors.textPrimary }]}>{pendingCount}</Text>
             </View>
-            <Text style={[styles.apprKpiValue, { color: colors.textPrimary }]}>{approvedCount}</Text>
+
+            {/* Approved Card */}
+            <View style={[styles.apprKpiCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+              <View style={styles.apprKpiHeader}>
+                <View style={[styles.apprKpiIconWrap, { backgroundColor: '#F0FDF4' }]}>
+                  <MaterialCommunityIcons name="checkbox-marked-circle-outline" size={18} color="#22C55E" />
+                </View>
+                <Text style={[styles.apprKpiLabel, { color: colors.textSecond }]}>APPROVED</Text>
+              </View>
+              <Text style={[styles.apprKpiValue, { color: colors.textPrimary }]}>{approvedCount}</Text>
+            </View>
           </View>
-        </View>
 
-        {/* Action Required Header */}
-        <Text style={[styles.apprSectionHeaderTitle, { color: colors.textPrimary }]}>Action Required</Text>
+          {/* Action Required Header */}
+          <Text style={[styles.apprSectionHeaderTitle, { color: colors.textPrimary }]}>Action Required</Text>
 
-        {/* Tab Selection */}
-        <View style={[styles.apprTabSelectorContainer, { backgroundColor: colors.borderLight || '#F1F5F9' }]}>
-          {(['time', 'leave', 'claim'] as const).map((tab) => {
-            const isActive = activeSubTab === tab;
-            return (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.apprTabSelectorItem,
-                  isActive && [styles.apprTabSelectorItemActive, { backgroundColor: colors.card }],
-                ]}
-                onPress={() => setActiveSubTab(tab)}
-                activeOpacity={0.8}
-              >
-                <Text
+          {/* Tab Selection */}
+          <View style={[styles.apprTabSelectorContainer, { backgroundColor: colors.borderLight || '#F1F5F9' }]}>
+            {(['time', 'leave', 'claim'] as const).map((tab) => {
+              const isActive = activeSubTab === tab;
+              return (
+                <TouchableOpacity
+                  key={tab}
                   style={[
-                    styles.apprTabSelectorText,
-                    isActive
-                      ? [styles.apprTabSelectorTextActive, { color: colors.brand }]
-                      : { color: colors.textSecond },
+                    styles.apprTabSelectorItem,
+                    isActive && [styles.apprTabSelectorItemActive, { backgroundColor: colors.card }],
+                  ]}
+                  onPress={() => setActiveSubTab(tab)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.apprTabSelectorText,
+                      isActive
+                        ? [styles.apprTabSelectorTextActive, { color: colors.brand }]
+                        : { color: colors.textSecond },
+                    ]}
+                  >
+                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* List of Detailed Cards */}
+          {filteredRequests.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.textMuted, marginTop: 12 }]}>No pending {activeSubTab} requests</Text>
+          ) : (
+            filteredRequests.map((req) => {
+              let badgeBg = '#F1F5F9';
+              let badgeTextColor = '#64748B';
+              if (req.type === 'Annual Leave') {
+                badgeBg = '#EFF6FF';
+                badgeTextColor = '#0A52D6';
+              } else if (req.type === 'Sick Leave') {
+                badgeBg = '#FEF2F2';
+                badgeTextColor = '#EF4444';
+              } else if (req.type === 'Overtime') {
+                badgeBg = '#FFFBEB';
+                badgeTextColor = '#D97706';
+              } else if (req.type === 'Missed Punch') {
+                badgeBg = '#F5F5F7';
+                badgeTextColor = '#3A3A3C';
+              } else if (req.type === 'Device Request') {
+                badgeBg = '#F3E8FF';
+                badgeTextColor = '#7C3AED';
+              } else if (req.type === 'Travel Expense') {
+                badgeBg = '#ECFDF5';
+                badgeTextColor = '#059669';
+              }
+
+              return (
+                <View
+                  key={req.id}
+                  style={[
+                    styles.detailedCard,
+                    { backgroundColor: colors.card, borderColor: colors.borderLight },
                   ]}
                 >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* List of Detailed Cards */}
-        {filteredRequests.length === 0 ? (
-          <Text style={[styles.emptyText, { color: colors.textMuted, marginTop: 12 }]}>No pending {activeSubTab} requests</Text>
-        ) : (
-          filteredRequests.map((req) => {
-            let badgeBg = '#F1F5F9';
-            let badgeTextColor = '#64748B';
-            if (req.type === 'Annual Leave') {
-              badgeBg = '#EFF6FF';
-              badgeTextColor = '#0A52D6';
-            } else if (req.type === 'Sick Leave') {
-              badgeBg = '#FEF2F2';
-              badgeTextColor = '#EF4444';
-            } else if (req.type === 'Overtime') {
-              badgeBg = '#FFFBEB';
-              badgeTextColor = '#D97706';
-            } else if (req.type === 'Missed Punch') {
-              badgeBg = '#F5F5F7';
-              badgeTextColor = '#3A3A3C';
-            } else if (req.type === 'Device Request') {
-              badgeBg = '#F3E8FF';
-              badgeTextColor = '#7C3AED';
-            } else if (req.type === 'Travel Expense') {
-              badgeBg = '#ECFDF5';
-              badgeTextColor = '#059669';
-            }
-
-            return (
-              <View
-                key={req.id}
-                style={[
-                  styles.detailedCard,
-                  { backgroundColor: colors.card, borderColor: colors.borderLight },
-                ]}
-              >
-                {/* Card Header: Avatar, Name & Info, Tag */}
-                <View style={styles.detailedCardHeader}>
-                  <Image source={{ uri: req.avatar }} style={styles.detailedCardAvatar} />
-                  <View style={styles.detailedCardInfo}>
-                    <Text style={[styles.detailedCardName, { color: colors.textPrimary }]}>{req.name}</Text>
-                    <Text style={[styles.detailedCardRole, { color: colors.textSecond }]}>{req.role || 'Team Member'}</Text>
-                  </View>
-                  <View style={[styles.detailedCardTag, { backgroundColor: badgeBg }]}>
-                    <Text style={[styles.detailedCardTagText, { color: badgeTextColor }]}>{req.type}</Text>
-                  </View>
-                </View>
-
-                {/* Details Gray Area */}
-                <View style={[styles.detailedCardBody, { backgroundColor: colors.bgScreen }]}>
-                  <View style={styles.detailedCardGrid}>
-                    <View style={styles.detailedCardCol}>
-                      <Text style={[styles.detailedCardLabel, { color: colors.textSecond }]}>Dates</Text>
-                      <Text style={[styles.detailedCardValue, { color: colors.textPrimary }]}>{req.date}</Text>
+                  {/* Card Header: Avatar, Name & Info, Tag */}
+                  <View style={styles.detailedCardHeader}>
+                    <Image source={{ uri: req.avatar }} style={styles.detailedCardAvatar} />
+                    <View style={styles.detailedCardInfo}>
+                      <Text style={[styles.detailedCardName, { color: colors.textPrimary }]}>{req.name}</Text>
+                      <Text style={[styles.detailedCardRole, { color: colors.textSecond }]}>{req.role || 'Team Member'}</Text>
                     </View>
-                    <View style={styles.detailedCardCol}>
-                      <Text style={[styles.detailedCardLabel, { color: colors.textSecond }]}>Duration</Text>
-                      <Text style={[styles.detailedCardValue, { color: colors.textPrimary }]}>{req.duration || 'N/A'}</Text>
+                    <View style={[styles.detailedCardTag, { backgroundColor: badgeBg }]}>
+                      <Text style={[styles.detailedCardTagText, { color: badgeTextColor }]}>{req.type}</Text>
                     </View>
                   </View>
 
-                  <View style={{ marginTop: 12 }}>
-                    <Text style={[styles.detailedCardLabel, { color: colors.textSecond }]}>Reason</Text>
-                    <Text
-                      style={[
-                        styles.detailedCardReason,
-                        { color: colors.textPrimary },
-                        req.reason === 'No reason provided.' && { fontStyle: 'italic', opacity: 0.8 },
-                      ]}
+                  {/* Details Gray Area */}
+                  <View style={[styles.detailedCardBody, { backgroundColor: colors.bgScreen }]}>
+                    <View style={styles.detailedCardGrid}>
+                      <View style={styles.detailedCardCol}>
+                        <Text style={[styles.detailedCardLabel, { color: colors.textSecond }]}>Dates</Text>
+                        <Text style={[styles.detailedCardValue, { color: colors.textPrimary }]}>{req.date}</Text>
+                      </View>
+                      <View style={styles.detailedCardCol}>
+                        <Text style={[styles.detailedCardLabel, { color: colors.textSecond }]}>Duration</Text>
+                        <Text style={[styles.detailedCardValue, { color: colors.textPrimary }]}>{req.duration || 'N/A'}</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={[styles.detailedCardLabel, { color: colors.textSecond }]}>Reason</Text>
+                      <Text
+                        style={[
+                          styles.detailedCardReason,
+                          { color: colors.textPrimary },
+                          req.reason === 'No reason provided.' && { fontStyle: 'italic', opacity: 0.8 },
+                        ]}
+                      >
+                        {req.reason || 'N/A'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Buttons Row */}
+                  <View style={styles.detailedCardButtonsRow}>
+                    <TouchableOpacity
+                      style={[styles.detailedCardBtnReject, { borderColor: colors.border }]}
+                      onPress={() => handleReject(req.id, req.name)}
+                      activeOpacity={0.7}
                     >
-                      {req.reason || 'N/A'}
-                    </Text>
+                      <Text style={styles.detailedCardBtnRejectText}>Reject</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.detailedCardBtnApprove, { backgroundColor: colors.brand }]}
+                      onPress={() => handleApprove(req.id, req.name)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.detailedCardBtnApproveText}>Approve</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
-
-                {/* Buttons Row */}
-                <View style={styles.detailedCardButtonsRow}>
-                  <TouchableOpacity
-                    style={[styles.detailedCardBtnReject, { borderColor: colors.border }]}
-                    onPress={() => handleReject(req.id, req.name)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.detailedCardBtnRejectText}>Reject</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.detailedCardBtnApprove, { backgroundColor: colors.brand }]}
-                    onPress={() => handleApprove(req.id, req.name)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.detailedCardBtnApproveText}>Approve</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })
-        )}
-      </View>
-    </ScrollView>
+              );
+            })
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
