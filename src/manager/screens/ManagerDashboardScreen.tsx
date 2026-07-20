@@ -1005,7 +1005,7 @@ export default function ManagerDashboardScreen({
                   } else if (item.name === 'Reports') {
                     onNavigate?.('manager_reports');
                   } else if (item.name === '+ Leaves') {
-                    onNavigate?.('manager_apply_leave', { showApplyForm: true });
+                    onNavigate?.('manager_create_leave');
                   }
                 }}
               >

@@ -201,7 +201,7 @@ export default function ManagerChangePasswordScreen({
             <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_approvals')}>
+          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
             <Feather name="check-square" size={22} color={colors.tabInactive} />
             <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
           </TouchableOpacity>

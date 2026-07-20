@@ -17,15 +17,15 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '../components/ManagerMenu';
 
-interface ManagerClaimsScreenProps {
+interface ManagerClaimManagementScreenProps {
   onBack?: () => void;
   onNavigate?: (screen: string, params?: any) => void;
 }
 
-export default function ManagerClaimsScreen({
+export default function ManagerClaimManagementScreen({
   onBack,
   onNavigate,
-}: ManagerClaimsScreenProps) {
+}: ManagerClaimManagementScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors, toggleTheme, isDark } = useTheme();
 

@@ -29,12 +29,13 @@ import ManagerRoleDetailScreen from '@/manager/screens/ManagerRoleDetailScreen';
 import ManagerHelpScreen from '@/manager/screens/ManagerHelpScreen';
 import ManagerProfileScreen from '@/manager/screens/ManagerProfileScreen';
 import ManagerCreateClaimScreen from '@/manager/screens/ManagerCreateClaimScreen';
-import ManagerClaimsScreen from '@/manager/screens/ManagerClaimsScreen';
+import ManagerClaimManagementScreen from '@/manager/screens/ManagerClaimManagementScreen';
 import ManagerClaimsHistoryScreen from '@/manager/screens/ManagerClaimsHistoryScreen';
 import ManagerLeaveHistoryScreen from '@/manager/screens/ManagerLeaveHistoryScreen';
 import ManagerAssetScreen from '@/manager/screens/ManagerAssetScreen';
 import ManagerReportsScreen from '@/manager/screens/ManagerReportsScreen';
-import ManagerApplyLeaveScreen from '@/manager/screens/ManagerApplyLeaveScreen';
+import ManagerCreateLeaveScreen from '@/manager/screens/ManagerCreateLeaveScreen';
+import ManagerLeaveManagementScreen from '@/manager/screens/ManagerLeaveManagementScreen';
 import AdminStaffScreen from '@/admin/screens/AdminStaffScreen';
 import AdminClientScreen from '@/admin/screens/AdminClientScreen';
 import AdminLeaveSettingsScreen from '@/admin/screens/AdminLeaveSettingsScreen';
@@ -104,13 +105,14 @@ type ScreenName =
   | 'manager_role_detail'
   | 'manager_help'
   | 'manager_profile'
-  | 'manager_claims'
+  | 'manager_claim_management'
   | 'manager_claims_history'
   | 'manager_leave_history'
   | 'manager_create_claim'
   | 'manager_assets'
   | 'manager_reports'
-  | 'manager_apply_leave'
+  | 'manager_create_leave'
+  | 'manager_leave_management'
   | 'employee_profile'
   | 'employee_help'
   | 'employee_assets'
@@ -273,20 +275,28 @@ function AppContent() {
         transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
         return true;
 
-      case 'manager_claims':
+      case 'manager_claim_management':
         transitionTo('manager_dashboard', undefined, 'backward');
         return true;
 
       case 'manager_claims_history':
-        transitionTo('manager_claims', undefined, 'backward');
+        transitionTo('manager_claim_management', undefined, 'backward');
         return true;
 
       case 'manager_leave_history':
-        transitionTo('manager_apply_leave', undefined, 'backward');
+        transitionTo('manager_leave_management', undefined, 'backward');
+        return true;
+
+      case 'manager_leave_management':
+        transitionTo('manager_dashboard', undefined, 'backward');
+        return true;
+
+      case 'manager_create_leave':
+        transitionTo('manager_leave_management', undefined, 'backward');
         return true;
 
       case 'manager_create_claim':
-        transitionTo('manager_claims', undefined, 'backward');
+        transitionTo('manager_claim_management', undefined, 'backward');
         return true;
 
       case 'manager_assets':
@@ -765,9 +775,9 @@ function AppContent() {
           />
         );
 
-      case 'manager_claims':
+      case 'manager_claim_management':
         return (
-          <ManagerClaimsScreen
+          <ManagerClaimManagementScreen
             onBack={() => transitionTo('manager_dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
@@ -776,7 +786,7 @@ function AppContent() {
       case 'manager_claims_history':
         return (
           <ManagerClaimsHistoryScreen
-            onBack={() => transitionTo('manager_claims', undefined, 'backward')}
+            onBack={() => transitionTo('manager_claim_management', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
@@ -784,7 +794,7 @@ function AppContent() {
       case 'manager_leave_history':
         return (
           <ManagerLeaveHistoryScreen
-            onBack={() => transitionTo('manager_apply_leave', undefined, 'backward')}
+            onBack={() => transitionTo('manager_leave_management', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
@@ -792,7 +802,7 @@ function AppContent() {
       case 'manager_create_claim':
         return (
           <ManagerCreateClaimScreen
-            onBack={() => transitionTo('manager_claims', undefined, 'backward')}
+            onBack={() => transitionTo('manager_claim_management', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
           />
         );
@@ -815,10 +825,20 @@ function AppContent() {
           />
         );
 
-      case 'manager_apply_leave': {
+      case 'manager_create_leave': {
+        return (
+          <ManagerCreateLeaveScreen
+            onBack={() => transitionTo('manager_leave_management', undefined, 'backward')}
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            initialParams={screenParams}
+          />
+        );
+      }
+
+      case 'manager_leave_management': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
         return (
-          <ManagerApplyLeaveScreen
+          <ManagerLeaveManagementScreen
             onBack={() => transitionTo(isManager ? 'manager_dashboard' : 'dashboard', undefined, 'backward')}
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             initialParams={screenParams}

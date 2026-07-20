@@ -175,7 +175,7 @@ export default function ManagerCreateClaimScreen({
   useEffect(() => {
     if (step === 4) {
       const timer = setTimeout(() => {
-        onNavigate?.('manager_claims');
+        onNavigate?.('manager_claim_management');
       }, 2000);
       return () => clearTimeout(timer);
     }
