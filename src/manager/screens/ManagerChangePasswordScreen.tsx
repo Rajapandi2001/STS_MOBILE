@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '../components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 
 interface ManagerChangePasswordScreenProps {
   onBack?: () => void;
@@ -83,29 +85,15 @@ export default function ManagerChangePasswordScreen({
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={[styles.container, { backgroundColor: colors.bgScreen, paddingTop: insets.top }]}>
+      <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
         <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
         {/* Header */}
-        <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity
-              style={[styles.hamburgerBtn, { backgroundColor: colors.iconBg }]}
-              onPress={() => setMenuOpen(true)}
-              activeOpacity={0.7}
-            >
-              <Feather name="menu" size={20} color={colors.brand} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.brand }]}>Change Password</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('manager_profile')}
-          >
-            <Feather name="user" size={20} color={colors.brand} />
-          </TouchableOpacity>
-        </View>
+        <ManagerHeader
+          title="Change Password"
+          showBackButton={true}
+          onBackPress={onBack}
+        />
 
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Update Security</Text>
@@ -185,32 +173,16 @@ export default function ManagerChangePasswordScreen({
         </ScrollView>
 
         {/* Sticky Bottom Tab Bar */}
-        <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard')}>
-            <Feather name="home" size={22} color={colors.tabInactive} />
-            <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-            <Feather name="users" size={22} color={colors.tabInactive} />
-            <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_time')}>
-            <Feather name="clock" size={22} color={colors.tabInactive} />
-            <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-            <Feather name="check-square" size={22} color={colors.tabInactive} />
-            <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-            <Feather name="package" size={22} color={colors.tabInactive} />
-            <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-          </TouchableOpacity>
-        </View>
+        <ManagerBottomTabNavigator
+          activeTab={undefined}
+          onTabPress={(tab) => {
+            if (tab === 'home' || tab === 'approvals') {
+              onNavigate?.('manager_dashboard', { tab });
+            } else {
+              onNavigate?.(`manager_${tab}`);
+            }
+          }}
+        />
 
         {/* Side Menu Drawer overlay */}
         <ManagerMenu

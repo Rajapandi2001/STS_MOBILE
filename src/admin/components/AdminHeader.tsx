@@ -6,9 +6,12 @@ import { useTheme } from '@/context/ThemeContext';
 
 export interface AdminHeaderProps {
   title?: string;
-  onMenuPress: () => void;
+  onMenuPress?: () => void;
   onNotificationPress?: () => void;
   onProfilePress?: () => void;
+  showBackButton?: boolean;
+  onBackPress?: () => void;
+  rightComponent?: React.ReactNode;
 }
 
 export default function AdminHeader({
@@ -16,6 +19,9 @@ export default function AdminHeader({
   onMenuPress,
   onNotificationPress,
   onProfilePress,
+  showBackButton,
+  onBackPress,
+  rightComponent,
 }: AdminHeaderProps) {
   const insets = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useTheme();
@@ -32,47 +38,63 @@ export default function AdminHeader({
       ]}
     >
       <View style={styles.headerLeft}>
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-          onPress={onMenuPress}
-          activeOpacity={0.7}
-        >
-          <Feather name="menu" size={20} color={colors.brand} />
-        </TouchableOpacity>
+        {showBackButton ? (
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={onBackPress}
+            activeOpacity={0.7}
+          >
+            <Feather name="arrow-left" size={20} color={colors.brand} />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={onMenuPress}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+        )}
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
           {title}
         </Text>
       </View>
 
-      <View style={styles.headerRight}>
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
-          onPress={toggleTheme}
-          activeOpacity={0.7}
-        >
-          <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
-        </TouchableOpacity>
+      {rightComponent ? (
+        <View style={styles.headerRight}>
+          {rightComponent}
+        </View>
+      ) : (
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]}
-          activeOpacity={0.7}
-          onPress={onNotificationPress}
-        >
-          <Feather name="bell" size={18} color={colors.brand} />
-          <View style={styles.notifDot} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]}
+            activeOpacity={0.7}
+            onPress={onNotificationPress}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.avatarWrapper}
-          activeOpacity={0.8}
-          onPress={onProfilePress}
-        >
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-            style={styles.avatar}
-          />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            activeOpacity={0.8}
+            onPress={onProfilePress}
+          >
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }

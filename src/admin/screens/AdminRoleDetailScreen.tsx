@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import AdminHeader from '../components/AdminHeader';
+import AdminBottomTabNavigator from '../components/AdminBottomTabNavigator';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -221,29 +223,15 @@ export default function AdminRoleDetailScreen({
   const enabledPerms = role.permissionGroups.reduce((acc, g) => acc + g.permissions.filter(p => p.enabled).length, 0);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
+    <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Role Details</Text>
-        <TouchableOpacity
-          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-          activeOpacity={0.8}
-          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
-        >
-          <Feather name="user" size={20} color={colors.brand} />
-        </TouchableOpacity>
-      </View>
+      <AdminHeader
+        title="Role Details"
+        showBackButton={true}
+        onBackPress={onBack}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -356,20 +344,16 @@ export default function AdminRoleDetailScreen({
       </ScrollView>
 
       {/* ── Bottom Tab Bar ── */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
-          <Feather name="home" size={22} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_roles_permissions')}>
-          <MaterialCommunityIcons name="shield-account-outline" size={24} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Roles</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
-          <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
-        </TouchableOpacity>
-      </View>
+      <AdminBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home') {
+            onNavigate?.('admin_dashboard');
+          } else {
+            onNavigate?.(`admin_${tab}`);
+          }
+        }}
+      />
 
       <AdminMenu visible={menuOpen} onClose={() => setMenuOpen(false)} onNavigate={onNavigate} />
     </View>

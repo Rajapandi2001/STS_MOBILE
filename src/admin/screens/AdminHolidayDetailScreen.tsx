@@ -12,6 +12,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
+import AdminHeader from '../components/AdminHeader';
+import AdminBottomTabNavigator from '../components/AdminBottomTabNavigator';
 import apiClient from '@/api/apiClient';
 import { useAuth } from '@/context/AuthContext';
 
@@ -262,29 +264,15 @@ export default function AdminHolidayDetailScreen({
   const sc = statusColors[holiday.status] ?? { bg: colors.iconBg, text: colors.textSecond };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen }]}>
+    <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity
-          style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Holiday Details</Text>
-        <TouchableOpacity
-          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-          activeOpacity={0.8}
-          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
-        >
-          <Feather name="user" size={20} color={colors.brand} />
-        </TouchableOpacity>
-      </View>
+      <AdminHeader
+        title="Holiday Details"
+        showBackButton={true}
+        onBackPress={onBack}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -370,20 +358,16 @@ export default function AdminHolidayDetailScreen({
       </ScrollView>
 
       {/* ── Bottom Tab Bar ── */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
-          <Feather name="home" size={22} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_holidays', { source: 'dashboard' })}>
-          <MaterialCommunityIcons name="calendar-star" size={24} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Holidays</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
-          <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
-        </TouchableOpacity>
-      </View>
+      <AdminBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home') {
+            onNavigate?.('admin_dashboard');
+          } else {
+            onNavigate?.(`admin_${tab}`);
+          }
+        }}
+      />
 
       <AdminMenu visible={menuOpen} onClose={() => setMenuOpen(false)} onNavigate={onNavigate} />
     </View>

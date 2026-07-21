@@ -19,6 +19,8 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import * as DocumentPicker from 'expo-document-picker';
 import ManagerMenu from '../components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 
 interface ManagerCreateLeaveScreenProps {
   onBack?: () => void;
@@ -354,58 +356,17 @@ export default function ManagerCreateLeaveScreen({
     );
   };
 
-  const renderHeader = () => {
-    return (
-      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Feather name="menu" size={20} color={colors.brand} />
-        </TouchableOpacity>
 
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Apply Leave</Text>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <TouchableOpacity
-            style={{ padding: 4 }}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Feather name={isDark ? 'sun' : 'moon'} size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            activeOpacity={0.7}
-            style={{ position: 'relative', padding: 4 }}
-            onPress={() => onNavigate?.('manager_alerts')}
-          >
-            <Feather name="bell" size={20} color={colors.textPrimary} />
-            <View style={{ position: 'absolute', top: 4, right: 4, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger }} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.avatarWrapper}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('manager_profile')}
-          >
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-              style={styles.avatarImage}
-            />
-            <View style={styles.activeDot} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
-      {renderHeader()}
+      <ManagerHeader
+        title="Apply Leave"
+        showBackButton={true}
+        onBackPress={onBack}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -528,32 +489,16 @@ export default function ManagerCreateLeaveScreen({
       </KeyboardAvoidingView>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       {/* Attractive Confirmation Modal */}
       <Modal

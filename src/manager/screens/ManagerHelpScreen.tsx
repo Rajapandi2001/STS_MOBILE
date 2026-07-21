@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '@/manager/components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Asset } from 'expo-asset';
@@ -84,47 +86,16 @@ export default function ManagerHelpScreen({ onNavigate, onBack }: ManagerHelpScr
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
-            <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-            <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-            <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Help</Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg || colors.cardAlt, marginRight: 8 }]}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.iconButton, { backgroundColor: colors.iconBg || colors.cardAlt, marginRight: 12 }]} 
-            activeOpacity={0.7}
-            onPress={() => Alert.alert('Notifications', 'No new notifications')}
-          >
-            <Feather name="bell" size={18} color={colors.brand} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('manager_profile', { source: 'header' })}
-          >
-            <Feather name="user" size={20} color={colors.brand} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ManagerHeader
+        title="Help"
+        onMenuPress={() => setMenuOpen(true)}
+        onNotificationPress={() => onNavigate?.('manager_alerts')}
+        onProfilePress={() => onNavigate?.('manager_profile')}
+      />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.brand }]}>
@@ -161,32 +132,16 @@ export default function ManagerHelpScreen({ onNavigate, onBack }: ManagerHelpScr
       </ScrollView>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard')}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('attendance_history')}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       {/* Admin Menu */}
       <ManagerMenu

@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '@/manager/components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 
 interface ManagerReportsScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
@@ -123,44 +125,16 @@ export default function ManagerReportsScreen({ onNavigate, onBack }: ManagerRepo
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bgScreen || '#F8FAFC' }]}>
+    <View style={[styles.container, { backgroundColor: colors.bgScreen || '#F8FAFC' }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderLight }]}>
-        <View style={styles.headerLeft}>
-          <TouchableOpacity
-            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]}
-            onPress={() => setMenuOpen(true)}
-            activeOpacity={0.7}
-          >
-            <Feather name="menu" size={20} color={colors.brand} />
-          </TouchableOpacity>
-
-        </View>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg, marginRight: 12 }]}
-            activeOpacity={0.7}
-          >
-            <Feather name="bell" size={18} color={colors.brand} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => onNavigate?.('manager_profile')}
-          >
-            <View style={styles.avatarWrapper}>
-              <View style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}>
-                <Feather name="user" size={18} color={colors.brand} />
-              </View>
-              <View style={styles.activeDot} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ManagerHeader
+        title="Reports"
+        onMenuPress={() => setMenuOpen(true)}
+        onNotificationPress={() => onNavigate?.('manager_alerts')}
+        onProfilePress={() => onNavigate?.('manager_profile')}
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -413,32 +387,16 @@ export default function ManagerReportsScreen({ onNavigate, onBack }: ManagerRepo
       </Modal>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar || '#FFFFFF', borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
-          <Feather name="home" size={20} color={colors.tabActive || colors.brand} />
-          <Text style={[styles.tabTextActive, { color: colors.tabActive || colors.brand }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-circle" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'assets' })}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       <ManagerMenu
         visible={menuOpen}

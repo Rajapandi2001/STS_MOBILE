@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '@/manager/components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -174,32 +176,30 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.bg }]}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.bg} />
 
       {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt || '#F8FAFC' }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Profile</Text>
-        {isEditing ? (
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.8}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+      <ManagerHeader
+        title="Profile"
+        onMenuPress={() => setMenuOpen(true)}
+        rightComponent={
+          isEditing ? (
+            <View style={styles.headerActions}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} activeOpacity={0.8}>
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
+                <Text style={styles.saveBtnText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={[styles.editBtn, { backgroundColor: colors.brand }]} onPress={handleEdit} activeOpacity={0.8}>
+              <Text style={styles.editBtnText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.8}>
-              <Text style={styles.saveBtnText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity style={[styles.editBtn, { backgroundColor: colors.brand }]} onPress={handleEdit} activeOpacity={0.8}>
-            <Text style={styles.editBtnText}>Edit</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+          )
+        }
+      />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -377,32 +377,16 @@ export default function ManagerProfileScreen({ onNavigate, onBack }: ManagerProf
       </Modal>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       <ManagerMenu
         visible={menuOpen}

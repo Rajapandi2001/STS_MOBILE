@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '../components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 import * as DocumentPicker from 'expo-document-picker';
 
 interface ManagerCreateClaimScreenProps {
@@ -268,29 +270,11 @@ export default function ManagerCreateClaimScreen({
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── HEADER ── */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        <TouchableOpacity
-          style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-          onPress={() => setMenuOpen(true)}
-          activeOpacity={0.7}
-        >
-          <Feather name="menu" size={20} color={colors.brand} />
-        </TouchableOpacity>
-
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{getHeaderTitle()}</Text>
-
-        <TouchableOpacity
-          style={styles.avatarWrapper}
-          activeOpacity={0.8}
-          onPress={() => onNavigate?.('manager_profile')}
-        >
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-            style={styles.avatarImage}
-          />
-          <View style={styles.activeDot} />
-        </TouchableOpacity>
-      </View>
+      <ManagerHeader
+        title={getHeaderTitle()}
+        showBackButton={true}
+        onBackPress={onBack}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -655,32 +639,16 @@ export default function ManagerCreateClaimScreen({
       </KeyboardAvoidingView>
 
       {/* ── BOTTOM NAV TAB BAR ── */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress('home')}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress('team')}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress('time')}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress('approvals')}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress('assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       {showCalendar && (
         <View style={[styles.calendarModalOverlay, { backgroundColor: 'rgba(15, 23, 42, 0.4)' }]}>

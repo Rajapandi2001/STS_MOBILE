@@ -18,6 +18,8 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import ManagerMenu from '../components/ManagerMenu';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
 
 interface ManagerLeaveManagementScreenProps {
   onBack?: () => void;
@@ -748,61 +750,18 @@ export default function ManagerLeaveManagementScreen({
     );
   };
 
-  const renderHeader = () => {
-    return (
-      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-            onPress={() => setMenuOpen(true)}
-            activeOpacity={0.7}
-          >
-            <Feather name="menu" size={20} color={colors.brand} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
-            Leave Management
-          </Text>
-        </View>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12, position: 'relative', padding: 4 }]} 
-            activeOpacity={0.7}
-            onPress={() => onNavigate?.('manager_alerts')}
-          >
-            <Feather name="bell" size={18} color={colors.brand} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.avatarWrapper}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('manager_profile')}
-          >
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-              style={styles.avatarImage}
-            />
-            <View style={styles.activeDot} />
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  };
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: colors.bgScreen }]}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
-      {renderHeader()}
+      <ManagerHeader
+        title="Leave Management"
+        onMenuPress={() => setMenuOpen(true)}
+        onNotificationPress={() => onNavigate?.('manager_alerts')}
+        onProfilePress={() => onNavigate?.('manager_profile')}
+      />
 
       <View style={[styles.tabsBar, { backgroundColor: colors.header, borderBottomColor: colors.borderLight }]}>
         <TouchableOpacity
@@ -836,32 +795,16 @@ export default function ManagerLeaveManagementScreen({
       </KeyboardAvoidingView>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-square" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       <ManagerMenu
         visible={menuOpen}

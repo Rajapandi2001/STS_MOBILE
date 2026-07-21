@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import ManagerMenu from '@/manager/components/ManagerMenu';
+import ManagerHeader from '@/manager/components/ManagerHeader';
+import ManagerBottomTabNavigator from '@/manager/components/ManagerBottomTabNavigator';
 
 interface ManagerAssetScreenProps {
   onBack?: () => void;
@@ -79,51 +81,12 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-            onPress={() => setMenuOpen(true)}
-            activeOpacity={0.7}
-          >
-            <Feather name="menu" size={20} color={colors.brand} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
-            Assets
-          </Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
-            activeOpacity={0.7}
-            onPress={() => Alert.alert('Notifications', 'No new notifications')}
-          >
-            <Feather name="bell" size={18} color={colors.brand} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.avatarWrapper}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('manager_profile')}
-          >
-            <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-              style={styles.avatarImage}
-            />
-            <View style={styles.activeDot} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ManagerHeader
+        title="Assets"
+        onMenuPress={() => setMenuOpen(true)}
+        onNotificationPress={() => onNavigate?.('manager_alerts')}
+        onProfilePress={() => onNavigate?.('manager_profile')}
+      />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Assigned Assets</Text>
@@ -182,32 +145,17 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
       </ScrollView>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
-          <Feather name="clock" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-circle" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.brand} />
-          <Text style={[styles.tabText, { color: colors.brand }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerBottomTabNavigator
+        activeTab="assets"
+        onTabPress={(tab) => {
+          if (tab === 'assets') return;
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
       <ManagerMenu
         visible={menuOpen}

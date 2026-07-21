@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import AdminMenu from '@/admin/components/AdminMenu';
+import AdminHeader from '../components/AdminHeader';
+import AdminBottomTabNavigator from '../components/AdminBottomTabNavigator';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -70,48 +72,16 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
   };
 
   return (
-    <View style={[{ flex: 1, backgroundColor: colors.bgScreen }, { paddingTop: insets.top }]}>
+    <View style={{ flex: 1, backgroundColor: colors.bgScreen }}>
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── Header ── */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        {/* Left: Hamburger */}
-        <TouchableOpacity
-          style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
-          onPress={openMenu}
-          activeOpacity={0.7}
-          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-        >
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        {/* Title */}
-        <Text style={[styles.headerTitle, { color: colors.brand }]}>Admin</Text>
-        {/* Right: Theme toggle + Bell + Avatar */}
-        <View style={styles.headerRight}>
-          <TouchableOpacity style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]} activeOpacity={0.8} onPress={toggleTheme}>
-            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('admin_alerts')}
-          >
-            <View>
-              <Feather name="bell" size={18} color={colors.brand} />
-              <View style={[styles.notifDot, { borderColor: colors.header }]} />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-            activeOpacity={0.8}
-            onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
-          >
-            <Text style={[styles.avatarText, { color: colors.brandDark }]}>AP</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <AdminHeader
+        title="Admin"
+        onMenuPress={openMenu}
+        onNotificationPress={() => onNavigate?.('admin_alerts')}
+        onProfilePress={() => onNavigate?.('admin_profile')}
+      />
 
       {/* ── Main ScrollView ── */}
       <ScrollView
@@ -288,20 +258,16 @@ export default function AdminDashboardScreen({ onNavigate, routeParams }: AdminD
       </ScrollView>
 
       {/* ── Bottom Tab Bar ── */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Feather name="home" size={22} color={colors.tabActive} />
-          <Text style={[styles.tabText, { color: colors.tabActive }]}>Home</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
-          <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_reports')}>
-          <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
-        </TouchableOpacity>
-      </View>
+      <AdminBottomTabNavigator
+        activeTab="home"
+        onTabPress={(tab) => {
+          if (tab === 'home') {
+            onNavigate?.('admin_dashboard');
+          } else {
+            onNavigate?.(`admin_${tab}`);
+          }
+        }}
+      />
 
       {/* ══ MENU OVERLAY — slides in from left ══ */}
       <AdminMenu

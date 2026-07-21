@@ -7,7 +7,7 @@ import { useTheme } from '@/context/ThemeContext';
 export type ManagerTab = 'home' | 'team' | 'time' | 'approvals' | 'assets';
 
 export interface ManagerBottomTabNavigatorProps {
-  activeTab: ManagerTab;
+  activeTab?: ManagerTab | null;
   onTabPress: (tab: ManagerTab) => void;
 }
 

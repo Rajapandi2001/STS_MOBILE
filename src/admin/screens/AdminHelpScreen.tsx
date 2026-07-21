@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import AdminMenu from '@/admin/components/AdminMenu';
+import AdminHeader from '../components/AdminHeader';
+import AdminBottomTabNavigator from '../components/AdminBottomTabNavigator';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Asset } from 'expo-asset';
@@ -84,25 +86,16 @@ export default function AdminHelpScreen({ onNavigate, onBack }: AdminHelpScreenP
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg, paddingTop: insets.top }]}>
+    <View style={[styles.container, { backgroundColor: colors.bg }]}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]} onPress={() => setMenuOpen(true)} activeOpacity={0.7}>
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
-          <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Help</Text>
-        <TouchableOpacity
-          style={[styles.avatarCircle, { backgroundColor: colors.brandBorder }]}
-          activeOpacity={0.8}
-          onPress={() => onNavigate?.('admin_profile', { source: 'header' })}
-        >
-          <Feather name="user" size={20} color={colors.brand} />
-        </TouchableOpacity>
-      </View>
+      <AdminHeader
+        title="Help"
+        onMenuPress={() => setMenuOpen(true)}
+        onNotificationPress={() => onNavigate?.('admin_alerts')}
+        onProfilePress={() => onNavigate?.('admin_profile')}
+      />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]} showsVerticalScrollIndicator={false}>
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: colors.brand }]}>
@@ -139,22 +132,16 @@ export default function AdminHelpScreen({ onNavigate, onBack }: AdminHelpScreenP
       </ScrollView>
 
       {/* Bottom Tab Bar */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_dashboard')}>
-          <Feather name="home" size={22} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_staff', { source: 'dashboard' })}>
-          <MaterialCommunityIcons name="account-group-outline" size={24} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Staff</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('admin_reports')}>
-          <Feather name="bar-chart-2" size={22} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Reports</Text>
-        </TouchableOpacity>
-      </View>
+      <AdminBottomTabNavigator
+        activeTab={undefined}
+        onTabPress={(tab) => {
+          if (tab === 'home') {
+            onNavigate?.('admin_dashboard');
+          } else {
+            onNavigate?.(`admin_${tab}`);
+          }
+        }}
+      />
 
       {/* Admin Menu */}
       <AdminMenu

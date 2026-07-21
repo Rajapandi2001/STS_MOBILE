@@ -12,6 +12,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import { AttendanceRecord } from '@/employee/screens/EmployeeAttendanceHistoryScreen';
 import { useTheme } from '@/context/ThemeContext';
+import ManagerHeader from '../components/ManagerHeader';
+import ManagerBottomTabNavigator from '../components/ManagerBottomTabNavigator';
+import { useState } from 'react';
+import ManagerMenu from '../components/ManagerMenu';
 
 // Historical sample records (past days, no live today entry)
 const HISTORICAL_RECORDS: AttendanceRecord[] = [
@@ -69,6 +73,7 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
   const insets = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useTheme();
   const [activeFilter, setActiveFilter] = React.useState<'all' | 'present' | 'absent' | 'late'>('all');
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Merge: live check-ins (newest first) + historical sample records
   const allRecords: AttendanceRecord[] = [...liveRecords, ...HISTORICAL_RECORDS];
@@ -97,47 +102,12 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── GLOBAL HEADER ── */}
-      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
-            activeOpacity={0.7}
-          >
-            <Feather name="menu" size={20} color={colors.brand} />
-          </TouchableOpacity>
-          <Text style={[styles.topHeaderTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
-            Attendance
-          </Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <TouchableOpacity
-            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
-            onPress={toggleTheme}
-            activeOpacity={0.7}
-          >
-            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} activeOpacity={0.7}>
-            <Feather name="bell" size={18} color={colors.brand} />
-            <View style={styles.notifDot} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => onNavigate?.('manager_profile')}
-          >
-            <View style={styles.avatarWrapper}>
-              <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
-                style={styles.avatarImage}
-              />
-              <View style={styles.activeDot} />
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <ManagerHeader
+        title="Attendance"
+        onMenuPress={() => setMenuOpen(true)}
+        onNotificationPress={() => onNavigate?.('manager_alerts')}
+        onProfilePress={() => onNavigate?.('manager_profile')}
+      />
 
       {/* Page Header */}
       <View style={styles.header}>
@@ -268,32 +238,23 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
       </ScrollView>
 
       {/* ── BOTTOM NAV TAB BAR ── */}
-      <View style={[styles.bottomTabBar, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: colors.tabBar, borderTopColor: colors.borderLight }]}>
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'home' })}>
-          <Feather name="home" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Home</Text>
-        </TouchableOpacity>
+      <ManagerBottomTabNavigator
+        activeTab="time"
+        onTabPress={(tab) => {
+          if (tab === 'time') return;
+          if (tab === 'home' || tab === 'approvals') {
+            onNavigate?.('manager_dashboard', { tab });
+          } else {
+            onNavigate?.(`manager_${tab}`);
+          }
+        }}
+      />
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'team' })}>
-          <Feather name="users" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Team</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'time' })}>
-          <Feather name="clock" size={20} color={colors.tabActive} />
-          <Text style={[styles.tabTextActive, { color: colors.tabActive }]}>Time</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_dashboard', { tab: 'approvals' })}>
-          <Feather name="check-circle" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Approvals</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.tabItem} onPress={() => onNavigate?.('manager_assets')}>
-          <Feather name="package" size={20} color={colors.tabInactive} />
-          <Text style={[styles.tabText, { color: colors.tabInactive }]}>Assets</Text>
-        </TouchableOpacity>
-      </View>
+      <ManagerMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onNavigate={onNavigate}
+      />
     </View>
   );
 }

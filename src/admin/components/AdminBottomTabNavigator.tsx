@@ -7,7 +7,7 @@ import { useTheme } from '@/context/ThemeContext';
 export type AdminTab = 'home' | 'staff' | 'reports';
 
 export interface AdminBottomTabNavigatorProps {
-  activeTab: AdminTab;
+  activeTab?: AdminTab | null;
   onTabPress: (tab: AdminTab) => void;
 }
 
