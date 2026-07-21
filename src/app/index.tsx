@@ -47,6 +47,9 @@ import AdminHelpScreen from '@/admin/screens/AdminHelpScreen';
 import AdminHolidayScreen from '@/admin/screens/AdminHolidayScreen';
 import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
+import AdminOfficeLocationScreen from '@/admin/screens/AdminOfficeLocationScreen';
+import AdminShiftMasterScreen from '@/admin/screens/AdminShiftMasterScreen';
+import AdminAttendanceRulesScreen from '@/admin/screens/AdminAttendanceRulesScreen';
 import AdminStaffDetailScreen from '@/admin/screens/AdminStaffDetailScreen';
 import AdminClientDetailScreen from '@/admin/screens/AdminClientDetailScreen';
 import AdminProjectDetailScreen from '@/admin/screens/AdminProjectDetailScreen';
@@ -90,6 +93,9 @@ type ScreenName =
   | 'admin_holidays'
   | 'admin_companies'
   | 'admin_assets'
+  | 'admin_office_locations'
+  | 'admin_shift_master'
+  | 'admin_attendance_rules'
   | 'admin_staff_detail'
   | 'admin_client_detail'
   | 'admin_project_detail'
@@ -205,7 +211,10 @@ function AppContent() {
       case 'admin_projects':
       case 'admin_holidays':
       case 'admin_companies':
-      case 'admin_assets': {
+      case 'admin_assets':
+      case 'admin_office_locations':
+      case 'admin_shift_master':
+      case 'admin_attendance_rules': {
         const isManager = user?.userName?.toLowerCase() === 'manager' || user?.groupID === 3;
         const destDashboard = isManager ? 'manager_dashboard' : 'admin_dashboard';
         if (navSource === 'menu') {
@@ -344,7 +353,7 @@ function AppContent() {
 
   /** Super smooth native-like slide transition */
   const transitionTo = (nextScreen: ScreenName, params?: any, direction: 'forward' | 'backward' = 'forward') => {
-    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects' || nextScreen === 'admin_holidays' || nextScreen === 'admin_companies' || nextScreen === 'admin_assets') && params?.source) {
+    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects' || nextScreen === 'admin_holidays' || nextScreen === 'admin_companies' || nextScreen === 'admin_assets' || nextScreen === 'admin_office_locations' || nextScreen === 'admin_shift_master' || nextScreen === 'admin_attendance_rules') && params?.source) {
       setNavSource(params.source);
     }
 
@@ -618,6 +627,48 @@ function AppContent() {
       case 'admin_assets':
         return (
           <AdminAssetScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('admin_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
+      case 'admin_office_locations':
+        return (
+          <AdminOfficeLocationScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('admin_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
+      case 'admin_shift_master':
+        return (
+          <AdminShiftMasterScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('admin_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('admin_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
+      case 'admin_attendance_rules':
+        return (
+          <AdminAttendanceRulesScreen
             onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
             onBack={() => {
               if (navSource === 'menu') {

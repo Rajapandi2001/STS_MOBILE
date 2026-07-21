@@ -31,6 +31,7 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
   const slideAnim = useRef(new Animated.Value(-SCREEN_WIDTH)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
   const [employeeExpanded, setEmployeeExpanded] = useState(false);
+  const [setupExpanded, setSetupExpanded] = useState(false);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const visibleRef = useRef(visible);
@@ -66,6 +67,7 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
         if (!visibleRef.current) {
           setIsRendered(false);
           setEmployeeExpanded(false);
+          setSetupExpanded(false);
         }
       });
     }
@@ -160,6 +162,40 @@ export default function AdminMenu({ visible, onClose, onNavigate }: AdminMenuPro
                     else if (item === 'Holiday') handleNavigate('admin_holidays', { source: 'menu' });
                     else if (item === 'Company Detail') handleNavigate('admin_companies', { source: 'menu' });
                     else if (item === 'Asset') handleNavigate('admin_assets', { source: 'menu' });
+                  }}
+                >
+                  <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Setup */}
+          <TouchableOpacity
+            style={[styles.menuItem, setupExpanded && { backgroundColor: colors.iconBg }]}
+            activeOpacity={0.7}
+            onPress={() => setSetupExpanded(prev => !prev)}
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
+              <MaterialCommunityIcons name="cog-outline" size={22} color={colors.brand} />
+            </View>
+            <Text style={[styles.menuItemText, setupExpanded && { color: colors.brand }, { color: setupExpanded ? colors.brand : colors.textPrimary }]}>
+              Setup
+            </Text>
+            <Feather name={setupExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecond} />
+          </TouchableOpacity>
+
+          {setupExpanded && (
+            <View style={[styles.subMenu, { backgroundColor: colors.card }]}>
+              {['Office Location', 'Shift Master', 'Attendance Rules'].map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[styles.subMenuItem, { borderLeftColor: colors.brandBorder }]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (item === 'Office Location') handleNavigate('admin_office_locations', { source: 'menu' });
+                    else if (item === 'Shift Master') handleNavigate('admin_shift_master', { source: 'menu' });
+                    else if (item === 'Attendance Rules') handleNavigate('admin_attendance_rules', { source: 'menu' });
                   }}
                 >
                   <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item}</Text>

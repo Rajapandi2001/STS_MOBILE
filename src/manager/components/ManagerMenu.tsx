@@ -129,39 +129,6 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Profile</Text>
           </TouchableOpacity>
 
-          {/* Team Hub accordion */}
-          <TouchableOpacity
-            style={[styles.menuItem, teamHubExpanded && { backgroundColor: colors.iconBg }]}
-            activeOpacity={0.7}
-            onPress={() => setTeamHubExpanded(prev => !prev)}
-          >
-            <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
-              <MaterialCommunityIcons name="account-group-outline" size={22} color={colors.brand} />
-            </View>
-            <Text style={[styles.menuItemText, teamHubExpanded && { color: colors.brand }, { color: teamHubExpanded ? colors.brand : colors.textPrimary }]}>
-              Team Hub
-            </Text>
-            <Feather name={teamHubExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecond} />
-          </TouchableOpacity>
-
-          {teamHubExpanded && (
-            <View style={[styles.subMenu, { backgroundColor: colors.card }]}>
-              {[
-                { name: 'Leave Management', screen: 'manager_leave_management' },
-                { name: 'Claim Management', screen: 'manager_claim_management' }
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.name}
-                  style={[styles.subMenuItem, { borderLeftColor: colors.brandBorder }]}
-                  activeOpacity={0.7}
-                  onPress={() => handleNavigate(item.screen)}
-                >
-                  <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-          
           {/* Change password */}
           <TouchableOpacity
             style={[styles.menuItem, { backgroundColor: colors.card }]}
