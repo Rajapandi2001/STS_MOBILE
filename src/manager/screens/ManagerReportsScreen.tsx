@@ -9,6 +9,7 @@ import {
   Modal,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -129,12 +130,59 @@ export default function ManagerReportsScreen({ onNavigate, onBack }: ManagerRepo
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── Header ── */}
+<<<<<<< Updated upstream
       <ManagerHeader
         title="Reports"
         onMenuPress={() => setMenuOpen(true)}
         onNotificationPress={() => onNavigate?.('manager_alerts')}
         onProfilePress={() => onNavigate?.('manager_profile')}
       />
+=======
+      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderLight }]}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.headerIconBtn, { backgroundColor: colors.iconBg, marginRight: 12 }]}
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_alerts')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeDot} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -446,12 +494,10 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     position: 'relative',
   },
-  avatarCircle: {
+  avatarImage: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
   activeDot: {
     position: 'absolute',

@@ -240,12 +240,61 @@ export default function ManagerClaimManagementScreen({
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* Header */}
+<<<<<<< Updated upstream:src/manager/screens/ManagerClaimManagementScreen.tsx
       <ManagerHeader
         title="Claim Management"
         onMenuPress={() => setMenuOpen(true)}
         onNotificationPress={() => onNavigate?.('manager_alerts')}
         onProfilePress={() => onNavigate?.('manager_profile')}
       />
+=======
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Claim Management
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_alerts')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeDot} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes:src/manager/screens/ManagerClaimsScreen.tsx
 
       {/* Tabs */}
       <View style={[styles.tabBar, { borderBottomColor: colors.borderLight, backgroundColor: colors.header }]}>

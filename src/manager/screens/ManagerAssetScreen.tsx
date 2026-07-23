@@ -81,12 +81,60 @@ export default function ManagerAssetScreen({ onNavigate, onBack }: ManagerAssetS
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
       {/* Header */}
+<<<<<<< Updated upstream
       <ManagerHeader
         title="Assets"
         onMenuPress={() => setMenuOpen(true)}
         onNotificationPress={() => onNavigate?.('manager_alerts')}
         onProfilePress={() => onNavigate?.('manager_profile')}
       />
+=======
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Assets
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_alerts')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+              style={styles.avatarImage}
+            />
+            <View style={styles.activeDot} />
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]} showsVerticalScrollIndicator={false}>
         <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Assigned Assets</Text>

@@ -11,6 +11,7 @@ import {
   Platform,
   BackHandler,
   Alert,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -29,7 +30,7 @@ export default function ManagerChangePasswordScreen({
   onNavigate,
 }: ManagerChangePasswordScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
 
   // Navigation drawer menu state
   const [menuOpen, setMenuOpen] = useState(false);
@@ -89,11 +90,57 @@ export default function ManagerChangePasswordScreen({
         <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
         {/* Header */}
+<<<<<<< Updated upstream
         <ManagerHeader
           title="Change Password"
           showBackButton={true}
           onBackPress={onBack}
         />
+=======
+        <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity
+              style={[styles.hamburgerBtn, { backgroundColor: colors.iconBg }]}
+              onPress={() => setMenuOpen(true)}
+              activeOpacity={0.7}
+            >
+              <Feather name="menu" size={20} color={colors.brand} />
+            </TouchableOpacity>
+            <Text style={[styles.headerTitle, { color: colors.brand }]}>Change Password</Text>
+          </View>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+              onPress={toggleTheme}
+              activeOpacity={0.7}
+            >
+              <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]}
+              activeOpacity={0.7}
+              onPress={() => onNavigate?.('manager_alerts')}
+            >
+              <Feather name="bell" size={18} color={colors.brand} />
+              <View style={styles.notifDot} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => onNavigate?.('manager_profile')}
+            >
+              <View style={styles.avatarWrapper}>
+                <Image
+                  source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                  style={styles.avatarImage}
+                />
+                <View style={styles.activeDot} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+>>>>>>> Stashed changes
 
         <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 100 }]} showsVerticalScrollIndicator={false}>
           <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>Update Security</Text>
@@ -200,7 +247,46 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1 },
   hamburgerBtn: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', borderRadius: 10 },
   headerTitle: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5, marginLeft: 12 },
-  avatarCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#EF4444',
+  },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  activeDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
   scrollContent: { paddingHorizontal: 20, paddingTop: 20 },
   pageTitle: { fontSize: 20, fontWeight: '800', marginBottom: 4 },
   pageSubtitle: { fontSize: 14, marginBottom: 24, lineHeight: 20 },

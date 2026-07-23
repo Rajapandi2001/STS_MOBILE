@@ -102,12 +102,60 @@ export default function ManagerAttendanceHistoryScreen({ onReturnHome, liveRecor
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── GLOBAL HEADER ── */}
+<<<<<<< Updated upstream
       <ManagerHeader
         title="Attendance"
         onMenuPress={() => setMenuOpen(true)}
         onNotificationPress={() => onNavigate?.('manager_alerts')}
         onProfilePress={() => onNavigate?.('manager_profile')}
       />
+=======
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+            activeOpacity={0.7}
+          >
+            <Feather name="menu" size={20} color={colors.brand} />
+          </TouchableOpacity>
+          <Text style={[styles.topHeaderTitle, { color: colors.textPrimary, marginLeft: 12 }]}>
+            Attendance
+          </Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]} 
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_alerts')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeDot} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes
 
       {/* Page Header */}
       <View style={styles.header}>

@@ -8,6 +8,7 @@ import {
   ScrollView,
   StatusBar,
   Alert,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -114,12 +115,61 @@ export default function ManagerRolesPermissionsScreen({
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* Header */}
+<<<<<<< Updated upstream
       <ManagerHeader
         title="Roles & Permissions"
         onMenuPress={() => setMenuOpen(true)}
         onNotificationPress={() => onNavigate?.('manager_alerts')}
         onProfilePress={() => onNavigate?.('manager_profile')}
       />
+=======
+      <View style={[styles.header, { backgroundColor: colors.header, borderBottomColor: colors.border }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <TouchableOpacity
+            style={[styles.hamburgerBtn, { backgroundColor: colors.cardAlt }]}
+            onPress={() => setMenuOpen(true)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+            <View style={[styles.hamburgerLine, { width: 16, backgroundColor: colors.brand }]} />
+            <View style={[styles.hamburgerLine, { backgroundColor: colors.brand }]} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Roles & Permissions</Text>
+        </View>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg || colors.cardAlt, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.iconButton, { backgroundColor: colors.iconBg || colors.cardAlt, marginRight: 12 }]} 
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_alerts')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <View style={styles.avatarWrapper}>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+                style={styles.avatarImage}
+              />
+              <View style={styles.activeDot} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -214,7 +264,25 @@ const styles = StyleSheet.create({
   headerRight: { flexDirection: 'row', alignItems: 'center' },
   notifDot: { position: 'absolute', top: 10, right: 10, width: 7, height: 7, borderRadius: 3.5, backgroundColor: '#EF4444' },
   iconButton: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  avatarCircle: { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  avatarWrapper: {
+    position: 'relative',
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
+  activeDot: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
   scrollContent: { paddingHorizontal: 20, paddingTop: 10 },
   pageDescription: {
     fontSize: 14,

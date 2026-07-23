@@ -41,7 +41,7 @@ export default function ManagerCreateClaimScreen({
   onNavigate,
 }: ManagerCreateClaimScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors, isDark } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
 
   // Navigation menu drawer state
   const [menuOpen, setMenuOpen] = useState(false);
@@ -270,11 +270,56 @@ export default function ManagerCreateClaimScreen({
       <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
       {/* ── HEADER ── */}
+<<<<<<< Updated upstream
       <ManagerHeader
         title={getHeaderTitle()}
         showBackButton={true}
         onBackPress={onBack}
       />
+=======
+      <View style={[styles.headerContainer, { paddingTop: insets.top || 16, backgroundColor: colors.header, borderBottomColor: colors.borderHeader }]}>
+        <TouchableOpacity
+          style={[styles.iconButton, { backgroundColor: colors.iconBg }]}
+          onPress={() => setMenuOpen(true)}
+          activeOpacity={0.7}
+        >
+          <Feather name="menu" size={20} color={colors.brand} />
+        </TouchableOpacity>
+
+        <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{getHeaderTitle()}</Text>
+
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 8 }]}
+            onPress={toggleTheme}
+            activeOpacity={0.7}
+          >
+            <Feather name={isDark ? 'sun' : 'moon'} size={18} color={colors.brand} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.iconButton, { backgroundColor: colors.iconBg, marginRight: 12 }]}
+            activeOpacity={0.7}
+            onPress={() => onNavigate?.('manager_alerts')}
+          >
+            <Feather name="bell" size={18} color={colors.brand} />
+            <View style={styles.notifDot} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.avatarWrapper}
+            activeOpacity={0.8}
+            onPress={() => onNavigate?.('manager_profile')}
+          >
+            <Image
+              source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?fit=crop&w=150' }}
+              style={styles.avatarImage}
+            />
+            <View style={styles.activeDot} />
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -802,10 +847,24 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    position: 'relative',
   },
   headerTitle: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#EF4444',
   },
   avatarWrapper: {
     position: 'relative',
@@ -825,9 +884,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#22C55E',
     borderWidth: 2,
     borderColor: '#FFFFFF',
-  },
-  headerRightPlaceholder: {
-    width: 38,
   },
   scrollContent: {
     paddingHorizontal: 16,
