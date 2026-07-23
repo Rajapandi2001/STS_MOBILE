@@ -33,6 +33,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
   const [teamHubExpanded, setTeamHubExpanded] = useState(false);
+  const [setupExpanded, setSetupExpanded] = useState(false);
   const visibleRef = useRef(visible);
   visibleRef.current = visible;
 
@@ -66,6 +67,7 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
         if (!visibleRef.current) {
           setIsRendered(false);
           setTeamHubExpanded(false);
+          setSetupExpanded(false);
         }
       });
     }
@@ -152,6 +154,38 @@ export default function ManagerMenu({ visible, onClose, onNavigate }: ManagerMen
             </View>
             <Text style={[styles.menuItemText, { color: colors.textPrimary }]}>Roles & permissions</Text>
           </TouchableOpacity>
+
+          {/* Setup */}
+          <TouchableOpacity
+            style={[styles.menuItem, setupExpanded && { backgroundColor: colors.iconBg }]}
+            activeOpacity={0.7}
+            onPress={() => setSetupExpanded(prev => !prev)}
+          >
+            <View style={[styles.menuIconWrap, { backgroundColor: colors.iconBg }]}>
+              <MaterialCommunityIcons name="cog-outline" size={22} color={colors.brand} />
+            </View>
+            <Text style={[styles.menuItemText, setupExpanded && { color: colors.brand }, { color: setupExpanded ? colors.brand : colors.textPrimary }]}>
+              Setup
+            </Text>
+            <Feather name={setupExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecond} />
+          </TouchableOpacity>
+
+          {setupExpanded && (
+            <View style={[styles.subMenu, { backgroundColor: colors.card }]}>
+              {['Shift Master'].map((item) => (
+                <TouchableOpacity
+                  key={item}
+                  style={[styles.subMenuItem, { borderLeftColor: colors.brandBorder }]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (item === 'Shift Master') handleNavigate('manager_shift_master', { source: 'menu' });
+                  }}
+                >
+                  <Text style={[styles.subMenuText, { color: colors.textSecond }]}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
 
 
           {/* Help */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,8 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
+  BackHandler,
   Alert,
-  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -16,138 +16,19 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
 import AdminHeader from '../components/AdminHeader';
 import AdminBottomTabNavigator from '../components/AdminBottomTabNavigator';
+import { getShifts, Shift, deleteShift } from './mockShiftStore';
 
 interface AdminShiftMasterScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
   onBack?: () => void;
 }
 
-interface Shift {
-  id: string;
-  name: string;
-  code: string;
-  startTime: string;
-  endTime: string;
-  gracePeriod: number; // in minutes
-  status: 'Active' | 'Inactive';
-}
-
-const DEFAULT_SHIFTS: Shift[] = [
-  {
-    id: '1',
-    name: 'Regular Shift',
-    code: 'REG-01',
-    startTime: '09:00 AM',
-    endTime: '06:00 PM',
-    gracePeriod: 15,
-    status: 'Active',
-  },
-  {
-    id: '2',
-    name: 'Night Shift',
-    code: 'NGT-02',
-    startTime: '09:00 PM',
-    endTime: '06:00 AM',
-    gracePeriod: 15,
-    status: 'Active',
-  },
-  {
-    id: '3',
-    name: 'Weekend Shift',
-    code: 'WKD-03',
-    startTime: '10:00 AM',
-    endTime: '04:00 PM',
-    gracePeriod: 30,
-    status: 'Inactive',
-  },
-];
-
 export default function AdminShiftMasterScreen({ onNavigate, onBack }: AdminShiftMasterScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [shifts, setShifts] = useState<Shift[]>(DEFAULT_SHIFTS);
-  
-  // Modals state
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingShift, setEditingShift] = useState<Shift | null>(null);
-  
-  // Form fields
-  const [formName, setFormName] = useState('');
-  const [formCode, setFormCode] = useState('');
-  const [formStart, setFormStart] = useState('');
-  const [formEnd, setFormEnd] = useState('');
-  const [formGrace, setFormGrace] = useState('');
-  const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
-
-  const openAddModal = () => {
-    setEditingShift(null);
-    setFormName('');
-    setFormCode('');
-    setFormStart('09:00 AM');
-    setFormEnd('06:00 PM');
-    setFormGrace('15');
-    setFormStatus('Active');
-    setModalVisible(true);
-  };
-
-  const openEditModal = (shift: Shift) => {
-    setEditingShift(shift);
-    setFormName(shift.name);
-    setFormCode(shift.code);
-    setFormStart(shift.startTime);
-    setFormEnd(shift.endTime);
-    setFormGrace(shift.gracePeriod.toString());
-    setFormStatus(shift.status);
-    setModalVisible(true);
-  };
-
-  const handleSave = () => {
-    if (!formName.trim()) return Alert.alert('Validation Error', 'Please enter a shift name.');
-    if (!formCode.trim()) return Alert.alert('Validation Error', 'Please enter a shift code.');
-    if (!formStart.trim()) return Alert.alert('Validation Error', 'Please enter a start time.');
-    if (!formEnd.trim()) return Alert.alert('Validation Error', 'Please enter an end time.');
-    
-    const graceNum = parseInt(formGrace, 10);
-    if (isNaN(graceNum) || graceNum < 0) {
-      return Alert.alert('Validation Error', 'Please enter a valid grace period (in minutes).');
-    }
-
-    if (editingShift) {
-      // Edit
-      setShifts(prev =>
-        prev.map(s =>
-          s.id === editingShift.id
-            ? {
-                ...s,
-                name: formName.trim(),
-                code: formCode.trim().toUpperCase(),
-                startTime: formStart.trim(),
-                endTime: formEnd.trim(),
-                gracePeriod: graceNum,
-                status: formStatus,
-              }
-            : s
-        )
-      );
-      Alert.alert('Success', 'Shift configuration updated successfully.');
-    } else {
-      // Add
-      const newShift: Shift = {
-        id: Math.random().toString(),
-        name: formName.trim(),
-        code: formCode.trim().toUpperCase(),
-        startTime: formStart.trim(),
-        endTime: formEnd.trim(),
-        gracePeriod: graceNum,
-        status: formStatus,
-      };
-      setShifts(prev => [...prev, newShift]);
-      Alert.alert('Success', 'Shift configuration added successfully.');
-    }
-    setModalVisible(false);
-  };
+  const [shifts, setShifts] = useState<Shift[]>([]);
 
   const handleDelete = (id: string) => {
     Alert.alert(
@@ -159,19 +40,57 @@ export default function AdminShiftMasterScreen({ onNavigate, onBack }: AdminShif
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            setShifts(prev => prev.filter(s => s.id !== id));
-            Alert.alert('Success', 'Shift configuration deleted successfully.');
+            const success = deleteShift(id);
+            if (success) {
+              setShifts(getShifts());
+              Alert.alert('Success', 'Shift configuration deleted successfully.');
+            } else {
+              Alert.alert('Error', 'Failed to delete shift configuration.');
+            }
           },
         },
       ]
     );
   };
 
+  // Load shifts on mount
+  useEffect(() => {
+    setShifts(getShifts());
+  }, []);
+
+  // Intercept hardware back button
+  useEffect(() => {
+    const onBackPress = () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      onNavigate?.('admin_dashboard');
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [onBack, onNavigate]);
+
   const filteredShifts = shifts.filter(
     s =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.code.toLowerCase().includes(search.toLowerCase())
   );
+
+  const getTypeColor = (type: 'Morning' | 'Evening' | 'Night') => {
+    switch (type) {
+      case 'Morning':
+        return { bg: '#EFF6FF', icon: '#3B82F6', badgeBg: '#DBEAFE' };
+      case 'Evening':
+        return { bg: '#FFF7ED', icon: '#F97316', badgeBg: '#FFEDD5' };
+      case 'Night':
+        return { bg: '#F5F3FF', icon: '#8B5CF6', badgeBg: '#EDE9FE' };
+      default:
+        return { bg: '#F1F5F9', icon: '#64748B', badgeBg: '#E2E8F0' };
+    }
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
@@ -186,202 +105,141 @@ export default function AdminShiftMasterScreen({ onNavigate, onBack }: AdminShif
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
       >
-        <View style={styles.topInfoRow}>
-          <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
-            Configure and assign shift schedules, working hours, and grace times.
-          </Text>
+        <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
+          Configure and assign shift schedules, working hours, grace periods, and thresholds.
+        </Text>
+
+        {/* Top Controls Row */}
+        <View style={styles.topBar}>
+          <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <Feather name="search" size={16} color={colors.textSecond} style={styles.searchIcon} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.textPrimary }]}
+              placeholder="Search code or name..."
+              placeholderTextColor={colors.textSecond}
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
           <TouchableOpacity
             style={[styles.addButton, { backgroundColor: colors.brand }]}
             activeOpacity={0.8}
-            onPress={openAddModal}
+            onPress={() => onNavigate?.('admin_shift_detail')}
           >
-            <Feather name="plus" size={16} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add Shift</Text>
+            <Feather name="plus" size={14} color="#FFFFFF" />
+            <Text style={styles.addButtonText}>Create Shift</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search shifts by name or code..."
-            placeholderTextColor={colors.textSecond}
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
-
-        <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>SHIFT CONFIGURATION INDEX</Text>
-
-        {/* Shift List */}
+        {/* Shifts List / Cards */}
         {filteredShifts.length === 0 ? (
-          <Text style={{ textAlign: 'center', color: colors.textSecond, marginTop: 30 }}>
-            No shift configurations found.
-          </Text>
+          <View style={styles.emptyContainer}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: colors.iconBg }]}>
+              <MaterialCommunityIcons name="calendar-clock" size={48} color={colors.brand} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>No Shifts Available</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecond }]}>
+              Create your first shift using the button above.
+            </Text>
+          </View>
         ) : (
-          filteredShifts.map(shift => (
-            <View
-              key={shift.id}
-              style={[styles.shiftCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.cardInfoRow}>
-                  <View style={[styles.iconContainer, { backgroundColor: '#F5F3FF' }]}>
-                    <MaterialCommunityIcons name="clock-outline" size={24} color="#8B5CF6" />
-                  </View>
-                  <View style={{ flex: 1 }}>
+          filteredShifts.map(shift => {
+            const typeStyle = getTypeColor(shift.type);
+            return (
+              <View
+                key={shift.id}
+                style={[
+                  styles.shiftCard,
+                  {
+                    backgroundColor: colors.card,
+                    borderColor: colors.borderLight,
+                    shadowColor: '#0F172A',
+                  },
+                ]}
+              >
+                {/* Header Row */}
+                <View style={styles.cardHeaderRow}>
+                  <View style={{ flex: 1, paddingRight: 8 }}>
                     <Text style={[styles.shiftName, { color: colors.textPrimary }]}>{shift.name}</Text>
-                    <Text style={[styles.codeText, { color: colors.textSecond }]}>
-                      Shift Code: {shift.code}
+                    <Text style={[styles.codeText, { color: colors.textSecond }]}>Code: {shift.code}</Text>
+                  </View>
+                  <View style={styles.headerRightActions}>
+                    <View style={[styles.typeBadge, { backgroundColor: typeStyle.badgeBg }]}>
+                      <Text style={[styles.typeBadgeText, { color: typeStyle.icon }]}>{shift.type}</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={[styles.cardDivider, { backgroundColor: colors.borderLight }]} />
+
+                {/* Timing Row */}
+                <View style={styles.timingRow}>
+                  <Feather name="clock" size={14} color={colors.textSecond} style={{ marginRight: 6 }} />
+                  <Text style={[styles.timingText, { color: colors.textSecond }]}>
+                    Working Hours:{' '}
+                    <Text style={[styles.timingHighlight, { color: colors.textPrimary }]}>
+                      {shift.startTime} – {shift.endTime}
+                    </Text>
+                  </Text>
+                </View>
+
+                {/* Detail Grid Columns */}
+                <View style={styles.gridRow}>
+                  <View style={styles.gridItem}>
+                    <Text style={[styles.gridLabel, { color: colors.textSecond }]}>Grace Time</Text>
+                    <Text style={[styles.gridValue, { color: colors.textPrimary }]}>{shift.graceTime} Mins</Text>
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={[styles.gridLabel, { color: colors.textSecond }]}>Min Hours</Text>
+                    <Text style={[styles.gridValue, { color: colors.textPrimary }]}>{shift.minWorkingHours} Hrs</Text>
+                  </View>
+                  <View style={styles.gridItem}>
+                    <Text style={[styles.gridLabel, { color: colors.textSecond }]}>Half Day</Text>
+                    <Text style={[styles.gridValue, { color: colors.textPrimary }]}>{shift.halfDayHours} Hrs</Text>
+                  </View>
+                </View>
+
+                <View style={[styles.actionRow, { borderTopColor: colors.borderLight }]}>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: shift.status === 'Active' ? colors.successBg : colors.borderLight }
+                  ]}>
+                    <View style={[
+                      styles.statusDot,
+                      { backgroundColor: shift.status === 'Active' ? colors.success : colors.textSecond }
+                    ]} />
+                    <Text style={[
+                      styles.statusText,
+                      { color: shift.status === 'Active' ? colors.successText : colors.textSecond }
+                    ]}>
+                      {shift.status}
                     </Text>
                   </View>
+
+                  <View style={styles.actionButtons}>
+                    <TouchableOpacity 
+                      style={[styles.btnEdit, { borderColor: colors.brandBorder, backgroundColor: colors.brandBg }]} 
+                      onPress={() => onNavigate?.('admin_shift_detail', { shiftId: shift.id })}
+                    >
+                      <Feather name="edit-2" size={13} color={colors.brand} />
+                      <Text style={[styles.btnEditText, { color: colors.brand }]}>Edit</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.btnDelete, { borderColor: isDark ? '#7F1D1D' : '#FCA5A5', backgroundColor: colors.dangerBg }]} 
+                      onPress={() => handleDelete(shift.id)}
+                    >
+                      <Feather name="trash-2" size={13} color={colors.danger} />
+                      <Text style={[styles.btnDeleteText, { color: colors.danger }]}>Delete</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-
-              <View style={[styles.cardDivider, { backgroundColor: colors.borderLight }]} />
-
-              <View style={styles.detailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Working Hours</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>
-                    {shift.startTime} - {shift.endTime}
-                  </Text>
-                </View>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Grace Period</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{shift.gracePeriod} Mins</Text>
-                </View>
-              </View>
-
-              <View style={[styles.actionRow, { borderTopColor: colors.borderLight }]}>
-                <View style={[styles.statusBadge, { backgroundColor: shift.status === 'Active' ? colors.successBg : colors.iconBg }]}>
-                  <View style={[styles.statusDot, { backgroundColor: shift.status === 'Active' ? colors.success : colors.textSecond }]} />
-                  <Text style={[styles.statusText, { color: shift.status === 'Active' ? colors.success : colors.textSecond }]}>
-                    {shift.status}
-                  </Text>
-                </View>
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => openEditModal(shift)}>
-                    <Feather name="edit-2" size={16} color={colors.brand} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(shift.id)}>
-                    <Feather name="trash-2" size={16} color={colors.danger} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
-
-      {/* Save Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {editingShift ? 'Edit Shift Settings' : 'Create New Shift'}
-            </Text>
-
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Shift Name *</Text>
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                placeholder="e.g. Regular Shift"
-                placeholderTextColor={colors.textSecond}
-                value={formName}
-                onChangeText={setFormName}
-              />
-
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Shift Code *</Text>
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                placeholder="e.g. REG-01"
-                placeholderTextColor={colors.textSecond}
-                value={formCode}
-                onChangeText={setFormCode}
-              />
-
-              <View style={styles.row}>
-                <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={[styles.label, { color: colors.textPrimary }]}>Start Time *</Text>
-                  <TextInput
-                    style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                    placeholder="e.g. 09:00 AM"
-                    placeholderTextColor={colors.textSecond}
-                    value={formStart}
-                    onChangeText={setFormStart}
-                  />
-                </View>
-                <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={[styles.label, { color: colors.textPrimary }]}>End Time *</Text>
-                  <TextInput
-                    style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                    placeholder="e.g. 06:00 PM"
-                    placeholderTextColor={colors.textSecond}
-                    value={formEnd}
-                    onChangeText={setFormEnd}
-                  />
-                </View>
-              </View>
-
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Grace Period (minutes) *</Text>
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                placeholder="e.g. 15"
-                placeholderTextColor={colors.textSecond}
-                keyboardType="number-pad"
-                value={formGrace}
-                onChangeText={setFormGrace}
-              />
-
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Status</Text>
-              <View style={styles.statusSelectRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.statusSelectorOption,
-                    { borderColor: colors.border },
-                    formStatus === 'Active' && { backgroundColor: colors.brand, borderColor: colors.brand },
-                  ]}
-                  onPress={() => setFormStatus('Active')}
-                >
-                  <Text style={[styles.statusSelectorText, { color: colors.textPrimary }, formStatus === 'Active' && { color: '#FFFFFF' }]}>
-                    Active
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.statusSelectorOption,
-                    { borderColor: colors.border },
-                    formStatus === 'Inactive' && { backgroundColor: colors.textSecond, borderColor: colors.textSecond },
-                  ]}
-                  onPress={() => setFormStatus('Inactive')}
-                >
-                  <Text style={[styles.statusSelectorText, { color: colors.textPrimary }, formStatus === 'Inactive' && { color: '#FFFFFF' }]}>
-                    Inactive
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-
-            <View style={styles.modalButtonContainer}>
-              <TouchableOpacity
-                style={[styles.modalNoButton, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={{ color: colors.textSecond, fontWeight: '700' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalYesButton, { backgroundColor: colors.brand }]} onPress={handleSave}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       <AdminBottomTabNavigator
         activeTab={null}
@@ -399,44 +257,53 @@ export default function AdminShiftMasterScreen({ onNavigate, onBack }: AdminShif
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-  topInfoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 },
-  pageDescription: { flex: 1, fontSize: 14, lineHeight: 20 },
-  addButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 6 },
-  addButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, height: 48, marginBottom: 16 },
+  pageDescription: { fontSize: 13, lineHeight: 18, marginBottom: 16 },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
+  searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, height: 44 },
   searchIcon: { marginRight: 8 },
   searchInput: { flex: 1, fontSize: 14, paddingVertical: 8 },
-  divider: { height: 1, marginBottom: 16 },
-  sectionHeader: { fontSize: 12, fontWeight: '700', letterSpacing: 1.0, marginBottom: 12 },
-  shiftCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 2 },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  shiftName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  codeText: { fontSize: 13, fontWeight: '500' },
+  addButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14, height: 44, borderRadius: 10, gap: 6 },
+  addButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
+  
+  /* Shift Card styles */
+  shiftCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  shiftName: { fontSize: 15, fontWeight: '700', marginBottom: 2 },
+  codeText: { fontSize: 12, fontWeight: '500' },
+  headerRightActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  typeBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  typeBadgeText: { fontSize: 10, fontWeight: '700' },
+  editBtn: { padding: 6, borderRadius: 6 },
   cardDivider: { height: 1, marginVertical: 12 },
-  detailsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
-  detailCol: { flex: 1 },
-  detailLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 13, fontWeight: '700' },
-  actionRow: { borderTopWidth: 1, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  timingRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  timingText: { fontSize: 12, fontWeight: '500' },
+  timingHighlight: { fontWeight: '700' },
+  gridRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  gridItem: { flex: 1 },
+  gridLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+  gridValue: { fontSize: 13, fontWeight: '700' },
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '700' },
-  actionButtons: { flexDirection: 'row', gap: 12 },
-  iconBtn: { padding: 4 },
+  actionRow: { borderTopWidth: 1, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  actionButtons: { flexDirection: 'row', gap: 8 },
+  btnEdit: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, gap: 6 },
+  btnEditText: { fontSize: 13, fontWeight: '700' },
+  btnDelete: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, gap: 6 },
+  btnDeleteText: { fontSize: 13, fontWeight: '700' },
 
-  /* Modal */
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContainer: { borderRadius: 24, padding: 24, maxHeight: '85%' },
-  modalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 18, textAlign: 'center' },
-  label: { fontSize: 13, fontWeight: '700', marginBottom: 6, marginTop: 12 },
-  input: { height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontSize: 14 },
-  row: { flexDirection: 'row' },
-  statusSelectRow: { flexDirection: 'row', gap: 12, marginTop: 6 },
-  statusSelectorOption: { flex: 1, height: 40, borderWidth: 1, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  statusSelectorText: { fontWeight: '700', fontSize: 13 },
-  modalButtonContainer: { flexDirection: 'row', gap: 12, marginTop: 24 },
-  modalNoButton: { flex: 1, height: 44, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
-  modalYesButton: { flex: 1, height: 44, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  /* Empty State */
+  emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  emptyIconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
+  emptyTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8, textAlign: 'center' },
+  emptySubtitle: { fontSize: 13, lineHeight: 18, textAlign: 'center' },
 });

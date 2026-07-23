@@ -101,7 +101,7 @@ function FormSectionHeader({ title, icon, colors }: { title: string; icon: strin
 
 export default function AdminOfficeLocationScreen({ onNavigate, onBack }: AdminOfficeLocationScreenProps) {
   const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [locations, setLocations] = useState<OfficeLocation[]>(DEFAULT_LOCATIONS);
@@ -637,11 +637,19 @@ export default function AdminOfficeLocationScreen({ onNavigate, onBack }: AdminO
                     </Text>
                   </View>
                   <View style={styles.actionButtons}>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => openEditModal(loc)}>
-                      <Feather name="edit-2" size={16} color={colors.brand} />
+                    <TouchableOpacity 
+                      style={[styles.btnEdit, { borderColor: colors.brandBorder, backgroundColor: colors.brandBg }]} 
+                      onPress={() => openEditModal(loc)}
+                    >
+                      <Feather name="edit-2" size={13} color={colors.brand} />
+                      <Text style={[styles.btnEditText, { color: colors.brand }]}>Edit</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(loc.id)}>
-                      <Feather name="trash-2" size={16} color={colors.danger} />
+                    <TouchableOpacity 
+                      style={[styles.btnDelete, { borderColor: isDark ? '#7F1D1D' : '#FCA5A5', backgroundColor: colors.dangerBg }]} 
+                      onPress={() => handleDelete(loc.id)}
+                    >
+                      <Feather name="trash-2" size={13} color={colors.danger} />
+                      <Text style={[styles.btnDeleteText, { color: colors.danger }]}>Delete</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -691,8 +699,11 @@ const styles = StyleSheet.create({
   statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 6 },
   statusDot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 12, fontWeight: '700' },
-  actionButtons: { flexDirection: 'row', gap: 12 },
-  iconBtn: { padding: 4 },
+  actionButtons: { flexDirection: 'row', gap: 8 },
+  btnEdit: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, gap: 6 },
+  btnEditText: { fontSize: 13, fontWeight: '700' },
+  btnDelete: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, gap: 6 },
+  btnDeleteText: { fontSize: 13, fontWeight: '700' },
   
   typeBadge: {
     paddingHorizontal: 8,

@@ -49,6 +49,7 @@ import AdminCompanyScreen from '@/admin/screens/AdminCompanyScreen';
 import AdminAssetScreen from '@/admin/screens/AdminAssetScreen';
 import AdminOfficeLocationScreen from '@/admin/screens/AdminOfficeLocationScreen';
 import AdminShiftMasterScreen from '@/admin/screens/AdminShiftMasterScreen';
+import AdminShiftDetailScreen from '@/admin/screens/AdminShiftDetailScreen';
 import AdminAttendanceRulesScreen from '@/admin/screens/AdminAttendanceRulesScreen';
 import AdminStaffDetailScreen from '@/admin/screens/AdminStaffDetailScreen';
 import AdminClientDetailScreen from '@/admin/screens/AdminClientDetailScreen';
@@ -65,6 +66,7 @@ import AdminReportsScreen from '@/admin/screens/AdminReportsScreen';
 import ManagerChangePasswordScreen from '@/manager/screens/ManagerChangePasswordScreen';
 import ManagerTeamScreen from '@/manager/screens/ManagerTeamScreen';
 import ManagerTimeScreen from '@/manager/screens/ManagerTimeScreen';
+import ManagerShiftMasterScreen from '@/manager/screens/ManagerShiftMasterScreen';
 
 type ScreenName =
   | 'splash'
@@ -95,6 +97,7 @@ type ScreenName =
   | 'admin_assets'
   | 'admin_office_locations'
   | 'admin_shift_master'
+  | 'admin_shift_detail'
   | 'admin_attendance_rules'
   | 'admin_staff_detail'
   | 'admin_client_detail'
@@ -125,6 +128,7 @@ type ScreenName =
   | 'employee_apply_leave'
   | 'employee_create_claim'
   | 'employee_change_password'
+  | 'manager_shift_master'
   | 'manager_change_password';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -229,6 +233,10 @@ function AppContent() {
         transitionTo('admin_staff', undefined, 'backward');
         return true;
 
+      case 'admin_shift_detail':
+        transitionTo('admin_shift_master', undefined, 'backward');
+        return true;
+
       case 'admin_client_detail':
         transitionTo('admin_client', undefined, 'backward');
         return true;
@@ -281,6 +289,7 @@ function AppContent() {
       case 'manager_help':
       case 'manager_profile':
       case 'manager_change_password':
+      case 'manager_shift_master':
         transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
         return true;
 
@@ -353,7 +362,7 @@ function AppContent() {
 
   /** Super smooth native-like slide transition */
   const transitionTo = (nextScreen: ScreenName, params?: any, direction: 'forward' | 'backward' = 'forward') => {
-    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects' || nextScreen === 'admin_holidays' || nextScreen === 'admin_companies' || nextScreen === 'admin_assets' || nextScreen === 'admin_office_locations' || nextScreen === 'admin_shift_master' || nextScreen === 'admin_attendance_rules') && params?.source) {
+    if ((nextScreen === 'admin_staff' || nextScreen === 'admin_client' || nextScreen === 'admin_leave_settings' || nextScreen === 'admin_user_groups' || nextScreen === 'admin_projects' || nextScreen === 'admin_holidays' || nextScreen === 'admin_companies' || nextScreen === 'admin_assets' || nextScreen === 'admin_office_locations' || nextScreen === 'admin_shift_master' || nextScreen === 'admin_attendance_rules' || nextScreen === 'manager_shift_master') && params?.source) {
       setNavSource(params.source);
     }
 
@@ -666,6 +675,15 @@ function AppContent() {
           />
         );
 
+      case 'admin_shift_detail':
+        return (
+          <AdminShiftDetailScreen
+            shiftId={p?.shiftId}
+            onNavigate={(s, navP) => transitionTo(s as ScreenName, navP)}
+            onBack={() => transitionTo('admin_shift_master', undefined, 'backward')}
+          />
+        );
+
       case 'admin_attendance_rules':
         return (
           <AdminAttendanceRulesScreen
@@ -896,6 +914,20 @@ function AppContent() {
           />
         );
       }
+      case 'manager_shift_master':
+        return (
+          <ManagerShiftMasterScreen
+            onNavigate={(s, p) => transitionTo(s as ScreenName, p)}
+            onBack={() => {
+              if (navSource === 'menu') {
+                transitionTo('manager_dashboard', { menuOpen: true }, 'backward');
+              } else {
+                transitionTo('manager_dashboard', undefined, 'backward');
+              }
+            }}
+          />
+        );
+
       case 'manager_alerts':
         return (
           <ManagerAlertScreen

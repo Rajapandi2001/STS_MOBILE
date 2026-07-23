@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,8 +7,12 @@ import {
   TextInput,
   ScrollView,
   StatusBar,
-  Alert,
+  Switch,
   Modal,
+  Animated,
+  KeyboardAvoidingView,
+  Platform,
+  BackHandler,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
@@ -16,381 +20,984 @@ import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import AdminMenu from '@/admin/components/AdminMenu';
 import AdminHeader from '../components/AdminHeader';
 import AdminBottomTabNavigator from '../components/AdminBottomTabNavigator';
+import { getShifts, Shift } from './mockShiftStore';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function parseTimeString(timeStr: string) {
+  const regex = /(\d{1,2}):(\d{2})\s*(AM|PM)/i;
+  const match = timeStr.match(regex);
+  if (match) {
+    return {
+      hour: parseInt(match[1], 10),
+      minute: parseInt(match[2], 10),
+      period: match[3].toUpperCase() as 'AM' | 'PM',
+    };
+  }
+  return { hour: 9, minute: 0, period: 'AM' as const };
+}
+
+function formatTimeComponents(hour: number, minute: number, period: 'AM' | 'PM'): string {
+  const hStr = hour.toString().padStart(2, '0');
+  const mStr = minute.toString().padStart(2, '0');
+  return `${hStr}:${mStr} ${period}`;
+}
+
+function parseDurationString(durationStr: string) {
+  const parts = durationStr.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  return {
+    hour: isNaN(h) ? 8 : h,
+    minute: isNaN(m) ? 0 : m,
+  };
+}
+
+function formatDurationComponents(hour: number, minute: number): string {
+  const hStr = hour.toString().padStart(2, '0');
+  const mStr = minute.toString().padStart(2, '0');
+  return `${hStr}:${mStr}`;
+}
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface PolicyData {
+  id: string;
+  name: string;
+  shiftRequired: boolean;
+  shiftId: string;
+  gracePeriod: string;
+  minWorkingHours: string;
+  halfDayHours: string;
+  overtimeStartsAfter: string;
+  gpsRequired: boolean;
+  geofenceRequired: boolean;
+  photoRequired: boolean;
+  allowWfh: boolean;
+  autoCheckout: boolean;
+  normalCheckinTime: string;
+  normalCheckoutTime: string;
+}
+
+const DEFAULT_POLICY: PolicyData = {
+  id: 'POL-2026-001',
+  name: 'Standard Attendance Policy',
+  shiftRequired: true,
+  shiftId: '1', // Regular Shift
+  gracePeriod: '15',
+  minWorkingHours: '08:00',
+  halfDayHours: '04:00',
+  overtimeStartsAfter: '09:00',
+  gpsRequired: true,
+  geofenceRequired: false,
+  photoRequired: true,
+  allowWfh: false,
+  autoCheckout: true,
+  normalCheckinTime: '09:00 AM',
+  normalCheckoutTime: '06:00 PM',
+};
 
 interface AdminAttendanceRulesScreenProps {
   onNavigate?: (screen: string, params?: any) => void;
   onBack?: () => void;
 }
 
-interface AttendanceRule {
-  id: string;
-  name: string;
-  description: string;
-  value: string; // Threshold value (e.g. "09:30 AM", "8 Hours")
-  status: 'Active' | 'Inactive';
-}
-
-const DEFAULT_RULES: AttendanceRule[] = [
-  {
-    id: '1',
-    name: 'Late Arrival Policy',
-    description: "Mark attendance as 'late' if checked in after this time.",
-    value: '09:30 AM',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    name: 'Half-Day Cutoff',
-    description: "Mark attendance as 'half-day' if checked in after this time.",
-    value: '01:30 PM',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    name: 'Minimum Daily Working Hours',
-    description: 'Minimum required work hours for a full-day presence credit.',
-    value: '8 Hours',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    name: 'Overtime Threshold',
-    description: 'Minimum hours after shift end time to qualify for overtime hours.',
-    value: '30 Mins',
-    status: 'Inactive',
-  },
-];
-
-export default function AdminAttendanceRulesScreen({ onNavigate, onBack }: AdminAttendanceRulesScreenProps) {
+export default function AdminAttendanceRulesScreen({
+  onNavigate,
+  onBack,
+}: AdminAttendanceRulesScreenProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-  const [search, setSearch] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [rules, setRules] = useState<AttendanceRule[]>(DEFAULT_RULES);
-  
-  // Modals state
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingRule, setEditingRule] = useState<AttendanceRule | null>(null);
-  
-  // Form fields
-  const [formName, setFormName] = useState('');
-  const [formDesc, setFormDesc] = useState('');
-  const [formValue, setFormValue] = useState('');
-  const [formStatus, setFormStatus] = useState<'Active' | 'Inactive'>('Active');
 
-  const openAddModal = () => {
-    setEditingRule(null);
-    setFormName('');
-    setFormDesc('');
-    setFormValue('');
-    setFormStatus('Active');
-    setModalVisible(true);
-  };
+  // Form State
+  const [policyName, setPolicyName] = useState(DEFAULT_POLICY.name);
+  const [shiftRequired, setShiftRequired] = useState(DEFAULT_POLICY.shiftRequired);
+  const [selectedShiftId, setSelectedShiftId] = useState(DEFAULT_POLICY.shiftId);
+  const [gracePeriod, setGracePeriod] = useState(DEFAULT_POLICY.gracePeriod);
+  const [minWorkingHours, setMinWorkingHours] = useState(DEFAULT_POLICY.minWorkingHours);
+  const [halfDayHours, setHalfDayHours] = useState(DEFAULT_POLICY.halfDayHours);
+  const [overtimeStartsAfter, setOvertimeStartsAfter] = useState(DEFAULT_POLICY.overtimeStartsAfter);
+  
+  const [gpsRequired, setGpsRequired] = useState(DEFAULT_POLICY.gpsRequired);
+  const [geofenceRequired, setGeofenceRequired] = useState(DEFAULT_POLICY.geofenceRequired);
+  const [photoRequired, setPhotoRequired] = useState(DEFAULT_POLICY.photoRequired);
+  const [allowWfh, setAllowWfh] = useState(DEFAULT_POLICY.allowWfh);
+  
+  const [autoCheckout, setAutoCheckout] = useState(DEFAULT_POLICY.autoCheckout);
+  const [normalCheckinTime, setNormalCheckinTime] = useState(DEFAULT_POLICY.normalCheckinTime);
+  const [normalCheckoutTime, setNormalCheckoutTime] = useState(DEFAULT_POLICY.normalCheckoutTime);
 
-  const openEditModal = (rule: AttendanceRule) => {
-    setEditingRule(rule);
-    setFormName(rule.name);
-    setFormDesc(rule.description);
-    setFormValue(rule.value);
-    setFormStatus(rule.status);
-    setModalVisible(true);
+  // Validation errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Toast State
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastAnim = useRef(new Animated.Value(0)).current;
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+
+  // Custom Time Picker state
+  const [timePickerVisible, setTimePickerVisible] = useState(false);
+  const [timePickerTarget, setTimePickerTarget] = useState<'normalCheckinTime' | 'normalCheckoutTime'>('normalCheckinTime');
+  const [tempTime, setTempTime] = useState({ hour: 9, minute: 0, period: 'AM' as 'AM' | 'PM' });
+
+  // Custom Duration Picker state
+  const [durationPickerVisible, setDurationPickerVisible] = useState(false);
+  const [durationPickerTarget, setDurationPickerTarget] = useState<'minWorkingHours' | 'halfDayHours' | 'overtimeStartsAfter'>('minWorkingHours');
+  const [tempDuration, setTempDuration] = useState({ hour: 8, minute: 0 });
+
+  // Shift List selector modal state
+  const [shiftListVisible, setShiftListVisible] = useState(false);
+  const [availableShifts, setAvailableShifts] = useState<Shift[]>([]);
+
+  // Load shifts on mount
+  useEffect(() => {
+    setAvailableShifts(getShifts());
+  }, []);
+
+  // Intercept hardware back button
+  useEffect(() => {
+    const onBackPress = () => {
+      if (onBack) {
+        onBack();
+        return true;
+      }
+      onNavigate?.('admin_dashboard');
+      return true;
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [onBack, onNavigate]);
+
+  const selectedShiftName = availableShifts.find(s => s.id === selectedShiftId)?.name || 'Select Shift';
+
+  // Validation
+  const validateForm = () => {
+    const nextErrors: Record<string, string> = {};
+
+    if (!policyName.trim()) {
+      nextErrors.policyName = 'Policy Name is required.';
+    }
+
+    if (shiftRequired && !selectedShiftId) {
+      nextErrors.shiftId = 'Please select a required shift.';
+    }
+
+    const graceNum = parseInt(gracePeriod, 10);
+    if (!gracePeriod.trim()) {
+      nextErrors.gracePeriod = 'Grace Period is required.';
+    } else if (isNaN(graceNum) || graceNum < 0) {
+      nextErrors.gracePeriod = 'Grace Period must be a positive integer.';
+    }
+
+    if (!minWorkingHours.trim()) {
+      nextErrors.minWorkingHours = 'Minimum daily hours are required.';
+    }
+
+    if (!halfDayHours.trim()) {
+      nextErrors.halfDayHours = 'Half day threshold hours are required.';
+    }
+
+    if (!overtimeStartsAfter.trim()) {
+      nextErrors.overtimeStartsAfter = 'Overtime cutoff starts after is required.';
+    }
+
+    if (!normalCheckinTime.trim()) {
+      nextErrors.normalCheckinTime = 'Normal check-in time is required.';
+    }
+
+    if (!normalCheckoutTime.trim()) {
+      nextErrors.normalCheckoutTime = 'Normal check-out time is required.';
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleSave = () => {
-    if (!formName.trim()) return Alert.alert('Validation Error', 'Please enter a rule name.');
-    if (!formDesc.trim()) return Alert.alert('Validation Error', 'Please enter a rule description.');
-    if (!formValue.trim()) return Alert.alert('Validation Error', 'Please enter a rule value/threshold.');
+    if (!validateForm()) return;
 
-    if (editingRule) {
-      // Edit
-      setRules(prev =>
-        prev.map(r =>
-          r.id === editingRule.id
-            ? {
-                ...r,
-                name: formName.trim(),
-                description: formDesc.trim(),
-                value: formValue.trim(),
-                status: formStatus,
-              }
-            : r
-        )
-      );
-      Alert.alert('Success', 'Attendance rule updated successfully.');
+    showToast('Attendance rules saved successfully!', () => {
+      // Logic for saving completed. No API needed.
+    });
+  };
+
+  const showToast = (message: string, callback: () => void) => {
+    setToastMessage(message);
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(toastAnim, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastOpacity, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.delay(1800),
+      Animated.parallel([
+        Animated.timing(toastAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start(() => {
+      setToastMessage(null);
+      callback();
+    });
+  };
+
+  // Custom Time Picker Handlers
+  const openTimePicker = (target: 'normalCheckinTime' | 'normalCheckoutTime') => {
+    setTimePickerTarget(target);
+    const initialTimeStr = target === 'normalCheckinTime' ? normalCheckinTime : normalCheckoutTime;
+    const parsed = parseTimeString(initialTimeStr);
+    setTempTime(parsed);
+    setTimePickerVisible(true);
+  };
+
+  const adjustTimeHour = (amt: number) => {
+    setTempTime((prev) => {
+      let next = prev.hour + amt;
+      if (next > 12) next = 1;
+      if (next < 1) next = 12;
+      return { ...prev, hour: next };
+    });
+  };
+
+  const adjustTimeMinute = (amt: number) => {
+    setTempTime((prev) => {
+      let next = prev.minute + amt;
+      if (next >= 60) next = 0;
+      if (next < 0) next = 55;
+      return { ...prev, minute: next };
+    });
+  };
+
+  const confirmTimeSelection = () => {
+    const formatted = formatTimeComponents(tempTime.hour, tempTime.minute, tempTime.period);
+    if (timePickerTarget === 'normalCheckinTime') {
+      setNormalCheckinTime(formatted);
+      if (errors.normalCheckinTime) setErrors((prev) => ({ ...prev, normalCheckinTime: '' }));
     } else {
-      // Add
-      const newRule: AttendanceRule = {
-        id: Math.random().toString(),
-        name: formName.trim(),
-        description: formDesc.trim(),
-        value: formValue.trim(),
-        status: formStatus,
-      };
-      setRules(prev => [...prev, newRule]);
-      Alert.alert('Success', 'Attendance rule added successfully.');
+      setNormalCheckoutTime(formatted);
+      if (errors.normalCheckoutTime) setErrors((prev) => ({ ...prev, normalCheckoutTime: '' }));
     }
-    setModalVisible(false);
+    setTimePickerVisible(false);
   };
 
-  const handleDelete = (id: string) => {
-    Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this attendance rule?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            setRules(prev => prev.filter(r => r.id !== id));
-            Alert.alert('Success', 'Attendance rule deleted successfully.');
-          },
-        },
-      ]
-    );
+  // Custom Duration Picker Handlers
+  const openDurationPicker = (target: 'minWorkingHours' | 'halfDayHours' | 'overtimeStartsAfter') => {
+    setDurationPickerTarget(target);
+    const initialDurationStr =
+      target === 'minWorkingHours'
+        ? minWorkingHours
+        : target === 'halfDayHours'
+        ? halfDayHours
+        : overtimeStartsAfter;
+    const parsed = parseDurationString(initialDurationStr);
+    setTempDuration(parsed);
+    setDurationPickerVisible(true);
   };
 
-  const filteredRules = rules.filter(
-    r =>
-      r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const adjustDurationHour = (amt: number) => {
+    setTempDuration((prev) => {
+      let next = prev.hour + amt;
+      if (next > 23) next = 0;
+      if (next < 0) next = 23;
+      return { ...prev, hour: next };
+    });
+  };
+
+  const adjustDurationMinute = (amt: number) => {
+    setTempDuration((prev) => {
+      let next = prev.minute + amt;
+      if (next >= 60) next = 0;
+      if (next < 0) next = 55;
+      return { ...prev, minute: next };
+    });
+  };
+
+  const confirmDurationSelection = () => {
+    const formatted = formatDurationComponents(tempDuration.hour, tempDuration.minute);
+    if (durationPickerTarget === 'minWorkingHours') {
+      setMinWorkingHours(formatted);
+      if (errors.minWorkingHours) setErrors((prev) => ({ ...prev, minWorkingHours: '' }));
+    } else if (durationPickerTarget === 'halfDayHours') {
+      setHalfDayHours(formatted);
+      if (errors.halfDayHours) setErrors((prev) => ({ ...prev, halfDayHours: '' }));
+    } else {
+      setOvertimeStartsAfter(formatted);
+      if (errors.overtimeStartsAfter) setErrors((prev) => ({ ...prev, overtimeStartsAfter: '' }));
+    }
+    setDurationPickerVisible(false);
+  };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
-      <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={{ flex: 1 }}
+    >
+      <View style={[styles.container, { backgroundColor: colors.bgScreen }]}>
+        <StatusBar barStyle={colors.statusBar} backgroundColor={colors.header} />
 
-      <AdminHeader
-        title="Attendance Rules"
-        onMenuPress={() => setMenuOpen(true)}
-        onNotificationPress={() => onNavigate?.('admin_alerts')}
-        onProfilePress={() => onNavigate?.('admin_profile')}
-      />
+        <AdminHeader
+          title="Attendance Rules"
+          onMenuPress={() => setMenuOpen(true)}
+          onNotificationPress={() => onNavigate?.('admin_alerts')}
+          onProfilePress={() => onNavigate?.('admin_profile')}
+        />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 95 }]}
-      >
-        <View style={styles.topInfoRow}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 120 }]}
+        >
           <Text style={[styles.pageDescription, { color: colors.textSecond }]}>
-            Set the parameters governing presence, shift exceptions, late mark cutoffs, and daily hours rules.
+            Set active attendance tracking parameters, geolocation requirements, WFH provisions, and overtime schedules.
           </Text>
-          <TouchableOpacity
-            style={[styles.addButton, { backgroundColor: colors.brand }]}
-            activeOpacity={0.8}
-            onPress={openAddModal}
-          >
-            <Feather name="plus" size={16} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add Rule</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Search Bar */}
-        <View style={[styles.searchContainer, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
-          <Feather name="search" size={18} color={colors.textSecond} style={styles.searchIcon} />
-          <TextInput
-            style={[styles.searchInput, { color: colors.textPrimary }]}
-            placeholder="Search rules by name or description..."
-            placeholderTextColor={colors.textSecond}
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
+          {/* Section 1: Policy Information */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: colors.brandBg }]}>
+                <Feather name="file-text" size={18} color={colors.brand} />
+              </View>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Policy Information</Text>
+            </View>
 
-        <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Policy ID (Read-only)</Text>
+            <TextInput
+              style={[
+                styles.inputDisabled,
+                { color: colors.textMuted, borderColor: colors.border, backgroundColor: colors.bgScreen }
+              ]}
+              value={DEFAULT_POLICY.id}
+              editable={false}
+            />
 
-        <Text style={[styles.sectionHeader, { color: colors.textSecond }]}>ATTENDANCE CONTROL LAWS</Text>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Policy Name *</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: colors.textPrimary, borderColor: errors.policyName ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+              ]}
+              placeholder="e.g. Standard Attendance Policy"
+              placeholderTextColor={colors.textSecond}
+              value={policyName}
+              onChangeText={(text) => {
+                setPolicyName(text);
+                if (errors.policyName) setErrors((prev) => ({ ...prev, policyName: '' }));
+              }}
+            />
+            {errors.policyName && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.policyName}</Text>}
 
-        {/* Rules List */}
-        {filteredRules.length === 0 ? (
-          <Text style={{ textAlign: 'center', color: colors.textSecond, marginTop: 30 }}>
-            No attendance rules found.
-          </Text>
-        ) : (
-          filteredRules.map(rule => (
-            <View
-              key={rule.id}
-              style={[styles.ruleCard, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-            >
-              <View style={styles.cardHeaderRow}>
-                <View style={styles.cardInfoRow}>
-                  <View style={[styles.iconContainer, { backgroundColor: '#FEF2F2' }]}>
-                    <MaterialCommunityIcons name="gavel" size={24} color="#EF4444" />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.ruleName, { color: colors.textPrimary }]}>{rule.name}</Text>
-                    <Text style={[styles.descText, { color: colors.textSecond }]}>
-                      {rule.description}
-                    </Text>
-                  </View>
-                </View>
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Shift Required</Text>
+                <Text style={[styles.switchDesc, { color: colors.textSecond }]}>Shift scheduling linked check-in validation.</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#CBD5E1', true: colors.brandBorder }}
+                thumbColor={shiftRequired ? colors.brand : '#F1F5F9'}
+                ios_backgroundColor="#CBD5E1"
+                onValueChange={(val) => {
+                  setShiftRequired(val);
+                  if (!val) {
+                    if (errors.shiftId) setErrors((prev) => ({ ...prev, shiftId: '' }));
+                  }
+                }}
+                value={shiftRequired}
+              />
+            </View>
+
+            {shiftRequired && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Link Shift Dropdown *</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pickerButtonInput,
+                    { borderColor: errors.shiftId ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+                  ]}
+                  onPress={() => setShiftListVisible(true)}
+                >
+                  <Text style={[styles.pickerValueText, { color: colors.textPrimary }]}>{selectedShiftName}</Text>
+                  <Feather name="chevron-down" size={16} color={colors.textSecond} />
+                </TouchableOpacity>
+                {errors.shiftId && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.shiftId}</Text>}
+              </View>
+            )}
+          </View>
+
+          {/* Section 2: Attendance Configuration */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: '#F0FDF4' }]}>
+                <Feather name="sliders" size={18} color="#16A34A" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Attendance Configuration</Text>
+            </View>
+
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Grace Period (Minutes) *</Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: colors.textPrimary, borderColor: errors.gracePeriod ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+              ]}
+              placeholder="e.g. 15"
+              placeholderTextColor={colors.textSecond}
+              keyboardType="number-pad"
+              value={gracePeriod}
+              onChangeText={(text) => {
+                setGracePeriod(text);
+                if (errors.gracePeriod) setErrors((prev) => ({ ...prev, gracePeriod: '' }));
+              }}
+            />
+            {errors.gracePeriod && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.gracePeriod}</Text>}
+
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Min Work Hours *</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pickerButtonInput,
+                    { borderColor: errors.minWorkingHours ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+                  ]}
+                  onPress={() => openDurationPicker('minWorkingHours')}
+                >
+                  <Text style={[styles.pickerValueText, { color: colors.textPrimary }]}>{minWorkingHours} Hrs</Text>
+                  <Feather name="clock" size={16} color={colors.textSecond} />
+                </TouchableOpacity>
+                {errors.minWorkingHours && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.minWorkingHours}</Text>}
               </View>
 
-              <View style={[styles.cardDivider, { backgroundColor: colors.borderLight }]} />
-
-              <View style={styles.detailsRow}>
-                <View style={styles.detailCol}>
-                  <Text style={[styles.detailLabel, { color: colors.textSecond }]}>Threshold Value</Text>
-                  <Text style={[styles.detailValue, { color: colors.textPrimary }]}>{rule.value}</Text>
-                </View>
-              </View>
-
-              <View style={[styles.actionRow, { borderTopColor: colors.borderLight }]}>
-                <View style={[styles.statusBadge, { backgroundColor: rule.status === 'Active' ? colors.successBg : colors.iconBg }]}>
-                  <View style={[styles.statusDot, { backgroundColor: rule.status === 'Active' ? colors.success : colors.textSecond }]} />
-                  <Text style={[styles.statusText, { color: rule.status === 'Active' ? colors.success : colors.textSecond }]}>
-                    {rule.status}
-                  </Text>
-                </View>
-                <View style={styles.actionButtons}>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => openEditModal(rule)}>
-                    <Feather name="edit-2" size={16} color={colors.brand} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => handleDelete(rule.id)}>
-                    <Feather name="trash-2" size={16} color={colors.danger} />
-                  </TouchableOpacity>
-                </View>
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Half Day Hours *</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pickerButtonInput,
+                    { borderColor: errors.halfDayHours ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+                  ]}
+                  onPress={() => openDurationPicker('halfDayHours')}
+                >
+                  <Text style={[styles.pickerValueText, { color: colors.textPrimary }]}>{halfDayHours} Hrs</Text>
+                  <Feather name="clock" size={16} color={colors.textSecond} />
+                </TouchableOpacity>
+                {errors.halfDayHours && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.halfDayHours}</Text>}
               </View>
             </View>
-          ))
-        )}
-      </ScrollView>
 
-      {/* Save Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
-            <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
-              {editingRule ? 'Edit Attendance Rule' : 'Add Attendance Rule'}
-            </Text>
+            <Text style={[styles.label, { color: colors.textPrimary }]}>Overtime starts after (Hours) *</Text>
+            <TouchableOpacity
+              style={[
+                styles.pickerButtonInput,
+                { borderColor: errors.overtimeStartsAfter ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+              ]}
+              onPress={() => openDurationPicker('overtimeStartsAfter')}
+            >
+              <Text style={[styles.pickerValueText, { color: colors.textPrimary }]}>{overtimeStartsAfter} Hrs</Text>
+              <Feather name="clock" size={16} color={colors.textSecond} />
+            </TouchableOpacity>
+            {errors.overtimeStartsAfter && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.overtimeStartsAfter}</Text>}
+          </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Rule Name *</Text>
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                placeholder="e.g. Late Arrival Policy"
-                placeholderTextColor={colors.textSecond}
-                value={formName}
-                onChangeText={setFormName}
-              />
-
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Description *</Text>
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen, height: 60 }]}
-                placeholder="Brief description of the rule impact..."
-                placeholderTextColor={colors.textSecond}
-                multiline
-                numberOfLines={2}
-                value={formDesc}
-                onChangeText={setFormDesc}
-              />
-
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Threshold/Limit Value *</Text>
-              <TextInput
-                style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.bgScreen }]}
-                placeholder="e.g. 09:30 AM or 8 Hours"
-                placeholderTextColor={colors.textSecond}
-                value={formValue}
-                onChangeText={setFormValue}
-              />
-
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Status</Text>
-              <View style={styles.statusSelectRow}>
-                <TouchableOpacity
-                  style={[
-                    styles.statusSelectorOption,
-                    { borderColor: colors.border },
-                    formStatus === 'Active' && { backgroundColor: colors.brand, borderColor: colors.brand },
-                  ]}
-                  onPress={() => setFormStatus('Active')}
-                >
-                  <Text style={[styles.statusSelectorText, { color: colors.textPrimary }, formStatus === 'Active' && { color: '#FFFFFF' }]}>
-                    Active
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.statusSelectorOption,
-                    { borderColor: colors.border },
-                    formStatus === 'Inactive' && { backgroundColor: colors.textSecond, borderColor: colors.textSecond },
-                  ]}
-                  onPress={() => setFormStatus('Inactive')}
-                >
-                  <Text style={[styles.statusSelectorText, { color: colors.textPrimary }, formStatus === 'Inactive' && { color: '#FFFFFF' }]}>
-                    Inactive
-                  </Text>
-                </TouchableOpacity>
+          {/* Section 3: Attendance Requirements */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: '#FEF2F2' }]}>
+                <Feather name="shield" size={18} color="#EF4444" />
               </View>
-            </ScrollView>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Attendance Requirements</Text>
+            </View>
 
-            <View style={styles.modalButtonContainer}>
+            {/* GPS switch */}
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>GPS Required</Text>
+                <Text style={[styles.switchDesc, { color: colors.textSecond }]}>Requires real-time coordinate logging during punch-in.</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#CBD5E1', true: colors.brandBorder }}
+                thumbColor={gpsRequired ? colors.brand : '#F1F5F9'}
+                ios_backgroundColor="#CBD5E1"
+                onValueChange={setGpsRequired}
+                value={gpsRequired}
+              />
+            </View>
+
+            <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
+
+            {/* Geofence switch */}
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Geofence Required</Text>
+                <Text style={[styles.switchDesc, { color: colors.textSecond }]}>Restricts check-in to designated office spatial circles.</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#CBD5E1', true: colors.brandBorder }}
+                thumbColor={geofenceRequired ? colors.brand : '#F1F5F9'}
+                ios_backgroundColor="#CBD5E1"
+                onValueChange={setGeofenceRequired}
+                value={geofenceRequired}
+              />
+            </View>
+
+            <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
+
+            {/* Photo switch */}
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Photo Required</Text>
+                <Text style={[styles.switchDesc, { color: colors.textSecond }]}>Capture selfie during check-in for verification check.</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#CBD5E1', true: colors.brandBorder }}
+                thumbColor={photoRequired ? colors.brand : '#F1F5F9'}
+                ios_backgroundColor="#CBD5E1"
+                onValueChange={setPhotoRequired}
+                value={photoRequired}
+              />
+            </View>
+
+            <View style={[styles.rowDivider, { backgroundColor: colors.borderLight }]} />
+
+            {/* Allow WFH switch */}
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Allow Work From Home</Text>
+                <Text style={[styles.switchDesc, { color: colors.textSecond }]}>Permits remote spatial locations without geofencing validation.</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#CBD5E1', true: colors.brandBorder }}
+                thumbColor={allowWfh ? colors.brand : '#F1F5F9'}
+                ios_backgroundColor="#CBD5E1"
+                onValueChange={setAllowWfh}
+                value={allowWfh}
+              />
+            </View>
+          </View>
+
+          {/* Section 4: Automation */}
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+            <View style={styles.sectionHeaderRow}>
+              <View style={[styles.sectionIconWrap, { backgroundColor: '#FFFBEB' }]}>
+                <Feather name="cpu" size={18} color="#D97706" />
+              </View>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Automation</Text>
+            </View>
+
+            {/* Auto Checkout switch */}
+            <View style={styles.switchRow}>
+              <View style={{ flex: 1, marginRight: 10 }}>
+                <Text style={[styles.switchLabel, { color: colors.textPrimary }]}>Auto Checkout</Text>
+                <Text style={[styles.switchDesc, { color: colors.textSecond }]}>Performs automatic clock-out at end-of-day cutoff.</Text>
+              </View>
+              <Switch
+                trackColor={{ false: '#CBD5E1', true: colors.brandBorder }}
+                thumbColor={autoCheckout ? colors.brand : '#F1F5F9'}
+                ios_backgroundColor="#CBD5E1"
+                onValueChange={setAutoCheckout}
+                value={autoCheckout}
+              />
+            </View>
+
+            <View style={styles.row}>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Normal Check-in *</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pickerButtonInput,
+                    { borderColor: errors.normalCheckinTime ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+                  ]}
+                  onPress={() => openTimePicker('normalCheckinTime')}
+                >
+                  <Text style={[styles.pickerValueText, { color: colors.textPrimary }]}>{normalCheckinTime}</Text>
+                  <Feather name="clock" size={16} color={colors.textSecond} />
+                </TouchableOpacity>
+                {errors.normalCheckinTime && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.normalCheckinTime}</Text>}
+              </View>
+
+              <View style={{ flex: 1, marginLeft: 8 }}>
+                <Text style={[styles.label, { color: colors.textPrimary }]}>Normal Check-out *</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.pickerButtonInput,
+                    { borderColor: errors.normalCheckoutTime ? colors.danger : colors.border, backgroundColor: colors.bgScreen }
+                  ]}
+                  onPress={() => openTimePicker('normalCheckoutTime')}
+                >
+                  <Text style={[styles.pickerValueText, { color: colors.textPrimary }]}>{normalCheckoutTime}</Text>
+                  <Feather name="clock" size={16} color={colors.textSecond} />
+                </TouchableOpacity>
+                {errors.normalCheckoutTime && <Text style={[styles.errorText, { color: colors.danger }]}>{errors.normalCheckoutTime}</Text>}
+              </View>
+            </View>
+          </View>
+
+          {/* Save Policy Button */}
+          <TouchableOpacity
+            style={[styles.savePolicyBtn, { backgroundColor: colors.brand }]}
+            activeOpacity={0.8}
+            onPress={handleSave}
+          >
+            <Text style={styles.savePolicyBtnText}>Save Policy</Text>
+          </TouchableOpacity>
+
+        </ScrollView>
+
+        {/* Custom Dropdown Dialog for Shifts */}
+        <Modal
+          visible={shiftListVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShiftListVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContainer, { backgroundColor: colors.card, maxHeight: '60%' }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary, marginBottom: 16 }]}>Select Shift Schedule</Text>
+              
+              <ScrollView showsVerticalScrollIndicator={true} style={{ width: '100%' }}>
+                {availableShifts.map((shift) => {
+                  const isSelected = shift.id === selectedShiftId;
+                  return (
+                    <TouchableOpacity
+                      key={shift.id}
+                      style={[
+                        styles.dropdownItem,
+                        { borderBottomColor: colors.borderLight },
+                        isSelected && { backgroundColor: colors.brandBg }
+                      ]}
+                      onPress={() => {
+                        setSelectedShiftId(shift.id);
+                        if (errors.shiftId) setErrors((prev) => ({ ...prev, shiftId: '' }));
+                        setShiftListVisible(false);
+                      }}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.dropdownItemCode, { color: colors.textPrimary, fontWeight: isSelected ? '700' : '500' }]}>
+                          {shift.code}
+                        </Text>
+                        <Text style={[styles.dropdownItemName, { color: colors.textSecond }]}>
+                          {shift.name} ({shift.startTime} - {shift.endTime})
+                        </Text>
+                      </View>
+                      {isSelected && <Feather name="check" size={18} color={colors.brand} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+
               <TouchableOpacity
-                style={[styles.modalNoButton, { borderColor: colors.border, backgroundColor: colors.cardAlt }]}
-                onPress={() => setModalVisible(false)}
+                style={[styles.modalNoButton, { borderColor: colors.border, marginTop: 16, width: '100%' }]}
+                onPress={() => setShiftListVisible(false)}
               >
                 <Text style={{ color: colors.textSecond, fontWeight: '700' }}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalYesButton, { backgroundColor: colors.brand }]} onPress={handleSave}>
-                <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Save</Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <AdminBottomTabNavigator
-        activeTab={null}
-        onTabPress={tab => {
-          if (tab === 'home') onNavigate?.('admin_dashboard');
-          else onNavigate?.(`admin_${tab}`);
-        }}
-      />
+        {/* Custom Time Picker Modal */}
+        <Modal
+          visible={timePickerVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setTimePickerVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Select {timePickerTarget === 'normalCheckinTime' ? 'Check-in Time' : 'Check-out Time'}
+              </Text>
 
-      <AdminMenu visible={menuOpen} onClose={() => setMenuOpen(false)} onNavigate={onNavigate} />
-    </View>
+              <View style={styles.pickerSelectorRow}>
+                {/* Hour */}
+                <View style={styles.pickerCol}>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustTimeHour(1)}
+                  >
+                    <Feather name="chevron-up" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerNum, { color: colors.textPrimary }]}>
+                    {tempTime.hour.toString().padStart(2, '0')}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustTimeHour(-1)}
+                  >
+                    <Feather name="chevron-down" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerColLabel, { color: colors.textSecond }]}>Hour</Text>
+                </View>
+
+                <Text style={[styles.pickerColon, { color: colors.textPrimary }]}>:</Text>
+
+                {/* Minute */}
+                <View style={styles.pickerCol}>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustTimeMinute(5)}
+                  >
+                    <Feather name="chevron-up" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerNum, { color: colors.textPrimary }]}>
+                    {tempTime.minute.toString().padStart(2, '0')}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustTimeMinute(-5)}
+                  >
+                    <Feather name="chevron-down" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerColLabel, { color: colors.textSecond }]}>Minute</Text>
+                </View>
+
+                {/* AM/PM */}
+                <View style={[styles.pickerCol, { marginLeft: 12 }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.periodBtn,
+                      { borderColor: colors.border, backgroundColor: colors.bgScreen },
+                      tempTime.period === 'AM' && { backgroundColor: colors.brand, borderColor: colors.brand }
+                    ]}
+                    onPress={() => setTempTime((prev) => ({ ...prev, period: 'AM' }))}
+                  >
+                    <Text style={[
+                      styles.periodBtnText,
+                      { color: colors.textPrimary },
+                      tempTime.period === 'AM' && { color: '#FFFFFF', fontWeight: '700' }
+                    ]}>
+                      AM
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.periodBtn,
+                      { borderColor: colors.border, marginTop: 8, backgroundColor: colors.bgScreen },
+                      tempTime.period === 'PM' && { backgroundColor: colors.brand, borderColor: colors.brand }
+                    ]}
+                    onPress={() => setTempTime((prev) => ({ ...prev, period: 'PM' }))}
+                  >
+                    <Text style={[
+                      styles.periodBtnText,
+                      { color: colors.textPrimary },
+                      tempTime.period === 'PM' && { color: '#FFFFFF', fontWeight: '700' }
+                    ]}>
+                      PM
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.modalButtonContainer}>
+                <TouchableOpacity
+                  style={[styles.modalNoButton, { borderColor: colors.border }]}
+                  onPress={() => setTimePickerVisible(false)}
+                >
+                  <Text style={{ color: colors.textSecond, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalYesButton, { backgroundColor: colors.brand }]}
+                  onPress={confirmTimeSelection}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Custom Duration Picker Modal */}
+        <Modal
+          visible={durationPickerVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDurationPickerVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+              <Text style={[styles.modalTitle, { color: colors.textPrimary }]}>
+                Select Duration
+              </Text>
+
+              <View style={styles.pickerSelectorRow}>
+                {/* Hours */}
+                <View style={styles.pickerCol}>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustDurationHour(1)}
+                  >
+                    <Feather name="chevron-up" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerNum, { color: colors.textPrimary }]}>
+                    {tempDuration.hour.toString().padStart(2, '0')}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustDurationHour(-1)}
+                  >
+                    <Feather name="chevron-down" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerColLabel, { color: colors.textSecond }]}>Hours</Text>
+                </View>
+
+                <Text style={[styles.pickerColon, { color: colors.textPrimary }]}>:</Text>
+
+                {/* Minutes */}
+                <View style={styles.pickerCol}>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustDurationMinute(5)}
+                  >
+                    <Feather name="chevron-up" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerNum, { color: colors.textPrimary }]}>
+                    {tempDuration.minute.toString().padStart(2, '0')}
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.pickerBtn, { backgroundColor: colors.bgScreen }]}
+                    onPress={() => adjustDurationMinute(-5)}
+                  >
+                    <Feather name="chevron-down" size={24} color={colors.brand} />
+                  </TouchableOpacity>
+                  <Text style={[styles.pickerColLabel, { color: colors.textSecond }]}>Minutes</Text>
+                </View>
+              </View>
+
+              <View style={styles.modalButtonContainer}>
+                <TouchableOpacity
+                  style={[styles.modalNoButton, { borderColor: colors.border }]}
+                  onPress={() => setDurationPickerVisible(false)}
+                >
+                  <Text style={{ color: colors.textSecond, fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalYesButton, { backgroundColor: colors.brand }]}
+                  onPress={confirmDurationSelection}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Confirm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Success Animated Toast */}
+        {toastMessage && (
+          <Animated.View
+            style={[
+              styles.toastContainer,
+              {
+                backgroundColor: colors.successText,
+                transform: [
+                  {
+                    translateY: toastAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-100, 20 + insets.top],
+                    }),
+                  },
+                ],
+                opacity: toastOpacity,
+              },
+            ]}
+          >
+            <Feather name="check-circle" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.toastText}>{toastMessage}</Text>
+          </Animated.View>
+        )}
+
+        <AdminBottomTabNavigator
+          activeTab={null}
+          onTabPress={(tab) => {
+            if (tab === 'home') onNavigate?.('admin_dashboard');
+            else onNavigate?.(`admin_${tab}`);
+          }}
+        />
+
+        <AdminMenu visible={menuOpen} onClose={() => setMenuOpen(false)} onNavigate={onNavigate} />
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { paddingHorizontal: 16, paddingTop: 16 },
-  topInfoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 12 },
-  pageDescription: { flex: 1, fontSize: 14, lineHeight: 20 },
-  addButton: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 6 },
-  addButtonText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, height: 48, marginBottom: 16 },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, paddingVertical: 8 },
-  divider: { height: 1, marginBottom: 16 },
-  sectionHeader: { fontSize: 12, fontWeight: '700', letterSpacing: 1.0, marginBottom: 12 },
-  ruleCard: { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 2 },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  cardInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  iconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  ruleName: { fontSize: 16, fontWeight: '700', marginBottom: 4 },
-  descText: { fontSize: 13, lineHeight: 17 },
-  cardDivider: { height: 1, marginVertical: 12 },
-  detailsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
-  detailCol: { flex: 1 },
-  detailLabel: { fontSize: 11, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase' },
-  detailValue: { fontSize: 13, fontWeight: '700' },
-  actionRow: { borderTopWidth: 1, paddingTop: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, gap: 6 },
-  statusDot: { width: 6, height: 6, borderRadius: 3 },
-  statusText: { fontSize: 12, fontWeight: '700' },
-  actionButtons: { flexDirection: 'row', gap: 12 },
-  iconBtn: { padding: 4 },
-
-  /* Modal */
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContainer: { borderRadius: 24, padding: 24, maxHeight: '85%' },
-  modalTitle: { fontSize: 18, fontWeight: '800', marginBottom: 18, textAlign: 'center' },
+  pageDescription: { fontSize: 13, lineHeight: 18, marginBottom: 16 },
+  card: { borderRadius: 16, borderWidth: 1, padding: 18, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.02, shadowRadius: 6, elevation: 1 },
+  sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 10 },
+  sectionIconWrap: { width: 34, height: 34, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  sectionTitle: { fontSize: 15, fontWeight: '700' },
   label: { fontSize: 13, fontWeight: '700', marginBottom: 6, marginTop: 12 },
-  input: { height: 44, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontSize: 14, textAlignVertical: 'top' },
-  statusSelectRow: { flexDirection: 'row', gap: 12, marginTop: 6 },
-  statusSelectorOption: { flex: 1, height: 40, borderWidth: 1, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  statusSelectorText: { fontWeight: '700', fontSize: 13 },
-  modalButtonContainer: { flexDirection: 'row', gap: 12, marginTop: 24 },
+  input: { height: 46, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontSize: 14 },
+  inputDisabled: { height: 46, borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, fontSize: 14 },
+  pickerButtonInput: {
+    height: 46,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  pickerValueText: { fontSize: 14, fontWeight: '600' },
+  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, marginBottom: 4 },
+  switchLabel: { fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  switchDesc: { fontSize: 12, lineHeight: 16 },
+  row: { flexDirection: 'row', marginTop: 4 },
+  rowDivider: { height: 1, marginVertical: 14 },
+  errorText: { fontSize: 11, fontWeight: '600', marginTop: 4, marginLeft: 2 },
+  savePolicyBtn: { height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 6, elevation: 2 },
+  savePolicyBtnText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+
+  /* Dropdown Selector Modal */
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: 16, borderBottomWidth: 1 },
+  dropdownItemCode: { fontSize: 14, marginBottom: 2 },
+  dropdownItemName: { fontSize: 12 },
+
+  /* Picker Modals */
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.4)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContainer: { borderRadius: 20, padding: 24, width: '100%', maxWidth: 340, alignItems: 'center' },
+  modalTitle: { fontSize: 16, fontWeight: '700', marginBottom: 20, textAlign: 'center' },
+  pickerSelectorRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 10 },
+  pickerCol: { alignItems: 'center', width: 68 },
+  pickerBtn: { width: 52, height: 38, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  pickerNum: { fontSize: 28, fontWeight: '800', marginVertical: 10, width: 60, textAlign: 'center' },
+  pickerColLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', marginTop: 2 },
+  pickerColon: { fontSize: 28, fontWeight: '800', marginHorizontal: 8, bottom: 12 },
+  periodBtn: { width: 56, height: 36, borderWidth: 1, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  periodBtnText: { fontSize: 13, fontWeight: '600' },
+  modalButtonContainer: { flexDirection: 'row', gap: 12, marginTop: 24, width: '100%' },
   modalNoButton: { flex: 1, height: 44, borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 1 },
   modalYesButton: { flex: 1, height: 44, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+
+  /* Toast notification */
+  toastContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 6,
+    zIndex: 9999,
+  },
+  toastText: { color: '#FFFFFF', fontWeight: '700', fontSize: 13 },
 });
