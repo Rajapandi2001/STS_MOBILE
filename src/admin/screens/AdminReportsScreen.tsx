@@ -454,26 +454,146 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           } finally {
             setExportingPdf(false);
           }
+        } else if (selectedCard === 'project') {
+          // ── Project Report Export PDF API ─────────────────────────────────
+          setExportingPdf(true);
+          try {
+            const response = await apiClient.post(
+              '/Report/project/export-pdf',
+              { projectIds: [] },
+              { responseType: 'blob' }
+            );
+
+            let filename = 'ProjectReport.pdf';
+            const contentDisposition = response.headers['content-disposition'];
+            if (contentDisposition) {
+              const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+              if (filenameMatch && filenameMatch.length > 1) {
+                filename = filenameMatch[1];
+              }
+            }
+
+            extension = '.pdf';
+            mimeType = 'application/pdf';
+            fileBaseName = filename.replace('.pdf', '');
+            tempFileUri = `${FileSystem.documentDirectory}${filename}`;
+
+            const blob = response.data;
+            const reader = new FileReader();
+
+            await new Promise<void>((resolve, reject) => {
+              reader.onload = async () => {
+                try {
+                  const base64data = (reader.result as string).split(',')[1];
+                  await FileSystem.writeAsStringAsync(tempFileUri, base64data, {
+                    encoding: FileSystem.EncodingType.Base64,
+                  });
+                  resolve();
+                } catch (e) {
+                  reject(e);
+                }
+              };
+              reader.onerror = () => {
+                reject(new Error('Failed to read blob'));
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (error: any) {
+            setExportingPdf(false);
+            if (error.response?.status === 401) {
+              await storageService.clearAuthData();
+              onNavigate?.('login');
+              return;
+            }
+            let msg = 'Download Failure';
+            if (error.response?.status === 403) msg = 'Access denied. You do not have permission to export this report.';
+            else if (error.response?.status === 404) msg = 'Report data not found. Please try again.';
+            else if (error.response?.status === 500) msg = 'Server error. Please try again later.';
+            else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) msg = 'Request timed out. Please check your internet connection and try again.';
+            else if (!error.response || error.message === 'Network Error' || error.code === 'ERR_NETWORK') msg = 'No internet connection. Please check your network and try again.';
+            else if (!error.response?.data) msg = 'Empty response received from the server. Please try again.';
+            Alert.alert('Error', msg);
+            return;
+          } finally {
+            setExportingPdf(false);
+          }
+
+          // Save & share the downloaded file
+          if (Platform.OS === 'android') {
+            let directoryUri = await AsyncStorage.getItem('savedDownloadFolder');
+            if (!directoryUri) {
+              const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+              if (permissions.granted) {
+                directoryUri = permissions.directoryUri;
+                await AsyncStorage.setItem('savedDownloadFolder', directoryUri);
+              } else {
+                Alert.alert('Permission Required', 'File Permission Denied');
+                return;
+              }
+            }
+            if (directoryUri) {
+              try {
+                const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+                  directoryUri,
+                  fileBaseName + extension,
+                  mimeType
+                );
+                const base64 = await FileSystem.readAsStringAsync(tempFileUri, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                await FileSystem.writeAsStringAsync(newUri, base64, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                Alert.alert(
+                  'Success',
+                  'Project Report downloaded successfully.',
+                  [
+                    { text: 'Share', onPress: () => Sharing.shareAsync(tempFileUri) },
+                    { text: 'OK', style: 'cancel' },
+                  ]
+                );
+              } catch (err) {
+                console.error('SAF save failed, falling back to Sharing:', err);
+                if (await Sharing.isAvailableAsync()) {
+                  await Sharing.shareAsync(tempFileUri);
+                } else {
+                  await AsyncStorage.removeItem('savedDownloadFolder');
+                  Alert.alert('Error', 'Download Failure');
+                }
+              }
+            }
+          } else {
+            Alert.alert(
+              'Success',
+              'Project Report downloaded successfully.',
+              [
+                { text: 'Share / Open', onPress: () => Sharing.shareAsync(tempFileUri) },
+                { text: 'OK', style: 'cancel' },
+              ]
+            );
+          }
+          return;
+          // ── End Project Report Export PDF ─────────────────────────────────
         } else {
           let headersHTML = '';
           let rowsHTML = '';
           let titleName = '';
           let metaRows = '';
-          
+
           if (selectedCard === 'client') {
             titleName = 'Client Report';
-          headersHTML = `
+            headersHTML = `
             <th>Client Name</th>
             <th>Client ID</th>
             <th>Email</th>
             <th>Country</th>
             <th>Status</th>
           `;
-          let filteredClients = CLIENT_LIST;
-          if (selectedClient !== 'Select All') {
-            filteredClients = CLIENT_LIST.filter(c => c.name === selectedClient);
-          }
-          rowsHTML = filteredClients.map(client => `
+            let filteredClients = CLIENT_LIST;
+            if (selectedClient !== 'Select All') {
+              filteredClients = CLIENT_LIST.filter(c => c.name === selectedClient);
+            }
+            rowsHTML = filteredClients.map(client => `
             <tr>
               <td><strong>${client.name}</strong></td>
               <td>${client.clientId}</td>
@@ -482,41 +602,13 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
               <td><span class="badge badge-${client.status.toLowerCase()}">${client.status}</span></td>
             </tr>
           `).join('');
-          metaRows = `
+            metaRows = `
             <tr>
               <td class="meta-label">Client Selection:</td>
               <td class="meta-value">${selectedClient}</td>
             </tr>
           `;
-        } else if (selectedCard === 'project') {
-          titleName = 'Project Report';
-          headersHTML = `
-            <th>Project Name</th>
-            <th>Project ID</th>
-            <th>Start Date</th>
-            <th>End Date</th>
-            <th>Status</th>
-          `;
-          let filteredProjects = PROJECT_LIST;
-          if (selectedProject !== 'Select All') {
-            filteredProjects = PROJECT_LIST.filter(p => p.name === selectedProject);
-          }
-          rowsHTML = filteredProjects.map(proj => `
-            <tr>
-              <td><strong>${proj.name}</strong></td>
-              <td>${proj.projectId}</td>
-              <td>${proj.startDate}</td>
-              <td>${proj.endDate}</td>
-              <td><span class="badge badge-${proj.status.toLowerCase()}">${proj.status}</span></td>
-            </tr>
-          `).join('');
-          metaRows = `
-            <tr>
-              <td class="meta-label">Project Selection:</td>
-              <td class="meta-value">${selectedProject}</td>
-            </tr>
-          `;
-        } else if (selectedCard === 'holiday') {
+          } else if (selectedCard === 'holiday') {
           titleName = 'Holiday Report';
           headersHTML = `
             <th>Holiday Name</th>
@@ -743,6 +835,126 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
           } finally {
             setExportingExcel(false);
           }
+        } else if (selectedCard === 'project') {
+          // ── Project Report Export Excel API ──────────────────────────────
+          setExportingExcel(true);
+          try {
+            const response = await apiClient.post(
+              '/Report/project/export-excel',
+              { projectIds: [] },
+              { responseType: 'blob' }
+            );
+
+            let filename = 'ProjectReport.xlsx';
+            const contentDisposition = response.headers['content-disposition'];
+            if (contentDisposition) {
+              const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+              if (filenameMatch && filenameMatch.length > 1) {
+                filename = filenameMatch[1];
+              }
+            }
+
+            extension = '.xlsx';
+            mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+            fileBaseName = filename.replace('.xlsx', '');
+            tempFileUri = `${FileSystem.documentDirectory}${filename}`;
+
+            const blob = response.data;
+            const reader = new FileReader();
+
+            await new Promise<void>((resolve, reject) => {
+              reader.onload = async () => {
+                try {
+                  const base64data = (reader.result as string).split(',')[1];
+                  await FileSystem.writeAsStringAsync(tempFileUri, base64data, {
+                    encoding: FileSystem.EncodingType.Base64,
+                  });
+                  resolve();
+                } catch (e) {
+                  reject(e);
+                }
+              };
+              reader.onerror = () => {
+                reject(new Error('Failed to read blob'));
+              };
+              reader.readAsDataURL(blob);
+            });
+          } catch (error: any) {
+            setExportingExcel(false);
+            if (error.response?.status === 401) {
+              await storageService.clearAuthData();
+              onNavigate?.('login');
+              return;
+            }
+            let msg = 'Download Failure';
+            if (error.response?.status === 403) msg = 'Access denied. You do not have permission to export this report.';
+            else if (error.response?.status === 404) msg = 'Report data not found. Please try again.';
+            else if (error.response?.status === 500) msg = 'Server error. Please try again later.';
+            else if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) msg = 'Request timed out. Please check your internet connection and try again.';
+            else if (!error.response || error.message === 'Network Error' || error.code === 'ERR_NETWORK') msg = 'No internet connection. Please check your network and try again.';
+            else if (!error.response?.data) msg = 'Empty response received from the server. Please try again.';
+            Alert.alert('Error', msg);
+            return;
+          } finally {
+            setExportingExcel(false);
+          }
+
+          // Save & share the downloaded file
+          if (Platform.OS === 'android') {
+            let directoryUri = await AsyncStorage.getItem('savedDownloadFolder');
+            if (!directoryUri) {
+              const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+              if (permissions.granted) {
+                directoryUri = permissions.directoryUri;
+                await AsyncStorage.setItem('savedDownloadFolder', directoryUri);
+              } else {
+                Alert.alert('Permission Required', 'File Permission Denied');
+                return;
+              }
+            }
+            if (directoryUri) {
+              try {
+                const newUri = await FileSystem.StorageAccessFramework.createFileAsync(
+                  directoryUri,
+                  fileBaseName + extension,
+                  mimeType
+                );
+                const base64 = await FileSystem.readAsStringAsync(tempFileUri, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                await FileSystem.writeAsStringAsync(newUri, base64, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                Alert.alert(
+                  'Success',
+                  'Project Report downloaded successfully.',
+                  [
+                    { text: 'Share', onPress: () => Sharing.shareAsync(tempFileUri) },
+                    { text: 'OK', style: 'cancel' },
+                  ]
+                );
+              } catch (err) {
+                console.error('SAF save failed, falling back to Sharing:', err);
+                if (await Sharing.isAvailableAsync()) {
+                  await Sharing.shareAsync(tempFileUri);
+                } else {
+                  await AsyncStorage.removeItem('savedDownloadFolder');
+                  Alert.alert('Error', 'Download Failure');
+                }
+              }
+            }
+          } else {
+            Alert.alert(
+              'Success',
+              'Project Report downloaded successfully.',
+              [
+                { text: 'Share / Open', onPress: () => Sharing.shareAsync(tempFileUri) },
+                { text: 'OK', style: 'cancel' },
+              ]
+            );
+          }
+          return;
+          // ── End Project Report Export Excel ──────────────────────────────
         } else {
           let csvContent = '';
           if (selectedCard === 'client') {
@@ -752,13 +964,6 @@ export default function AdminReportsScreen({ onNavigate, onBack }: AdminReportsS
             }
             csvContent = `Client Name,Client ID,Email,Country,Status\n` +
               filteredClients.map(c => `"${c.name}","${c.clientId}","${c.email}","${c.country}","${c.status}"`).join('\n') + '\n';
-          } else if (selectedCard === 'project') {
-            let filteredProjects = PROJECT_LIST;
-            if (selectedProject !== 'Select All') {
-              filteredProjects = PROJECT_LIST.filter(p => p.name === selectedProject);
-            }
-            csvContent = `Project Name,Project ID,Start Date,End Date,Status\n` +
-              filteredProjects.map(p => `"${p.name}","${p.projectId}","${p.startDate}","${p.endDate}","${p.status}"`).join('\n') + '\n';
           } else if (selectedCard === 'holiday') {
             let filteredHolidays = HOLIDAY_LIST;
             if (selectedHoliday !== 'Select All') {
